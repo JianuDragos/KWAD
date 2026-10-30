@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Aeris.PlanningEngine;
+using Aeris.PlanningEngine.Services;
 
 namespace AERIS_API.Controllers;
 
@@ -41,8 +41,3 @@ public class PlanningController : ControllerBase
         }
     }
 }
-
-public record EvaluationRequestDto(
-    List<AircraftInput> Aircrafts,
-    ScenarioRules Rules
-);

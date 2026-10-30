@@ -1,4 +1,4 @@
-﻿namespace Aeris.PlanningEngine;
+﻿namespace Aeris.PlanningEngine.Services;
 
 public class SequenceGenerator
 {
