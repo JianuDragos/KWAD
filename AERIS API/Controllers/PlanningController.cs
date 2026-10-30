@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Aeris.PlanningEngine.Models;
 using Aeris.PlanningEngine.Services;
 
 namespace AERIS_API.Controllers;

@@ -1,3 +1,5 @@
+using Aeris.PlanningEngine.Models;
+
 namespace Aeris.PlanningEngine.Services;
 
 public class ScheduleCalculator
