@@ -1,0 +1,57 @@
+@AERIS_API_HostAddress = http://localhost:5271
+
+### 1. Obținere evaluare scenariu demonstrativ (GET)
+GET {{AERIS_API_HostAddress}}/api/planning/sample
+Accept: application/json
+
+###
+
+### 2. Evaluare scenariu custom prin POST (toată matematica evaluată)
+POST {{AERIS_API_HostAddress}}/api/planning/evaluate
+Content-Type: application/json
+
+{
+  "rules": {
+    "minimumGapSeconds": 120,
+    "allowVfr": true,
+    "baseTimeOffsetSeconds": 50400
+  },
+  "aircrafts": [
+    {
+      "id": "IFR1",
+      "flightRules": "IFR",
+      "etaSeconds": 0,
+      "earliestSeconds": 0,
+      "latestSeconds": 180
+    },
+    {
+      "id": "IFR2",
+      "flightRules": "IFR",
+      "etaSeconds": 240,
+      "earliestSeconds": 240,
+      "latestSeconds": 600
+    },
+    {
+      "id": "IFR3",
+      "flightRules": "IFR",
+      "etaSeconds": 480,
+      "earliestSeconds": 480,
+      "latestSeconds": 840
+    },
+    {
+      "id": "VFR",
+      "flightRules": "VFR",
+      "etaSeconds": 360,
+      "earliestSeconds": 300,
+      "latestSeconds": 420
+    }
+  ]
+}
+
+###
+
+### 3. Evaluare pe ruta alternativă (/api/evaluate)
+GET {{AERIS_API_HostAddress}}/api/evaluate
+Accept: application/json
+
+###
