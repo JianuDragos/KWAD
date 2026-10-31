@@ -182,8 +182,16 @@ export function realisticCraiovaTraffic(): CraiovaAircraft[] {
   ];
 }
 
+/** Zborurile spre LRCV din bazele mock ROMATSA, calculate de romatsaArrivals (romatsa.test.ts verifică să rămână la fel). */
+const ROMATSA_ARRIVALS: CraiovaAircraft[] = [
+  { id: 'ROT-641', callsign: 'ROT641', modelName: 'ATR 72-600', category: 'RegionalTurboprop', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 30, etaSeconds: 252, earliestSeconds: 192, latestSeconds: 552, frozenTimeSeconds: null, speedKnots: 118, remainingFuelMinutes: 135 },
+  { id: 'YR-TNA', callsign: 'YR-TNA', modelName: 'Cessna 172 Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: 1207, earliestSeconds: 1147, latestSeconds: 1507, frozenTimeSeconds: null, speedKnots: 75, remainingFuelMinutes: 165 },
+  { id: 'YR-MDV', callsign: 'YR-MDV', modelName: 'Piper PA-44 Seminole', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 17, etaSeconds: 528, earliestSeconds: 468, latestSeconds: 828, frozenTimeSeconds: null, speedKnots: 90, remainingFuelMinutes: 120 },
+  { id: 'HA-TDO', callsign: 'HA-TDO', modelName: 'Hawker Beechcraft Super King Air 350', category: 'RegionalTurboprop', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 25, etaSeconds: 440, earliestSeconds: 380, latestSeconds: 740, frozenTimeSeconds: null, speedKnots: 140, remainingFuelMinutes: 165 },
+];
+
 export function liveTraffic(): LiveTrafficResponse {
-  const traffic = realisticCraiovaTraffic();
+  const traffic = [...realisticCraiovaTraffic(), ...ROMATSA_ARRIVALS];
   return { source: 'Trafic simulat realist (OpenSky bypass / mod demonstrativ)', count: traffic.length, traffic };
 }
 

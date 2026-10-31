@@ -12,6 +12,7 @@ import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationRes
 import { explanationSchema, livePositionsSchema, metarSchema, vfrTrackingSchema, type Explanation, type LivePositions, type Metar, type VfrTracking } from '../contracts/live';
 import * as mock from './mockBackend';
 import * as mockLive from './mockLive';
+import { romatsaArrivals, romatsaIfrSchema, romatsaVfrSchema, withRomatsa } from './romatsa';
 
 export const API_MOCK = import.meta.env.VITE_API_MOCK === '1';
 
@@ -83,7 +84,14 @@ function mockDelay<T>(produce: () => T, signal?: AbortSignal, ms = 350): Promise
 export function fetchScenarioTraffic(signal?: AbortSignal): Promise<LiveTrafficResponse> {
   const path = '/api/craiova/live-traffic?forceSimulated=true';
   if (API_MOCK) return mockDelay(() => parseResponse(path, liveTrafficSchema, mock.liveTraffic()), signal);
-  return request(path, liveTrafficSchema, { signal });
+  return Promise.all([
+    request(path, liveTrafficSchema, { signal }),
+    request('/api/craiova/romatsa/ifr', romatsaIfrSchema, { signal }),
+    request('/api/craiova/romatsa/vfr', romatsaVfrSchema, { signal }),
+  ]).then(([live, ifr, vfr]) => {
+    const traffic = withRomatsa(live.traffic, romatsaArrivals(ifr, vfr));
+    return { ...live, count: traffic.length, traffic };
+  });
 }
 
 export function evaluateCraiova(body: CraiovaCustomEvaluationRequest, signal?: AbortSignal): Promise<CraiovaSimulationResult> {
