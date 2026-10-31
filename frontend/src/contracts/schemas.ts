@@ -76,6 +76,7 @@ const aircraftSchema: z.ZodType<CraiovaAircraft> = z.object({
   frozenTimeSeconds: z.number().nullable().optional(),
   speedKnots: z.number().optional(),
   remainingFuelMinutes: z.number().optional(),
+  departureIcao: z.string().nullable().optional(),
 });
 
 const alternateSchema: z.ZodType<AlternateAerodrome> = z.object({
@@ -162,6 +163,8 @@ const takeoffToLandingSchema: z.ZodType<TakeoffToLandingAnalysis> = z.object({
   runwayUsedPercent: z.number(),
   predictedRunwayOccupancySeconds: z.number(),
   phases: z.array(missionPhaseSchema),
+  departureLatitude: z.number().nullable().optional(),
+  departureLongitude: z.number().nullable().optional(),
 });
 
 const stepSnapshotSchema: z.ZodType<PredictionStepSnapshot> = z.object({

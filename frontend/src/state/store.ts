@@ -1,12 +1,15 @@
 // Starea comună pentru hartă, panou și timeline (un singur proprietar: Radu; Daha propune schimbări).
 import { create } from 'zustand';
-import type { CraiovaAircraft, CraiovaSimulationResult, WeatherCondition } from '../contracts/backend';
+import type { CraiovaAircraft, CraiovaSimulationResult, TrafficPresetId, WeatherCondition } from '../contracts/backend';
 import { ApiError, evaluateCraiova, fetchScenarioTraffic } from '../api/client';
+import { FALLBACK_FIRS, loadFirsDataset, type FirEntry } from '../data/airspace';
 import { DEFAULT_PRESET_ID, WEATHER_PRESETS } from '../data/weatherPresets';
 import { buildTraffic, type TrafficModel } from '../sim/traffic';
 
-export const SPEEDS = [1, 5, 10, 30] as const;
+export const SPEEDS = [1, 5, 10, 30, 60, 300] as const;
 export type Speed = (typeof SPEEDS)[number];
+export type MapViewPreset = 'continental' | 'wide' | 'close';
+export type TimelineScope = 'approach' | 'mission';
 
 /** Backendul calculează orele față de o bază fixă „14:00” (ScenarioRules.BaseTimeOffsetSeconds), fără dată. */
 export const BASE_TIME_OFFSET_SECONDS = 50400;
@@ -16,6 +19,7 @@ type LoadStatus = 'idle' | 'loading' | 'ok' | 'error';
 export interface Scenario {
   /** Crește la fiecare modificare; rezultatele cu altă revizie sunt depășite. */
   revision: number;
+  trafficPreset: TrafficPresetId;
   aircrafts: CraiovaAircraft[];
   weatherPresetId: string;
   weather: WeatherCondition;
@@ -34,15 +38,24 @@ interface AppState {
   status: LoadStatus;
   error: string | null;
   evaluation: Evaluation | null;
+  firs: FirEntry[];
+
+  useTrajectoryEngine: boolean;
+  setUseTrajectoryEngine: (enabled: boolean) => void;
 
   simTimeSeconds: number;
   playing: boolean;
   speed: Speed;
   selectedId: string | null;
-  view: 'wide' | 'close';
+  view: MapViewPreset;
+  viewNonce: number;
   basemap: 'none' | 'osm';
+  showSectors: boolean;
+  showAllRoutes: boolean;
+  timelineScope: TimelineScope;
 
   load: () => Promise<void>;
+  setTrafficPreset: (preset: TrafficPresetId) => Promise<void>;
   setWeatherPreset: (id: string) => void;
   reset: () => void;
   tick: (dtRealSeconds: number) => void;
@@ -50,8 +63,11 @@ interface AppState {
   setSpeed: (s: Speed) => void;
   seek: (t: number) => void;
   select: (id: string | null) => void;
-  setView: (v: 'wide' | 'close') => void;
+  setView: (v: MapViewPreset) => void;
   setBasemap: (b: 'none' | 'osm') => void;
+  setShowSectors: (show: boolean) => void;
+  setShowAllRoutes: (show: boolean) => void;
+  setTimelineScope: (scope: TimelineScope) => void;
 }
 
 let inFlight: AbortController | null = null;
@@ -63,14 +79,20 @@ export const useApp = create<AppState>()((set, get) => {
     inFlight = controller;
     set({ status: 'loading', error: null });
     try {
-      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts }, controller.signal);
+      const useTraj = get().useTrajectoryEngine;
+      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts, useTrajectoryEngine: useTraj }, controller.signal);
       // Răspuns pentru o revizie veche: îl ignorăm.
       if (get().scenario?.revision !== scenario.revision) return;
-      const traffic = buildTraffic(scenario.aircrafts, result);
+      const traffic = buildTraffic(scenario.aircrafts, result, get().firs, useTraj);
+      const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
       set((s) => ({
         status: 'ok',
         evaluation: { revision: scenario.revision, result, traffic },
-        simTimeSeconds: resetClock ? traffic.startSeconds : clamp(s.simTimeSeconds, traffic.startSeconds, traffic.endSeconds),
+        simTimeSeconds: resetClock
+          ? s.timelineScope === 'mission'
+            ? traffic.missionStartSeconds
+            : traffic.startSeconds
+          : clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
       }));
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
@@ -84,20 +106,72 @@ export const useApp = create<AppState>()((set, get) => {
     status: 'idle',
     error: null,
     evaluation: null,
+    firs: FALLBACK_FIRS,
+    useTrajectoryEngine: true,
     simTimeSeconds: 0,
     playing: false,
     speed: 5,
     selectedId: null,
     view: 'wide',
-    basemap: 'none',
+    viewNonce: 0,
+    basemap: 'osm',
+    showSectors: true,
+    showAllRoutes: true,
+    timelineScope: 'approach',
 
     load: async () => {
       set({ status: 'loading', error: null });
+      void loadFirsDataset().then((ds) => {
+        if (ds.firs.length > FALLBACK_FIRS.length) {
+          set((s) => {
+            if (!s.evaluation || !s.scenario) return { firs: ds.firs };
+            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs, s.useTrajectoryEngine);
+            return { firs: ds.firs, evaluation: { ...s.evaluation, traffic: updatedTraffic } };
+          });
+        }
+      });
+
       try {
         const live = await fetchScenarioTraffic();
         const preset = WEATHER_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)!;
-        const scenario: Scenario = { revision: 1, aircrafts: live.traffic, weatherPresetId: preset.id, weather: preset.weather, source: live.source };
+        const scenario: Scenario = {
+          revision: 1,
+          trafficPreset: 'default',
+          aircrafts: live.traffic,
+          weatherPresetId: preset.id,
+          weather: preset.weather,
+          source: live.source,
+        };
         set({ scenario, initialScenario: scenario });
+        await evaluate(scenario, true);
+      } catch (e) {
+        set({ status: 'error', error: e instanceof ApiError ? e.message : String(e) });
+      }
+    },
+
+    setTrafficPreset: async (trafficPreset) => {
+      const current = get().scenario;
+      const weatherPresetId = current?.weatherPresetId ?? DEFAULT_PRESET_ID;
+      const weather = current?.weather ?? WEATHER_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)!.weather;
+      const nextRev = (current?.revision ?? 0) + 1;
+      set({ status: 'loading', error: null, playing: false, selectedId: null });
+      try {
+        const live = await fetchScenarioTraffic(undefined, trafficPreset);
+        const scenario: Scenario = {
+          revision: nextRev,
+          trafficPreset,
+          aircrafts: live.traffic,
+          weatherPresetId,
+          weather,
+          source: live.source,
+        };
+        const nextView: MapViewPreset = trafficPreset === 'eurasia' ? 'continental' : 'wide';
+        set((s) => ({
+          scenario,
+          view: nextView,
+          viewNonce: s.viewNonce + 1,
+          timelineScope: trafficPreset === 'eurasia' ? 'mission' : s.timelineScope,
+        }));
         await evaluate(scenario, true);
       } catch (e) {
         set({ status: 'error', error: e instanceof ApiError ? e.message : String(e) });
@@ -113,11 +187,22 @@ export const useApp = create<AppState>()((set, get) => {
       void evaluate(scenario, false);
     },
 
+    setUseTrajectoryEngine: (enabled) => {
+      const current = get().scenario;
+      if (!current) {
+        set({ useTrajectoryEngine: enabled });
+        return;
+      }
+      const scenario = { ...current, revision: current.revision + 1 };
+      set({ useTrajectoryEngine: enabled, scenario });
+      void evaluate(scenario, false);
+    },
+
     reset: () => {
       const initial = get().initialScenario;
       if (!initial) return;
       const scenario = { ...initial, revision: (get().scenario?.revision ?? 0) + 1 };
-      set({ scenario, playing: false, selectedId: null });
+      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach' });
       void evaluate(scenario, true);
     },
 
@@ -132,11 +217,27 @@ export const useApp = create<AppState>()((set, get) => {
     setSpeed: (speed) => set({ speed }),
     seek: (t) => {
       const ev = get().evaluation;
-      if (ev) set({ simTimeSeconds: clamp(t, ev.traffic.startSeconds, ev.traffic.endSeconds) });
+      if (!ev) return;
+      const minSeek = Math.min(ev.traffic.missionStartSeconds, ev.traffic.startSeconds);
+      const clamped = clamp(t, minSeek, ev.traffic.endSeconds);
+      set((s) => ({
+        simTimeSeconds: clamped,
+        timelineScope: clamped < ev.traffic.startSeconds - 60 ? 'mission' : s.timelineScope,
+      }));
     },
     select: (selectedId) => set({ selectedId }),
-    setView: (view) => set({ view }),
+    setView: (view) => set((s) => ({ view, viewNonce: s.viewNonce + 1 })),
     setBasemap: (basemap) => set({ basemap }),
+    setShowSectors: (showSectors) => set({ showSectors }),
+    setShowAllRoutes: (showAllRoutes) => set({ showAllRoutes }),
+    setTimelineScope: (timelineScope) =>
+      set((s) => {
+        if (!s.evaluation) return { timelineScope };
+        if (timelineScope === 'approach' && s.simTimeSeconds < s.evaluation.traffic.startSeconds) {
+          return { timelineScope, simTimeSeconds: s.evaluation.traffic.startSeconds };
+        }
+        return { timelineScope };
+      }),
   };
 });
 

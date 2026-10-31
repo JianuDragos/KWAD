@@ -1,20 +1,24 @@
+import type { TrafficPresetId } from '../contracts/backend';
 import { WEATHER_PRESETS, presetLabel } from '../data/weatherPresets';
 import { clockLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 import { WindArrow } from './WindArrow';
 
-/** Bara de sus pe pagina Demo: ceasul simulării, redare, preset meteo. */
+/** Bara de sus pe pagina Demo: ceasul simulării, redare, scenariu trafic și preset meteo. */
 export function DemoControls() {
   const playing = useApp((s) => s.playing);
   const speed = useApp((s) => s.speed);
   const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
+  const trafficPreset = useApp((s) => s.scenario?.trafficPreset ?? 'default');
   const revision = useApp((s) => s.scenario?.revision ?? 0);
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
-  const { togglePlay, setSpeed, setWeatherPreset, reset } = useApp.getState();
+  const useTrajectoryEngine = useApp((s) => s.useTrajectoryEngine);
+  const evaluationResult = useApp((s) => s.evaluation?.result);
+  const { togglePlay, setSpeed, setWeatherPreset, setTrafficPreset, setUseTrajectoryEngine, reset } = useApp.getState();
   const stale = useIsStale();
-  const units = useSpeed(); // `speed` e deja viteza redării
+  const units = useSpeed();
 
   return (
     <>
@@ -39,6 +43,18 @@ export function DemoControls() {
       <Conditions />
 
       <label className="group">
+        <span className="group__label">Trafic</span>
+        <select
+          value={trafficPreset}
+          onChange={(e) => void setTrafficPreset(e.target.value as TrafficPresetId)}
+          disabled={status === 'loading'}
+        >
+          <option value="default">Standard LRCV (EGGW / LIME + 3 VFR)</option>
+          <option value="eurasia">Eurasia Long-Haul (China ZBAA → LRCV)</option>
+        </select>
+      </label>
+
+      <label className="group">
         <span className="group__label">Meteo</span>
         <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData}>
           {WEATHER_PRESETS.map((p) => (
@@ -49,12 +65,37 @@ export function DemoControls() {
         </select>
       </label>
 
+      <label className={`checkbox-toggle ${useTrajectoryEngine ? 'is-active' : ''}`} title="Comută între noul motor Trajectory & Separation Engine și planificatorul vechi">
+        <input
+          type="checkbox"
+          checked={useTrajectoryEngine}
+          onChange={(e) => setUseTrajectoryEngine(e.target.checked)}
+          disabled={!hasData}
+        />
+        <span>use Trajectory Engine</span>
+      </label>
+
       <div className="spacer" />
 
       <div className="pills" aria-live="polite">
         {status === 'loading' && <span className="pill pill--busy">Se calculează</span>}
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
+        {useTrajectoryEngine && evaluationResult?.safetyAssessment?.isSafe && (
+          <span className="pill pill--ok" title={evaluationResult.safetyAssessment.summary}>
+            ● Traiectorii Sigure (EASA)
+          </span>
+        )}
+        {useTrajectoryEngine && evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
+          <span className="pill pill--warn" title={evaluationResult.safetyAssessment.summary}>
+            ▲ {evaluationResult.safetyAssessment.conflicts.length} Conflicte
+          </span>
+        )}
+        {!useTrajectoryEngine && (
+          <span className="pill pill--legacy" title="Planificator vechi: ecart fix 120s, cercuri arbitrare fără eșalonare de siaj">
+            Motor Vechi (Legacy)
+          </span>
+        )}
         <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>
       </div>
     </>

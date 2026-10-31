@@ -29,10 +29,11 @@ builder.Services.AddScoped<IPlanningService, PlanningService>();
 builder.Services.AddSingleton<TrajectoryPredictor>();
 builder.Services.AddScoped<ITrajectorySeparationEngine, TrajectorySeparationEngine>();
 builder.Services.AddScoped<SafePlanningCoordinator>();
+builder.Services.AddScoped<ISafePlanningCoordinator>(sp => sp.GetRequiredService<SafePlanningCoordinator>());
 builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
-// ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
+// ── Servicii METAR + OpenSky Live Positions (cu protecție anti-blacklist) ─────
 builder.Services.AddHttpClient("aviation-weather", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(8);
@@ -40,7 +41,20 @@ builder.Services.AddHttpClient("aviation-weather", client =>
 });
 builder.Services.AddSingleton<IResilientWeatherService, ResilientWeatherService>();
 builder.Services.AddScoped<IMetarService, AviationWeatherService>();
-builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyFetcher>();
+
+builder.Services.AddHttpClient("opensky-live", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AERIS-Craiova-ATM/1.0");
+});
+builder.Services.AddSingleton<IOpenSkyLiveService>(sp =>
+{
+    var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<OpenSkyLiveService>>();
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new OpenSkyFetcher(httpFactory.CreateClient("opensky-live"), logger, config);
+});
+
 builder.Services.AddSingleton<VmcChecker>();
 builder.Services.AddSingleton<VfrGeofenceEngine>();
 builder.Services.AddSingleton<IVfrGeofenceService>(sp => sp.GetRequiredService<VfrGeofenceEngine>());
@@ -53,12 +67,28 @@ builder.Services.AddHostedService<OgnAprsListener>();
 builder.Services.Configure<Sbs1Options>(builder.Configuration.GetSection("SBS1"));
 builder.Services.AddHostedService<Sbs1Listener>();
 
-// ── Local AI grounded explainer (inferență separată, doar loopback) ──────────
-builder.Services.AddHttpClient<GroundedExplainer>(client =>
+// ── Local AI grounded explainer (Qwen3-4B-Instruct-2507, doar loopback) ───────
+builder.Services.AddHttpClient("local-ai", (sp, client) =>
 {
-    client.BaseAddress = new Uri("http://127.0.0.1:18090/");
-    client.Timeout = Timeout.InfiniteTimeSpan; // deadline-ul de 30s este gestionat de helper
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["LocalAI:BaseUrl"];
+    client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://127.0.0.1:18090/" : baseUrl);
+    client.Timeout = Timeout.InfiniteTimeSpan; // deadline-ul este gestionat de GroundedExplainer
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseProxy = false });
+
+builder.Services.AddScoped<GroundedExplainer>(sp =>
+{
+    var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var config = sp.GetRequiredService<IConfiguration>();
+    var model = config["LocalAI:Model"] ?? "aeris-local";
+    var fallbackModel = config["LocalAI:FallbackModel"] ?? "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0";
+    var timeoutSec = Math.Clamp(config.GetValue("LocalAI:TimeoutSeconds", 15), 2, 60);
+    return new GroundedExplainer(
+        httpFactory.CreateClient("local-ai"),
+        model: model,
+        timeout: TimeSpan.FromSeconds(timeoutSec),
+        fallbackModel: fallbackModel);
+});
 
 var app = builder.Build();
 

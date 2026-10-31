@@ -1,11 +1,12 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Aeris.PlanningEngine.Services;
 
 namespace AERIS_API.Controllers;
 
 /// <summary>
-/// Controller pentru date meteorologice în timp real la Aeroportul Craiova (LRCV).
-/// Oferă acces la METAR brut și decodat, destinat frontend-ului și modulului AI.
+/// Controller pentru date meteorologice în timp real la Aeroportul Craiova (LRCV) și pe coridoarele de rută.
+/// Oferă acces la METAR brut și decodat, plus interogare grupată (bulk cached) pe rută pentru evitarea rate-limit-ului.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -59,11 +60,6 @@ public class WeatherController : ControllerBase
     /// în format human-readable și un prompt AI structurat.
     /// Destinat frontend-ului (afișare condiții meteo) și modulului AI (context pentru LLM).
     /// </summary>
-    /// <remarks>
-    /// Câmpurile returnate includ: vânt (direcție, viteză, rafale), vizibilitate, nori/plafon,
-    /// temperatură, punct de rouă, umiditate, QNH, fenomene meteo, categoria de zbor,
-    /// rezumat pentru controller și promptul gata pentru injecție în LLM.
-    /// </remarks>
     [HttpGet("metar/decoded")]
     [ProducesResponseType(typeof(object), 200)]
     [ProducesResponseType(503)]
@@ -74,6 +70,32 @@ public class WeatherController : ControllerBase
             return StatusCode(503, new { error = "METAR indisponibil sau nu a putut fi decodat. Verificați conectivitatea la aviationweather.gov." });
 
         return Ok(decoded);
+    }
+
+    /// <summary>
+    /// Returnează starea meteo pe un coridor de zbor (ex: "51.87,-0.37;48.11,16.57;44.32,23.89")
+    /// folosind un singur apel bulk Open-Meteo și cache în RAM pe celule de 0.25° timp de 20 minute.
+    /// </summary>
+    [HttpGet("corridor")]
+    [ProducesResponseType(typeof(CorridorWeatherResponse), 200)]
+    public async Task<IActionResult> GetCorridorWeather(
+        [FromQuery] string points = "44.3181,23.8886",
+        CancellationToken cancellationToken = default)
+    {
+        var parsed = new List<(double Lat, double Lon)>();
+        foreach (var pair in (points ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var coords = pair.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (coords.Length == 2 &&
+                double.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var lat) &&
+                double.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var lon))
+            {
+                parsed.Add((lat, lon));
+            }
+        }
+
+        var response = await _weatherService.GetCorridorWeatherAsync(parsed, cancellationToken);
+        return Ok(response);
     }
 }
 

@@ -88,7 +88,9 @@ public record TakeoffToLandingAnalysis(
     double RunwaySafetyMarginMeters,
     double RunwayUsedPercent,
     double PredictedRunwayOccupancySeconds,
-    List<FlightMissionPhase> Phases
+    List<FlightMissionPhase> Phases,
+    double? DepartureLatitude = null,
+    double? DepartureLongitude = null
 );
 
 /// <summary>

@@ -7,16 +7,26 @@ using Aeris.PlanningEngine.Models;
 
 namespace Aeris.PlanningEngine.Services;
 
-/// <summary>Provider failover and per-ICAO cache. Forecast fallback never claims a verified ceiling.</summary>
+/// <summary>Provider failover, per-ICAO cache, and batched corridor weather cache (anti-blacklist).</summary>
 public sealed class ResilientWeatherService : IResilientWeatherService
 {
     private static readonly TimeSpan FreshCacheAge = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan MinimumPollInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan MinimumBulkCorridorGap = TimeSpan.FromSeconds(20);
+    private const int MaxCorridorPoints = 40;
+
     private readonly IHttpClientFactory _clients;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ResilientWeatherService> _logger;
     private readonly ConcurrentDictionary<string, AirportCache> _airports = new(StringComparer.OrdinalIgnoreCase);
+
+    // Cache pe celule geografice de 0.25° (~25 km) pentru vremea pe rută:
+    // elimină cererile repetate pe waypoint/cadru în timpul redării accelerate (10x..300x).
+    private readonly ConcurrentDictionary<string, CachedCorridorCell> _corridorCells = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _corridorGate = new(1, 1);
+    private DateTimeOffset _corridorBackoffUntilUtc;
+    private DateTimeOffset _lastCorridorFetchUtc;
 
     public ResilientWeatherService(IHttpClientFactory clients, IConfiguration configuration, ILogger<ResilientWeatherService> logger)
     {
@@ -63,12 +73,171 @@ public sealed class ResilientWeatherService : IResilientWeatherService
         finally { cache.Gate.Release(); }
     }
 
+    public async Task<CorridorWeatherResponse> GetCorridorWeatherAsync(
+        IReadOnlyList<(double Lat, double Lon)> waypoints,
+        CancellationToken cancellationToken = default)
+    {
+        if (waypoints is null || waypoints.Count == 0)
+            return new CorridorWeatherResponse(DateTime.UtcNow, "Open-Meteo Bulk Corridor Cache", 0, 0, 0, Array.Empty<CorridorWeatherPoint>());
+
+        var corridorTtl = TimeSpan.FromMinutes(Math.Clamp(_configuration.GetValue("WeatherProviders:CorridorCacheMinutes", 20), 5, 120));
+        var normalized = waypoints
+            .Where(p => p.Lat is >= -90 and <= 90 && p.Lon is >= -180 and <= 180)
+            .Take(MaxCorridorPoints)
+            .Select(p => (OrigLat: p.Lat, OrigLon: p.Lon, GridLat: SnapGrid(p.Lat), GridLon: SnapGrid(p.Lon), Key: GridKey(p.Lat, p.Lon)))
+            .ToList();
+
+        var now = DateTimeOffset.UtcNow;
+        var missingKeys = normalized
+            .Select(p => p.Key)
+            .Distinct(StringComparer.Ordinal)
+            .Where(k => !_corridorCells.TryGetValue(k, out var cell) || now - cell.FetchedAtUtc >= corridorTtl)
+            .ToList();
+
+        int fetchedCount = 0;
+        if (missingKeys.Count > 0 && now >= _corridorBackoffUntilUtc && now - _lastCorridorFetchUtc >= MinimumBulkCorridorGap)
+        {
+            await _corridorGate.WaitAsync(cancellationToken);
+            try
+            {
+                now = DateTimeOffset.UtcNow;
+                missingKeys = normalized
+                    .Select(p => p.Key)
+                    .Distinct(StringComparer.Ordinal)
+                    .Where(k => !_corridorCells.TryGetValue(k, out var cell) || now - cell.FetchedAtUtc >= corridorTtl)
+                    .ToList();
+
+                if (missingKeys.Count > 0 && now >= _corridorBackoffUntilUtc && now - _lastCorridorFetchUtc >= MinimumBulkCorridorGap)
+                {
+                    var uniqueCoords = missingKeys
+                        .Select(k => normalized.First(n => n.Key == k))
+                        .ToList();
+
+                    fetchedCount = await FetchBulkOpenMeteoCellsAsync(uniqueCoords.Select(c => (c.Key, c.GridLat, c.GridLon)).ToList(), cancellationToken);
+                    _lastCorridorFetchUtc = DateTimeOffset.UtcNow;
+                }
+            }
+            finally
+            {
+                _corridorGate.Release();
+            }
+        }
+
+        var output = new List<CorridorWeatherPoint>(normalized.Count);
+        int cachedHits = 0;
+        var freshKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in normalized)
+        {
+            if (_corridorCells.TryGetValue(item.Key, out var cell))
+            {
+                bool wasCached = DateTimeOffset.UtcNow - cell.FetchedAtUtc > TimeSpan.FromSeconds(3) || fetchedCount == 0;
+                if (wasCached) cachedHits++;
+                freshKeys.Add(item.Key);
+                output.Add(cell.Point with
+                {
+                    Latitude = Math.Round(item.OrigLat, 4),
+                    Longitude = Math.Round(item.OrigLon, 4),
+                    FromCache = wasCached
+                });
+            }
+        }
+
+        return new CorridorWeatherResponse(
+            RetrievedAtUtc: DateTime.UtcNow,
+            SourceProvider: fetchedCount > 0 ? "Open-Meteo Bulk Corridor (1-call batched)" : "Open-Meteo Corridor RAM Cache (0 external calls)",
+            TotalPoints: output.Count,
+            CachedPointsCount: cachedHits,
+            FetchedPointsCount: fetchedCount,
+            Points: output
+        );
+    }
+
+    private async Task<int> FetchBulkOpenMeteoCellsAsync(
+        IReadOnlyList<(string Key, double Lat, double Lon)> cells,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var lats = string.Join(",", cells.Select(c => c.Lat.ToString("0.##", CultureInfo.InvariantCulture)));
+            var lons = string.Join(",", cells.Select(c => c.Lon.ToString("0.##", CultureInfo.InvariantCulture)));
+            var url = "https://api.open-meteo.com/v1/forecast" +
+                      $"?latitude={lats}&longitude={lons}" +
+                      "&current=temperature_2m,visibility,cloud_cover,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+                      "&wind_speed_unit=kn&timezone=UTC&forecast_days=1";
+
+            var client = _clients.CreateClient("aviation-weather");
+            using var response = await client.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var retryAfter = ParseRetryAfterMinutes(response);
+                _corridorBackoffUntilUtc = DateTimeOffset.UtcNow.AddMinutes(Math.Max(10, retryAfter));
+                _logger.LogWarning("Open-Meteo bulk corridor returned HTTP {Status}; backing off until {BackoffUtc}.", (int)response.StatusCode, _corridorBackoffUntilUtc);
+                return 0;
+            }
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = document.RootElement;
+            var fetchedAt = DateTimeOffset.UtcNow;
+
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                int idx = 0;
+                foreach (var elem in root.EnumerateArray())
+                {
+                    if (idx >= cells.Count) break;
+                    StoreCorridorElement(cells[idx], elem, fetchedAt);
+                    idx++;
+                }
+                return idx;
+            }
+
+            if (root.ValueKind == JsonValueKind.Object && cells.Count > 0)
+            {
+                StoreCorridorElement(cells[0], root, fetchedAt);
+                return 1;
+            }
+
+            return 0;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _corridorBackoffUntilUtc = DateTimeOffset.UtcNow.AddMinutes(5);
+            _logger.LogWarning(ex, "Bulk corridor weather fetch failed; backing off 5 minutes.");
+            return 0;
+        }
+    }
+
+    private void StoreCorridorElement((string Key, double Lat, double Lon) cellInfo, JsonElement root, DateTimeOffset fetchedAt)
+    {
+        if (!root.TryGetProperty("current", out var current)) return;
+        var obs = DateProperty(current, "time") ?? fetchedAt.UtcDateTime;
+        var pt = new CorridorWeatherPoint(
+            Latitude: cellInfo.Lat,
+            Longitude: cellInfo.Lon,
+            ObservationTimeUtc: obs,
+            WindDirectionDegrees: ToInt(NumberProperty(current, "wind_direction_10m")),
+            WindSpeedKnots: ToInt(NumberProperty(current, "wind_speed_10m")),
+            WindGustKnots: ToInt(NumberProperty(current, "wind_gusts_10m")),
+            VisibilityMeters: ToInt(NumberProperty(current, "visibility")),
+            CloudCoverPercent: ToInt(NumberProperty(current, "cloud_cover")),
+            WeatherCode: ToInt(NumberProperty(current, "weather_code")),
+            TemperatureCelsius: NumberProperty(current, "temperature_2m"),
+            FromCache: false
+        );
+        _corridorCells[cellInfo.Key] = new CachedCorridorCell(pt, fetchedAt);
+    }
+
+    private static double SnapGrid(double deg) => Math.Round(deg * 4.0, MidpointRounding.AwayFromZero) / 4.0;
+    private static string GridKey(double lat, double lon) =>
+        string.Create(CultureInfo.InvariantCulture, $"{SnapGrid(lat):F2},{SnapGrid(lon):F2}");
+
     private async Task<MetarData?> TryNoaaAsync(string icao, AirportCache cache, DateTimeOffset now) =>
         await TryProviderAsync("NOAA AviationWeather.gov", cache, async () =>
         {
             var client = _clients.CreateClient("aviation-weather");
             using var response = await client.GetAsync($"https://aviationweather.gov/api/data/metar?ids={Uri.EscapeDataString(icao)}&format=json");
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+                throw new ProviderHttpException((int)response.StatusCode, ParseRetryAfterMinutes(response));
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var row = document.RootElement.ValueKind == JsonValueKind.Array && document.RootElement.GetArrayLength() > 0
                 ? document.RootElement[0] : document.RootElement;
@@ -87,7 +256,8 @@ public sealed class ResilientWeatherService : IResilientWeatherService
                 "&current=temperature_2m,dew_point_2m,visibility,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl" +
                 "&wind_speed_unit=kn&timezone=UTC&forecast_days=1";
             using var response = await client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+                throw new ProviderHttpException((int)response.StatusCode, ParseRetryAfterMinutes(response));
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (!document.RootElement.TryGetProperty("current", out var current)) return null;
 
@@ -114,7 +284,8 @@ public sealed class ResilientWeatherService : IResilientWeatherService
             using var request = new HttpRequestMessage(HttpMethod.Get, $"https://avwx.rest/api/metar/{Uri.EscapeDataString(icao)}");
             request.Headers.Authorization = new AuthenticationHeaderValue("BEARER", token);
             using var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+                throw new ProviderHttpException((int)response.StatusCode, ParseRetryAfterMinutes(response));
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var raw = StringProperty(document.RootElement, "raw") ?? StringProperty(document.RootElement, "raw_text") ?? StringProperty(document.RootElement, "report");
             if (string.IsNullOrWhiteSpace(raw)) return null;
@@ -141,11 +312,22 @@ public sealed class ResilientWeatherService : IResilientWeatherService
         catch (Exception ex)
         {
             var failures = cache.ProviderBackoff.TryGetValue(provider, out var previous) ? previous.Failures + 1 : 1;
-            var backoffMinutes = Math.Min(60, 10 * Math.Pow(2, Math.Min(failures - 1, 3)));
+            var expMinutes = Math.Min(60, 10 * Math.Pow(2, Math.Min(failures - 1, 3)));
+            var retryHeaderMinutes = ex is ProviderHttpException httpEx ? httpEx.RetryAfterMinutes : 0;
+            var backoffMinutes = Math.Min(120, Math.Max(expMinutes, retryHeaderMinutes));
             cache.ProviderBackoff[provider] = new ProviderBackoff(failures, DateTimeOffset.UtcNow.AddMinutes(backoffMinutes));
             _logger.LogWarning(ex, "{Provider} failed for weather request; retry backoff is {BackoffMinutes} minutes.", provider, backoffMinutes);
             return null;
         }
+    }
+
+    private static double ParseRetryAfterMinutes(HttpResponseMessage response)
+    {
+        if (response.Headers.RetryAfter?.Delta is { } delta && delta > TimeSpan.Zero)
+            return delta.TotalMinutes;
+        if (response.Headers.RetryAfter?.Date is { } date && date > DateTimeOffset.UtcNow)
+            return (date - DateTimeOffset.UtcNow).TotalMinutes;
+        return 0;
     }
 
     private MetarData StaleOrUnavailable(string icao, AirportCache cache, DateTimeOffset now)
@@ -265,4 +447,9 @@ public sealed class ResilientWeatherService : IResilientWeatherService
     }
 
     private sealed record ProviderBackoff(int Failures, DateTimeOffset NextAllowedUtc);
+    private sealed record CachedCorridorCell(CorridorWeatherPoint Point, DateTimeOffset FetchedAtUtc);
+    private sealed class ProviderHttpException(int statusCode, double retryAfterMinutes) : Exception($"HTTP {statusCode}")
+    {
+        public double RetryAfterMinutes { get; } = retryAfterMinutes;
+    }
 }

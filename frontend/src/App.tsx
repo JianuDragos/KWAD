@@ -14,7 +14,9 @@ import { useApp } from './state/store';
 export default function App() {
   const view = useApp((s) => s.view);
   const basemap = useApp((s) => s.basemap);
-  const { setView, setBasemap } = useApp.getState();
+  const showSectors = useApp((s) => s.showSectors);
+  const showAllRoutes = useApp((s) => s.showAllRoutes);
+  const { setView, setBasemap, setShowSectors, setShowAllRoutes } = useApp.getState();
 
   const mode = useMode();
   const simRunway = useApp((s) => s.evaluation?.traffic.runway ?? null);
@@ -25,7 +27,7 @@ export default function App() {
     void useApp.getState().load();
   }, []);
 
-  // Datele reale se cer doar cât e deschisă pagina Live (cota OpenSky e mică).
+  // Datele reale se cer doar cât e deschisă pagina Live (cache partajat 15s + protecție cotă OpenSky).
   useEffect(() => (mode === 'live' ? useLive.getState().start() : undefined), [mode]);
 
   // O singură buclă de ceas pentru toată aplicația.
@@ -46,14 +48,13 @@ export default function App() {
       if (target.closest('select, input, textarea')) return;
       const s = useApp.getState();
       if (e.code === 'Space') {
-        // Pe un buton focusat, Space trebuie să apese butonul, nu să pornească redarea.
         if (target.closest('button, a[href], [role="button"]') || currentMode() !== 'demo') return;
         e.preventDefault();
         if (s.evaluation) s.togglePlay();
       } else if (e.key === 'Escape') {
         s.select(null);
         useLive.getState().select(null);
-      }
+      } else if (e.key === '0') s.setView('continental');
       else if (e.key === '1') s.setView('wide');
       else if (e.key === '2') s.setView('close');
     };
@@ -76,22 +77,61 @@ export default function App() {
         )}
         <AltitudeLegend />
         {mode === 'demo' && (
-          <p className="map-banner">Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.</p>
+          <p className="map-banner">
+            Simulare 4D Decolare → Aterizare (nu pentru uz operațional). Rute Great-Circle + proceduri AIP LRCV; limite FIR orientative (VATSpy CC BY-SA 4.0).
+          </p>
         )}
         <div className="map-controls">
           <div className="seg" role="group" aria-label="Vedere hartă">
-            <button className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`} onClick={() => setView('wide')} aria-pressed={view === 'wide'} aria-keyshortcuts="1">
+            <button
+              className={`seg__btn ${view === 'continental' ? 'is-on' : ''}`}
+              onClick={() => setView('continental')}
+              aria-pressed={view === 'continental'}
+              aria-keyshortcuts="0"
+              title="Încadrează toate aeroporturile de decolare și rutele complete (tasta 0)"
+            >
+              Continental
+            </button>
+            <button
+              className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`}
+              onClick={() => setView('wide')}
+              aria-pressed={view === 'wide'}
+              aria-keyshortcuts="1"
+              title="Zona terminală TMA/CTR Craiova (tasta 1)"
+            >
               Larg
             </button>
-            <button className={`seg__btn ${view === 'close' ? 'is-on' : ''}`} onClick={() => setView('close')} aria-pressed={view === 'close'} aria-keyshortcuts="2">
+            <button
+              className={`seg__btn ${view === 'close' ? 'is-on' : ''}`}
+              onClick={() => setView('close')}
+              aria-pressed={view === 'close'}
+              aria-keyshortcuts="2"
+              title="Pragul pistei LRCV 08/26 (tasta 2)"
+            >
               Apropiat
             </button>
           </div>
           <button
+            className={`seg__btn seg__btn--solo ${showSectors ? 'is-on' : ''}`}
+            onClick={() => setShowSectors(!showSectors)}
+            aria-pressed={showSectors}
+            title="Afișează sectoarele FIR (LRBB + Europa/Asia), TMA Craiova și căile aeriene ATS"
+          >
+            Sectoare FIR
+          </button>
+          <button
+            className={`seg__btn seg__btn--solo ${showAllRoutes ? 'is-on' : ''}`}
+            onClick={() => setShowAllRoutes(!showAllRoutes)}
+            aria-pressed={showAllRoutes}
+            title="Afișează traiectoria completă Decolare → Aterizare pentru fiecare aeronavă"
+          >
+            Rute complete
+          </button>
+          <button
             className={`seg__btn seg__btn--solo ${basemap === 'osm' ? 'is-on' : ''}`}
             onClick={() => setBasemap(basemap === 'osm' ? 'none' : 'osm')}
             aria-pressed={basemap === 'osm'}
-            title="Fundal OpenStreetMap (necesită internet)"
+            title="Fundal OpenStreetMap întunecat (necesită internet)"
           >
             Hartă geografică
           </button>

@@ -100,7 +100,6 @@ Pentru fiecare aeronavă se calculează trei poziții legate de timpul planifica
 ### 3.7. Decizia VFR: așteptare în orbită vs. redirecționare (`PNR` și scorul `0–100`)
 Când un avion VFR nu poate ateriza pe Craiova din cauza vântului lateral:
 1. **Point of No Return ($\text{PNR}$):**
-   $$T_{\text{PNR}} = \frac{\left(T_{\text{combustibil}} - 30\text{ min rezervă} - T_{\text{zbor spre alternativă}}\right) \cdot \dot{m}_{\text{croazieră}}}{\dot{m}_{\text{holding}}}$$
    Deoarece în așteptare consumul este mai mic decât în croazieră ($\dot{m}_{\text{holding}} \approx 0.78 \cdot \dot{m}_{\text{croazieră}}$), avionul poate aștepta mai multe minute decât diferența brută de timp. Dacă $T_{\text{PNR}} < 12\text{ min}$, sistemul recomandă devierea imediată (`DivertImmediately`).
 2. **Scorul pistelor apropiate ($0\text{–}100$):**
    Fiecare teren (`PODARI`, `LRCW` Craiova-Sud, `SLATINA`) primește un scor:

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CraiovaCustomEvaluationRequest, CraiovaSimulationResult } from '../contracts/backend';
+import type { CraiovaCustomEvaluationRequest, CraiovaSimulationResult, TrafficPresetId } from '../contracts/backend';
 import * as mockBackend from '../api/mockBackend';
 
-// Clientul HTTP e înlocuit: testăm logica stării (revizii, răspunsuri vechi, reset), nu rețeaua.
+// Clientul HTTP e înlocuit: testăm logica stării (revizii, răspunsuri vechi, reset, preset Eurasia, seek decolare), nu rețeaua.
 vi.mock('../api/client', () => ({
   API_MOCK: false,
   ApiError: class ApiError extends Error {},
@@ -25,7 +25,9 @@ async function freshStore() {
 }
 
 beforeEach(() => {
-  fetchScenarioTraffic.mockReset().mockResolvedValue(mockBackend.liveTraffic());
+  fetchScenarioTraffic.mockReset().mockImplementation((_signal?: AbortSignal, preset: TrafficPresetId = 'default') =>
+    Promise.resolve(mockBackend.liveTraffic(preset)),
+  );
   evaluateCraiova.mockReset().mockImplementation(evaluateNow);
 });
 
@@ -84,18 +86,43 @@ describe('store', () => {
     expect(s.scenario?.revision).toBe(2);
   });
 
-  it('tick avansează doar în redare și se oprește la final', async () => {
+  it('tick avansează doar în redare (inclusiv viteza ×300) și se oprește la final', async () => {
     const useApp = await freshStore();
     await useApp.getState().load();
     const { startSeconds, endSeconds } = useApp.getState().evaluation!.traffic;
     useApp.getState().tick(10);
     expect(useApp.getState().simTimeSeconds).toBe(startSeconds);
     useApp.getState().togglePlay();
-    useApp.getState().setSpeed(30);
-    useApp.getState().tick(2);
+    useApp.getState().setSpeed(300);
+    useApp.getState().tick(0.2);
     expect(useApp.getState().simTimeSeconds).toBe(startSeconds + 60);
     useApp.getState().tick(1e6);
     expect(useApp.getState().simTimeSeconds).toBe(endSeconds);
     expect(useApp.getState().playing).toBe(false);
+  });
+
+  it('comută pe scenariul Eurasia Long-Haul (China ZBAA → LRCV), vedere continentală și permite seek la decolare', async () => {
+    const useApp = await freshStore();
+    await useApp.getState().load();
+    expect(useApp.getState().basemap).toBe('osm');
+    expect(useApp.getState().showSectors).toBe(true);
+    expect(useApp.getState().showAllRoutes).toBe(true);
+
+    await useApp.getState().setTrafficPreset('eurasia');
+    const s = useApp.getState();
+    expect(s.scenario?.trafficPreset).toBe('eurasia');
+    expect(s.view).toBe('continental');
+    expect(s.timelineScope).toBe('mission');
+    expect(s.evaluation?.traffic.flights.some((f) => f.id === 'CA-841' && f.origin.icao === 'ZBAA')).toBe(true);
+    expect(s.simTimeSeconds).toBe(s.evaluation?.traffic.missionStartSeconds);
+
+    // Revenim pe timeline 'approach', apoi facem seek la decolarea din Londra: timelineScope trece automat pe 'mission'
+    useApp.getState().setTimelineScope('approach');
+    expect(useApp.getState().simTimeSeconds).toBe(s.evaluation!.traffic.startSeconds);
+
+    const londonFlight = s.evaluation!.traffic.flights.find((f) => f.id === 'W4-3751')!;
+    useApp.getState().seek(londonFlight.takeoffSeconds);
+    expect(useApp.getState().simTimeSeconds).toBe(londonFlight.takeoffSeconds);
+    expect(useApp.getState().timelineScope).toBe('mission');
   });
 });

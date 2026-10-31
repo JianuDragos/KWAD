@@ -1,4 +1,4 @@
-/* AERIS: scope de apropiere Craiova.
+/* AERIS: scope de apropiere & coridoare continentale Craiova (LRCV).
    Fundal gri-verde de consolă ATC, culoare vie doar unde controlorul trebuie să acționeze
    (așteptare, deviere). Fonturile vin din pachete locale, ca demo-ul să meargă offline. */
 :root {
@@ -48,7 +48,7 @@ p { margin: 0; }
 /* ---------- bara de sus ---------- */
 .topbar {
   grid-area: top;
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 8px 16px;
   background: var(--console);
   border-bottom: 1px solid var(--line);
@@ -57,7 +57,7 @@ p { margin: 0; }
 .brand__name { font-weight: 600; font-size: 18px; letter-spacing: .06em; }
 .brand__apt { color: var(--muted); }
 .clock__time { font: 600 26px/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-.group { display: flex; align-items: center; gap: 8px; }
+.group { display: flex; align-items: center; gap: 7px; }
 .group__label { color: var(--muted); }
 .spacer { flex: 1; }
 
@@ -70,16 +70,17 @@ p { margin: 0; }
 .btn--primary { background: var(--chrome-on); border-color: var(--chrome-on); color: var(--scope); font-weight: 600; min-width: 72px; }
 .btn--primary:hover:not(:disabled) { background: #fff; }
 .btn--quiet { background: transparent; }
+.btn--xs { padding: 3px 8px; font-size: 12px; font-family: var(--mono); }
 
 .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden; }
-.seg__btn { background: transparent; border: 0; padding: 5px 10px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg__btn { background: transparent; border: 0; padding: 5px 9px; cursor: pointer; font-variant-numeric: tabular-nums; }
 .seg__btn + .seg__btn { border-left: 1px solid var(--line-strong); }
 .seg__btn:hover { background: var(--raised); }
 .seg__btn.is-on { background: var(--chrome-on); color: var(--scope); font-weight: 600; }
 .seg__btn--solo { border: 1px solid var(--line-strong); border-radius: 4px; background: var(--console); }
-select { background: var(--raised); border: 1px solid var(--line-strong); border-radius: 4px; padding: 5px 8px; max-width: 230px; }
+select { background: var(--raised); border: 1px solid var(--line-strong); border-radius: 4px; padding: 5px 8px; max-width: 240px; }
 
-.atis { display: flex; align-items: center; gap: 8px; padding-left: 14px; border-left: 1px solid var(--line); }
+.atis { display: flex; align-items: center; gap: 8px; padding-left: 12px; border-left: 1px solid var(--line); }
 .atis__rwy { font: 600 15px/1 var(--mono); padding: 4px 7px; border: 1px solid var(--line-strong); border-radius: 3px; }
 .atis__wind { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .atis__xw { color: var(--muted); }
@@ -90,14 +91,51 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .pills { display: flex; gap: 6px; align-items: center; }
 .pill { font-size: 13px; padding: 1px 8px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--muted); font-variant-numeric: tabular-nums; }
 .pill--busy { color: var(--text); }
+.pill--ok { color: #34d399; border-color: currentColor; }
 .pill--warn { color: var(--hold); border-color: currentColor; }
+.pill--legacy { color: #f59e0b; border-color: currentColor; }
 .pill--err { color: var(--divert); border-color: currentColor; }
+
+.checkbox-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  transition: all .15s ease;
+}
+.checkbox-toggle:hover:not(:has(:disabled)) {
+  border-color: var(--text);
+}
+.checkbox-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #38bdf8;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+.checkbox-toggle.is-active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe;
+  font-weight: 500;
+}
+.checkbox-toggle:has(:disabled) {
+  opacity: .4;
+  cursor: default;
+}
 
 /* ---------- harta ---------- */
 .map-area { grid-area: map; position: relative; min-height: 0; }
 .map { position: absolute; inset: 0; }
 .leaflet-container { background: var(--scope); font-family: var(--sans); }
-.basemap-osm { filter: invert(1) hue-rotate(180deg) brightness(.5) saturate(.3); }
+.basemap-osm { filter: invert(1) hue-rotate(180deg) brightness(.46) saturate(.28); }
 .leaflet-control-attribution { background: rgba(29, 37, 35, .85) !important; color: var(--muted) !important; }
 .leaflet-control-attribution a { color: var(--text) !important; }
 .leaflet-bar { border: 1px solid var(--line-strong) !important; }
@@ -109,12 +147,33 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   font-size: 12px; color: var(--hold); pointer-events: none;
   background: rgba(29, 37, 35, .85); padding: 3px 8px; border-left: 2px solid var(--hold);
 }
-.map-controls { position: absolute; right: 12px; top: 12px; z-index: 500; display: flex; gap: 8px; }
+.map-controls { position: absolute; right: 12px; top: 12px; z-index: 500; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(100% - 24px); }
 .map-controls .seg { background: var(--console); }
+
+/* ---------- Sectoare FIR, TMA, ATZ, Grilă Navigație & Rute Complete ---------- */
+.nav-grid { stroke: rgba(138, 152, 147, .14); stroke-width: 1; stroke-dasharray: 2 6; fill: none; }
+.fir-poly { stroke: rgba(122, 165, 160, .34); stroke-width: 1.1; fill: rgba(80, 120, 115, .02); }
+.fir-poly--sector { stroke: rgba(185, 163, 227, .28); stroke-width: 1; stroke-dasharray: 5 5; fill: none; }
+.fir-poly--lrbb { stroke: #63c5b8; stroke-width: 1.8; fill: rgba(99, 197, 184, .06); }
+.fir-poly--active { stroke: #a9d8ea; stroke-width: 1.8; fill: rgba(169, 216, 234, .07); }
+.tma-poly { stroke: #7fc8b8; stroke-width: 1.4; stroke-dasharray: 7 4; fill: rgba(127, 200, 184, .04); }
+.atz { stroke: #9fb8b0; stroke-width: 1; stroke-dasharray: 3 4; }
+.ats-airway { stroke: rgba(169, 216, 234, .28); stroke-width: 1.2; stroke-dasharray: 8 6; fill: none; }
 
 .ctr { stroke: #6d8a82; stroke-width: 1.5; stroke-dasharray: 10 6; }
 .range-ring { stroke: #36433f; stroke-width: 1; }
 .route { stroke: #52625e; stroke-width: 1.2; stroke-dasharray: 4 5; fill: none; }
+.full-route { fill: none; stroke-width: 1.35; stroke-dasharray: 5 5; stroke-opacity: .38; }
+.full-route--ifr { stroke: var(--ifr); }
+.full-route--vfr { stroke: var(--vfr); }
+.planned { stroke: var(--select); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-opacity: .85; fill: none; }
+.planned--selected { stroke: var(--select); stroke-width: 2.1; stroke-dasharray: 6 4; stroke-opacity: .95; }
+.live-vector { stroke: #7ee081; stroke-width: 1.6; stroke-opacity: .75; fill: none; }
+
+.origin-apt { stroke: var(--ifr); fill: var(--scope); stroke-width: 2; }
+.hub-apt { stroke: var(--cleared); fill: var(--cleared); stroke-width: 2; }
+.tod-marker { stroke: var(--hold); fill: var(--scope); stroke-width: 2; }
+
 .runway { stroke: var(--text); stroke-width: 6; stroke-linecap: butt; }
 .thr { stroke: var(--text); fill: var(--text); }
 .wpt { stroke: var(--faint); fill: var(--scope); stroke-width: 1.5; }
@@ -122,7 +181,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .wpt--synthetic { stroke: #e58ad6; stroke-dasharray: 2 2; }
 .wpt--alt { stroke: var(--divert); }
 .navaid { stroke: var(--muted); fill: none; stroke-width: 1.5; }
-.trail { fill: none; stroke-width: 1.5; stroke-opacity: .5; }
+.trail { fill: none; stroke-width: 2; stroke-opacity: .72; }
 .trail--ifr { stroke: var(--ifr); }
 .trail--vfr { stroke: var(--vfr); }
 .ac--live.ac--vfr .ac__glyph path { fill: #e58ad6; }
@@ -132,19 +191,25 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .vmc-badge--vmc, .vmc-pill--vmc { color: #0b2118; background: #72d7a0; }
 .vmc-badge--mvfr, .vmc-pill--mvfr { color: #241b00; background: #f0bd55; }
 .vmc-badge--imc, .vmc-pill--imc { color: #fff; background: #d95b68; }
-.planned { stroke: var(--select); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-opacity: .85; fill: none; }
 
 .leaflet-tooltip.lbl {
   background: transparent; border: 0; box-shadow: none; padding: 0;
   color: var(--faint); font: 10px/1 var(--mono);
+  text-shadow: 0 0 3px var(--scope), 0 0 3px var(--scope);
 }
 .leaflet-tooltip.lbl::before { display: none; }
 .leaflet-tooltip.lbl--rwy { color: var(--text); font-size: 12px; font-weight: 600; }
 .leaflet-tooltip.lbl--synthetic { color: var(--synthetic); }
 .leaflet-tooltip.lbl--ring { color: var(--faint); font-size: 9px; }
+.leaflet-tooltip.lbl--fir { color: rgba(154, 184, 178, .68); font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.leaflet-tooltip.lbl--fir-hi { color: #9de5dc; font-size: 11px; }
+.leaflet-tooltip.lbl--tma { color: #8ad4c5; font-size: 10px; font-weight: 600; }
+.leaflet-tooltip.lbl--airway { color: rgba(169, 216, 234, .7); font-size: 9px; }
+.leaflet-tooltip.lbl--apt { color: var(--ifr); font-size: 10px; font-weight: 600; background: rgba(29, 37, 35, .78); padding: 1px 4px; border-radius: 2px; }
+.leaflet-tooltip.lbl--hub { color: var(--cleared); font-size: 11px; font-weight: 700; background: rgba(29, 37, 35, .85); padding: 2px 5px; border-radius: 2px; border: 1px solid rgba(143, 209, 158, .4); }
+.leaflet-tooltip.lbl--tod { color: var(--hold); font-size: 10px; font-weight: 600; background: rgba(29, 37, 35, .85); padding: 1px 5px; border-radius: 2px; }
 
-/* Blocul de date fără chenar, ca pe scope: textul are un contur în culoarea fundalului ca să rămână lizibil
-   peste trasee. Doar avionul selectat primește chenar. */
+/* Blocul de date fără chenar, ca pe scope */
 .leaflet-tooltip.datablock {
   background: transparent; border: 1px solid transparent; border-radius: 2px; box-shadow: none;
   color: var(--text); font: 11px/1.3 var(--mono); padding: 1px 4px;
@@ -153,12 +218,11 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .leaflet-tooltip.datablock::before { display: none; }
 .leaflet-tooltip.datablock--selected { background: rgba(29, 37, 35, .92); border-color: var(--select); z-index: 1; }
 .db-callsign { font-weight: 600; }
+.db-orig { color: var(--muted); font-size: 10px; }
 .db-warn { color: var(--hold); }
 
 .ac { width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
 .ac__glyph { width: 22px; height: 22px; }
-/* Culoarea avionului arată altitudinea (benzile din sim/units.ts); IFR și VFR se deosebesc prin formă:
-   VFR are un cerc în jurul săgeții. Culorile nu se confundă cu inelele de stare (chihlimbar, roșu). */
 .alt-0 { --alt: #7ee081; }
 .alt-1 { --alt: #5fd4e8; }
 .alt-2 { --alt: #6f9dff; }
@@ -170,7 +234,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .db-alt { color: var(--alt); }
 .ac.st-hold { box-shadow: 0 0 0 2px var(--hold); }
 .ac.st-divert { box-shadow: 0 0 0 2px var(--divert); }
-.ac--done { opacity: .4; }
+.ac--done { opacity: .45; }
 .ac--selected { box-shadow: 0 0 0 2px var(--select), 0 0 10px rgba(255, 255, 255, .3) !important; }
 
 /* ---------- panou: benzi de zbor ---------- */
@@ -184,7 +248,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .panel__count { color: var(--muted); font-size: 13px; text-align: right; }
 .panel__sub { margin: 10px 0 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
 
-/* ---------- casete matematice (Future Prediction, 2 Steps Ahead, Takeoff-to-Landing, VFR) ---------- */
+/* ---------- casete matematice ---------- */
 .math-box {
   background: var(--raised); border: 1px solid var(--line-strong); border-left: 3px solid var(--synthetic);
   border-radius: 4px; overflow: hidden;
@@ -259,12 +323,18 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 }
 .strip__head:hover { background: rgba(255, 255, 255, .04); }
 .strip__cs { font: 600 17px/1.2 var(--mono); }
+.strip__orig { font: 500 11px/1 var(--mono); color: var(--muted); margin-left: 4px; }
 .strip__time { font: 600 17px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
 .strip__type { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip__when { font-size: 12px; color: var(--muted); text-align: right; }
 .strip__tag { font-weight: 600; color: var(--hold); }
 .strip.st-divert .strip__tag { color: var(--divert); }
 .strip__body { padding: 0 12px 12px; display: grid; gap: 10px; font-size: 14px; }
+
+.fir-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.fir-chip { font: 600 10px/1.2 var(--mono); padding: 2px 5px; border-radius: 2px; background: var(--console); border: 1px solid var(--line-strong); color: var(--muted); }
+.fir-chip--lrbb { color: #9de5dc; border-color: #63c5b8; }
+.jump-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .kv { display: grid; grid-template-columns: 104px 1fr; gap: 3px 10px; margin: 0; }
 .kv dt { color: var(--muted); }
@@ -294,25 +364,35 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .ai .panel__sub { margin-top: 0; }
 
 /* ---------- cronologie ---------- */
-.timeline { grid-area: tl; background: var(--console); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 220px; padding: 6px 16px 8px; }
+.timeline { grid-area: tl; background: var(--console); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 224px; padding: 6px 16px 8px; }
 .timeline.timeline--collapsed { height: auto; min-height: 0; }
 .timeline--collapsed .tl-body, .timeline--collapsed .tl-legend { display: none; }
-.tl-toggle { background: transparent; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+.tl-toggle { background: transparent; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
 .tl-toggle__chev { color: var(--muted); width: 10px; }
 .tl-body { overflow: auto; flex: 1; position: relative; }
-.tl-row { display: grid; grid-template-columns: 160px 1fr; align-items: center; height: 28px; cursor: pointer; }
+.tl-row { display: grid; grid-template-columns: 196px 1fr; align-items: center; height: 28px; cursor: pointer; }
 .tl-row:hover { background: rgba(255, 255, 255, .03); }
 .tl-row.is-selected { background: rgba(255, 255, 255, .06); box-shadow: inset 2px 0 0 var(--select); }
 .tl-row--axis { cursor: default; height: 26px; }
 .tl-row--axis:hover { background: none; }
-.tl-label { font: 13px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.tl-label { font: 12px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.tl-label--hdr { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
 .tl-label--btn { background: transparent; border: 0; text-align: left; cursor: pointer; padding-left: 4px; height: 100%; }
+.tl-scope { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 3px; overflow: hidden; }
+.tl-scope__btn { background: transparent; border: 0; padding: 1px 5px; font: 10px/1.3 var(--sans); color: var(--muted); cursor: pointer; }
+.tl-scope__btn + .tl-scope__btn { border-left: 1px solid var(--line-strong); }
+.tl-scope__btn.is-on { background: var(--chrome-on); color: var(--scope); font-weight: 600; }
+
 .tl-track { position: relative; height: 100%; border-left: 1px solid var(--line); }
 .tl-axis { cursor: ew-resize; border-bottom: 1px solid var(--line); touch-action: none; overflow: hidden; }
 .tl-body .tl-track { overflow: hidden; }
 .tl-tick { position: absolute; bottom: 3px; transform: translateX(-50%); font: 11px var(--mono); color: var(--faint); pointer-events: none; }
-.tl-nowlayer { position: absolute; top: 0; bottom: 0; left: 160px; right: 0; pointer-events: none; }
+.tl-nowlayer { position: absolute; top: 0; bottom: 0; left: 196px; right: 0; pointer-events: none; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--select); pointer-events: none; }
+.tl-airborne { position: absolute; top: 12px; height: 4px; border-radius: 2px; opacity: .45; }
+.tl-airborne--ifr { background: var(--ifr); }
+.tl-airborne--vfr { background: var(--vfr); }
+.tl-dep { position: absolute; top: 9px; width: 8px; height: 8px; transform: translateX(-50%); border-radius: 50%; border: 1.5px solid var(--ifr); background: var(--scope); }
 .tl-window { position: absolute; top: 9px; height: 10px; background: rgba(169, 216, 234, .12); border: 1px solid rgba(169, 216, 234, .35); border-radius: 2px; }
 .tl-eta { position: absolute; top: 9px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); border: 1.5px solid var(--text); background: var(--console); }
 .tl-slot { position: absolute; top: 8px; width: 12px; height: 12px; transform: translateX(-50%); border-radius: 50%; background: currentColor; }
@@ -323,6 +403,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .tl-slot.st-divert, .tl-flag.st-divert { color: var(--divert); }
 .tl-legend { display: flex; gap: 16px; padding-top: 6px; }
 .lg { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; }
+.lg--dep { border-radius: 50%; border: 1.5px solid var(--ifr); width: 8px; height: 8px; }
 .lg--window { background: rgba(169, 216, 234, .12); border: 1px solid rgba(169, 216, 234, .35); }
 .lg--eta { border: 1.5px solid var(--text); transform: rotate(45deg); width: 8px; height: 8px; }
 .lg--slot { border-radius: 50%; background: var(--cleared); }
@@ -338,8 +419,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   .atis { padding-left: 0; border-left: 0; }
   .panel { border-left: 0; border-top: 1px solid var(--line); }
   .timeline { height: auto; min-height: 220px; }
-  .tl-row { grid-template-columns: 120px 1fr; }
-  .tl-nowlayer { left: 120px; }
+  .tl-row { grid-template-columns: 140px 1fr; }
+  .tl-nowlayer { left: 140px; }
   .map-banner { max-width: calc(100% - 24px); bottom: 34px; }
 }
 
@@ -351,7 +432,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .strip--live { border-left-color: var(--faint); }
 .metar { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .metar__raw { font: 13px/1.4 var(--mono); background: var(--raised); padding: 6px 8px; border-radius: 3px; overflow-wrap: anywhere; }
-/* Culorile standard ale categoriilor de zbor din meteo aviatică. */
 .fltcat { font: 600 12px/1 var(--mono); padding: 2px 6px; border-radius: 2px; color: var(--scope); background: var(--muted); }
 .fltcat--vfr { background: var(--cleared); }
 .fltcat--mvfr { background: #7fb3ff; }

@@ -351,6 +351,8 @@ public static class FlightPhysicsAndPredictionEngine
         {
             "W4-3751" => ("EGGW", "London Luton", 1125.0, 37000.0, 450.0, 1440.0, 138.0, 133.0, 52.0),
             "W4-3762" => ("LIME", "Milan Bergamo", 640.0, 35000.0, 455.0, 1580.0, 144.0, 139.0, 55.0),
+            "CA-841"  => ("ZBAA", "Beijing Capital", 3885.0, 38000.0, 470.0, 1680.0, 142.0, 137.0, 58.0),
+            "RO-204"  => ("LROP", "București Otopeni", 98.0, 16000.0, 275.0, 1080.0, 116.0, 111.0, 42.0),
             "YR-SAV"  => ("PODARI", "Aerodrom Podari", 18.5, 2000.0, 65.0, 95.0, 52.0, 46.0, 24.0),
             "YR-WILG" => ("LRCW", "Craiova-Sud (LRCW)", 24.0, 2500.0, 75.0, 125.0, 60.0, 54.0, 28.0),
             "YR-C172" => ("LRBS", "București Băneasa", 97.0, 4500.0, 115.0, 160.0, 68.0, 61.0, 30.0),
@@ -359,6 +361,11 @@ public static class FlightPhysicsAndPredictionEngine
             _ when isGa => ("LRBS", "București Băneasa", 95.0, 4500.0, 110.0, 180.0, 70.0, 62.0, 30.0),
             _ => ("LRCW", "Craiova-Sud (LRCW)", 20.0, 2000.0, 70.0, 110.0, 55.0, 48.0, 25.0)
         };
+
+        var (resolvedIcao, resolvedName, depLat, depLon, overrideNm) = ResolveDepartureAerodrome(ac.DepartureIcao ?? depIcao, depName, routeNm);
+        depIcao = resolvedIcao;
+        depName = resolvedName;
+        routeNm = overrideNm;
 
         // Vântul prezis la momentul aterizării (landingTimeSeconds / 60.0 minute în viitor)
         double landingHorizonMin = Math.Max(0.0, landingTimeSeconds / 60.0);
@@ -520,7 +527,9 @@ public static class FlightPhysicsAndPredictionEngine
             RunwaySafetyMarginMeters: safetyMarginMeters,
             RunwayUsedPercent: rwyUsedPct,
             PredictedRunwayOccupancySeconds: rotSeconds,
-            Phases: phases
+            Phases: phases,
+            DepartureLatitude: depLat,
+            DepartureLongitude: depLon
         );
     }
 
@@ -548,7 +557,7 @@ public static class FlightPhysicsAndPredictionEngine
         string entryPointId;
         if (ac.FlightRules == FlightRules.IFR)
         {
-            entryPointId = ac.Id == "W4-3751" ? "TITEK" : (ac.Id == "W4-3762" ? "PEMOK" : "PANZU");
+            entryPointId = ac.Id is "W4-3751" ? "TITEK" : (ac.Id is "W4-3762" or "CA-841" or "RO-204" ? "PEMOK" : "PANZU");
         }
         else
         {
@@ -996,5 +1005,45 @@ public static class FlightPhysicsAndPredictionEngine
             FuelRemainingAtAlternateMinutes: bestAlt.RemainingFuelAtTouchdownMinutes,
             MathematicalJustification: justification
         );
+    }
+
+    private static readonly Dictionary<string, (string Name, double Lat, double Lon, double? DefaultRouteNm)> DepartureCatalog = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["EGGW"] = ("London Luton", 51.874444, -0.368333, null),
+        ["EGLL"] = ("London Heathrow", 51.477500, -0.461389, 1135.0),
+        ["LIME"] = ("Milan Bergamo", 45.667408, 9.699503, null),
+        ["LIMC"] = ("Milan Malpensa", 45.630600, 8.728110, 680.0),
+        ["LIRF"] = ("Roma Fiumicino", 41.811786, 12.252253, 535.0),
+        ["LFPG"] = ("Paris Charles de Gaulle", 49.009747, 2.547819, 945.0),
+        ["EHAM"] = ("Amsterdam Schiphol", 52.308333, 4.765000, 935.0),
+        ["EDDF"] = ("Frankfurt Main", 50.033333, 8.570556, 745.0),
+        ["LOWW"] = ("Vienna Intl", 48.110278, 16.569722, 385.0),
+        ["LHBP"] = ("Budapest Ferenc Liszt", 47.439328, 19.261808, 275.0),
+        ["LYBE"] = ("Belgrade Nikola Tesla", 44.819383, 20.307067, 156.0),
+        ["LBSF"] = ("Sofia Airport", 42.695000, 23.408333, 100.0),
+        ["LTFM"] = ("Istanbul Airport", 41.275277, 28.751940, 285.0),
+        ["OMDB"] = ("Dubai Intl", 25.252778, 55.364444, 1860.0),
+        ["ZBAA"] = ("Beijing Capital", 40.074069, 116.590800, 3885.0),
+        ["ZSPD"] = ("Shanghai Pudong", 31.142333, 121.790844, 4420.0),
+        ["LROP"] = ("București Otopeni", 44.570992, 26.085119, null),
+        ["LRBS"] = ("București Băneasa", 44.503483, 26.103594, null),
+        ["LRCL"] = ("Cluj-Napoca", 46.785092, 23.686119, 150.0),
+        ["LRTR"] = ("Timișoara Traian Vuia", 45.809833, 21.337872, 140.0),
+        ["LRSB"] = ("Sibiu Intl", 45.785800, 24.091183, 89.0),
+        ["LRCS"] = ("Caransebeș", 45.420278, 22.252222, 96.0),
+        ["LRCW"] = ("Craiova-Sud (LRCW)", 44.286389, 23.791111, null),
+        ["PODARI"] = ("Aerodrom Podari", 44.225800, 23.765400, null)
+    };
+
+    private static (string Icao, string Name, double Lat, double Lon, double RouteNm) ResolveDepartureAerodrome(
+        string icao, string fallbackName, double fallbackNm)
+    {
+        var code = string.IsNullOrWhiteSpace(icao) ? "LROP" : icao.Trim().ToUpperInvariant();
+        if (DepartureCatalog.TryGetValue(code, out var entry))
+        {
+            double distNm = entry.DefaultRouteNm ?? fallbackNm;
+            return (code, entry.Name, entry.Lat, entry.Lon, distNm);
+        }
+        return (code, fallbackName, 44.570992, 26.085119, fallbackNm);
     }
 }

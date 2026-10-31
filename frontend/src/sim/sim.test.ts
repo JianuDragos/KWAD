@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { AIRPORTS } from '../data/airports';
 import { ARP, LRCW, arrivalRoute, publishedAltitudeFt, threshold } from '../data/geo';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
 import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
-import { bearingDeg, destination, distanceNm } from './geomath';
+import { bearingDeg, destination, distanceNm, greatCirclePoints } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
 import { altitudeBand, speedLabel } from './units';
 import { appendOrbit } from './synthetic';
@@ -43,7 +44,7 @@ describe('positionAt', () => {
   });
 });
 
-describe('geometria AIP', () => {
+describe('geometria AIP & arcul ortodromic Great-Circle', () => {
   it('citește restricțiile publicate', () => {
     expect(publishedAltitudeFt('+FL060 -250kt')).toBe(6000);
     expect(publishedAltitudeFt('+4000ft -230kt')).toBe(4000);
@@ -55,6 +56,15 @@ describe('geometria AIP', () => {
     expect(r.map((p) => p.id)).toEqual(['TITEK', 'CV520', 'CV514', 'OZZET', 'CV508', 'THR26']);
     const legs = r.slice(1).map((p, i) => Number(distanceNm(r[i], p).toFixed(1)));
     expect(legs).toEqual([15.5, 10.9, 6.0, 6.0, 5.7]);
+  });
+  it('calculează arcul ortodromic Beijing ZBAA → Craiova LRCV pe sferă', () => {
+    const pts = greatCirclePoints(AIRPORTS.ZBAA, ARP, 80);
+    expect(pts.length).toBeGreaterThan(30);
+    expect(pts[0]).toEqual(AIRPORTS.ZBAA);
+    expect(pts[pts.length - 1]).toEqual(ARP);
+    const mid = pts[Math.floor(pts.length / 2)];
+    // Pe sferă, cercul mare Beijing (40°N) → Craiova (44.3°N) urcă spre nord peste 52°N!
+    expect(mid.lat).toBeGreaterThan(50);
   });
 });
 
@@ -137,12 +147,18 @@ describe('mock = backendul KWAD', () => {
 describe('buildTraffic', () => {
   const aircrafts = mock.realisticCraiovaTraffic();
 
-  it.each(WEATHER_PRESETS)('$id: aterizarea pe hartă cade exact la timpul din backend', ({ weather }) => {
+  it.each(WEATHER_PRESETS)('$id: aterizarea pe hartă cade exact la timpul din backend și pornește de pe aerodromul de origine', ({ weather }) => {
     const res = mock.evaluateSimulation(aircrafts, weather, 'test');
     const model = buildTraffic(aircrafts, res);
     expect(model.flights).toHaveLength(aircrafts.length);
+    expect(model.missionStartSeconds).toBeLessThanOrEqual(model.startSeconds);
     for (const f of model.flights) {
-      expect(f.track.length).toBeGreaterThan(1);
+      expect(f.track.length).toBeGreaterThan(2);
+      expect(f.track[0].latitudeDeg).toBeCloseTo(f.origin.lat, 5);
+      expect(f.track[0].longitudeDeg).toBeCloseTo(f.origin.lon, 5);
+      expect(f.fullRoute[0][0]).toBeCloseTo(f.origin.lat, 5);
+      expect(f.fullRoute[0][1]).toBeCloseTo(f.origin.lon, 5);
+      expect(f.traversedFirs).toContain('LRBB');
       if (f.landingSeconds !== null) {
         const thr = threshold(model.runway);
         const atThr = f.track.find((p) => p.timeSeconds === f.landingSeconds)!;
@@ -152,6 +168,22 @@ describe('buildTraffic', () => {
       }
       for (let i = 1; i < f.track.length; i++) expect(f.track[i].timeSeconds).toBeGreaterThanOrEqual(f.track[i - 1].timeSeconds);
     }
+  });
+
+  it('construiește traiectoria completă Eurasia Long-Haul (Beijing ZBAA → PEMOK → LRCV) cu TOD și FIR-uri', () => {
+    const eurasia = mock.eurasiaLongHaulTraffic();
+    const calm = WEATHER_PRESETS.find((p) => p.id === 'calm')!.weather;
+    const res = mock.evaluateSimulation(eurasia, calm, 'test');
+    const model = buildTraffic(eurasia, res);
+    const chinaFlight = model.flights.find((f) => f.id === 'CA-841')!;
+    expect(chinaFlight.origin.icao).toBe('ZBAA');
+    expect(chinaFlight.entryFixId).toBe('PEMOK');
+    expect(chinaFlight.routeDistanceNm).toBeGreaterThan(3900);
+    expect(chinaFlight.todPoint).not.toBeNull();
+    expect(chinaFlight.todPoint!.timeSeconds).toBeGreaterThan(chinaFlight.takeoffSeconds);
+    expect(chinaFlight.todPoint!.timeSeconds).toBeLessThan(chinaFlight.landingSeconds!);
+    expect(chinaFlight.traversedFirs[0]).toBe('ZBAA');
+    expect(chinaFlight.traversedFirs).toContain('LRBB');
   });
 
   it('este determinist (reset repetabil)', () => {
