@@ -119,12 +119,22 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .thr { stroke: var(--text); fill: var(--text); }
 .wpt { stroke: var(--faint); fill: var(--scope); stroke-width: 1.5; }
 .wpt--iaf { stroke: var(--ifr); }
-.wpt--synthetic { stroke: var(--synthetic); stroke-dasharray: 2 2; }
+.wpt--synthetic { stroke: #e58ad6; stroke-dasharray: 2 2; }
 .wpt--alt { stroke: var(--divert); }
 .navaid { stroke: var(--muted); fill: none; stroke-width: 1.5; }
 .trail { fill: none; stroke-width: 1.5; stroke-opacity: .5; }
 .trail--ifr { stroke: var(--ifr); }
 .trail--vfr { stroke: var(--vfr); }
+.ac--live.ac--vfr .ac__glyph path { fill: #e58ad6; }
+.ac--live.ac--vfr .ac__glyph circle { stroke: #e58ad6; }
+.ac--live.ac--ifr .ac__glyph path { fill: #56d8e8; }
+.ac--live.ac--vfr .ac__glyph path { fill: #e58ad6; }
+.ac--live.ac--vfr .ac__glyph circle { stroke: #e58ad6; }
+.ac--live.ac--ifr .ac__glyph path { fill: #56d8e8; }
+.vmc-badge { padding: 7px 9px; margin: 8px 0; border-radius: 3px; font: 700 12px/1.2 var(--mono); letter-spacing: .04em; }
+.vmc-badge--vmc, .vmc-pill--vmc { color: #0b2118; background: #72d7a0; }
+.vmc-badge--mvfr, .vmc-pill--mvfr { color: #241b00; background: #f0bd55; }
+.vmc-badge--imc, .vmc-pill--imc { color: #fff; background: #d95b68; }
 .planned { stroke: var(--select); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-opacity: .85; fill: none; }
 
 .leaflet-tooltip.lbl {

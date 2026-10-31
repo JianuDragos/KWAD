@@ -17,6 +17,9 @@ export const liveFlightSchema = z.object({
   timePosition: z.number().nullable(),
   lastContact: z.number(),
   squawk: z.string().nullable().optional(),
+  flightRules: z.enum(['IFR', 'VFR', 'SVFR']),
+  vfrEtaMinutes: z.number().nullable().optional(),
+  vfrEntryPointCode: z.string().nullable().optional(),
   distanceFromLrcvKm: z.number().nullable(),
   bearingFromLrcvDegrees: z.number().nullable(),
 });
@@ -30,6 +33,21 @@ export const livePositionsSchema = z.object({
   flights: z.array(liveFlightSchema),
 });
 export type LivePositions = z.infer<typeof livePositionsSchema>;
+
+export const vfrPointSchema = z.object({ code: z.string(), lat: z.number(), long: z.number(), radiusMeters: z.number() });
+export const vmcStatusSchema = z.object({
+  status: z.enum(['VMC', 'MVFR', 'IMC']), isVmcValid: z.boolean(), visibilityMeters: z.number(), ceilingFeet: z.number().nullable(),
+  windDirectionDegrees: z.number(), windSpeedKnots: z.number(), crosswindRunway09Knots: z.number(), crosswindRunway27Knots: z.number(), rawMetar: z.string(),
+});
+export const vfrTrackingSchema = z.object({
+  queryTimeUtc: z.string(), source: z.string(), totalCount: z.number(), airborneCount: z.number(),
+  boundingBoxLamin: z.number(), boundingBoxLamax: z.number(), boundingBoxLomin: z.number(), boundingBoxLomax: z.number(),
+  flights: z.array(liveFlightSchema), vmc: vmcStatusSchema, points: z.array(vfrPointSchema),
+  vfrFlights: z.array(z.object({ flightId: z.string(), callsign: z.string(), pointCode: z.string(), distanceToPointMeters: z.number(), etaViaPointMinutes: z.number(), isVmcValid: z.boolean(), status: z.string() })),
+});
+export type VmcStatus = z.infer<typeof vmcStatusSchema>;
+export type VfrPoint = z.infer<typeof vfrPointSchema>;
+export type VfrTracking = z.infer<typeof vfrTrackingSchema>;
 
 export const metarSchema = z.object({
   station: z.string(),

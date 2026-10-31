@@ -16,7 +16,7 @@ public class MetarService : IMetarService
     // aviationweather.gov API – endpoint JSON pentru METAR
     // Docs: https://aviationweather.gov/api/doc/metar
     private const string MetarApiUrl =
-        "https://aviationweather.gov/api/data/metar?ids=LRCV&format=json&taf=false&hours=2";
+        "https://aviationweather.gov/data/api/metar?ids=LRCV&format=json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

@@ -21,6 +21,7 @@ import type { FlightView } from '../sim/traffic';
 import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
+import { useLive } from '../state/live';
 
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
@@ -149,6 +150,8 @@ function BackgroundClick({ onClick }: { onClick: () => void }) {
 const ring = (nm: number) => nm * M_PER_NM;
 
 function StaticLayers({ runway }: { runway: RunwayId | null }) {
+  const isLive = useLive((s) => s.vfrTracking !== null);
+  const livePoints = useLive((s) => s.vfrTracking?.points ?? null);
   const routes = useMemo(() => (runway ? allArrivalRoutes(runway) : []), [runway]);
   const join = runway ? vfrFinalJoin(runway) : null;
   return (
@@ -197,7 +200,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
           </Tooltip>
         </CircleMarker>
       ))}
-      {[...VFR_ENTRY_POINTS, ...(join ? [join] : [])].map((p) => (
+      {(isLive && livePoints ? livePoints.map((p) => ({ id: p.code, lat: p.lat, lon: p.long, role: 'Punct raportare VFR (sintetic)', synthetic: true })) : [...VFR_ENTRY_POINTS, ...(join ? [join] : [])]).map((p) => (
         <CircleMarker key={p.id} center={[p.lat, p.lon]} radius={3} pathOptions={{ className: 'wpt wpt--synthetic' }} interactive={false}>
           <Tooltip permanent direction="top" className="lbl lbl--synthetic" offset={[0, -3]}>
             {p.id}*

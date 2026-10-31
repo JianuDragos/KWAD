@@ -15,19 +15,25 @@ public class CraiovaController : ControllerBase
     private readonly ICraiovaAdvisoryEngine _advisoryEngine;
     private readonly IMetarService _metarService;
     private readonly GroundedExplainer _groundedExplainer;
+    private readonly IVfrGeofenceService _vfrGeofenceService;
+    private readonly IOpenAipService _openAipService;
 
     public CraiovaController(
         IOpenSkyService openSkyService,
         IOpenSkyLiveService openSkyLiveService,
         ICraiovaAdvisoryEngine advisoryEngine,
         IMetarService metarService,
-        GroundedExplainer groundedExplainer)
+        GroundedExplainer groundedExplainer,
+        IVfrGeofenceService vfrGeofenceService,
+        IOpenAipService openAipService)
     {
         _openSkyService = openSkyService;
         _openSkyLiveService = openSkyLiveService;
         _advisoryEngine = advisoryEngine;
         _metarService = metarService;
         _groundedExplainer = groundedExplainer;
+        _vfrGeofenceService = vfrGeofenceService;
+        _openAipService = openAipService;
     }
 
     /// <summary>
@@ -119,6 +125,65 @@ public class CraiovaController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("vfr/reporting-points")]
+    public IActionResult GetVfrReportingPoints() => Ok(new { source = _openAipService.DataSource, points = _vfrGeofenceService.ReportingPoints, airspaces = _openAipService.Airspaces });
+
+    [HttpGet("vfr/tracks")]
+    public IActionResult GetVfrTracks() => Ok(new { tracks = _vfrGeofenceService.Tracks, sources = new { openSky = "OpenSky REST (OAuth2 credentials optional)", ogn = "OGN APRS-IS TCP (configurable)", sbs1 = "Local SBS-1 (configurable)" } });
+
+    [HttpPost("vfr/tracks/{trackId}/correlate")]
+    public IActionResult CorrelateVfrTrack(string trackId, [FromBody] VfrCorrelationRequest request) =>
+        _vfrGeofenceService.TryCorrelate(trackId, request.FlightPlanId, request.Callsign) ? NoContent() : NotFound();
+
+    [HttpGet("vfr/flight-plans")]
+    public IActionResult GetVfrFlightPlans() => Ok(_vfrGeofenceService.FlightPlans);
+
+    [HttpPost("vfr/flight-plans")]
+    public IActionResult RegisterVfrFlightPlan([FromBody] VfrFlightPlan flightPlan)
+    {
+        _vfrGeofenceService.RegisterFlightPlan(flightPlan);
+        return Accepted(new { flightPlan.FlightPlanId, flightPlan.Callsign });
+    }
+
+    [HttpPost("vfr/reporting-points/refresh")]
+    public async Task<IActionResult> RefreshOpenAip(CancellationToken cancellationToken)
+    {
+        await _openAipService.RefreshAsync(cancellationToken);
+        return Ok(new { source = _openAipService.DataSource, points = _vfrGeofenceService.ReportingPoints.Count, airspaces = _openAipService.Airspaces.Count });
+    }
+
+    [HttpGet("vfr/status")]
+    [ProducesResponseType(typeof(VmcStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetVfrStatus()
+    {
+        var metar = await _metarService.GetDecodedMetarAsync();
+        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; statusul VMC este necunoscut." });
+        return Ok(VmcChecker.ToResponse(metar));
+    }
+
+    [HttpGet("vfr/status/detail")]
+    public async Task<IActionResult> GetVfrStatusDetail()
+    {
+        var metar = await _metarService.GetDecodedMetarAsync();
+        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; statusul VMC este necunoscut." });
+        return Ok(new { vmc = VmcChecker.ToStatus(metar), runwayWindComponents = VmcChecker.GetRunwayComponents(metar), rawMetar = metar.RawMetar });
+    }
+
+    [HttpGet("vfr/tracking")]
+    public async Task<IActionResult> GetVfrTracking([FromQuery] string runway = "09")
+    {
+        var metar = await _metarService.GetDecodedMetarAsync();
+        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; tracking-ul VFR este suspendat până la validarea condițiilor." });
+        var positions = await _openSkyLiveService.GetLivePositionsAsync();
+        var states = _vfrGeofenceService.Evaluate(positions, metar, runway == "27" ? "27" : "09");
+        var trackingFlights = states.ToDictionary(s => s.FlightId, StringComparer.OrdinalIgnoreCase);
+        var enrichedFlights = positions.Flights.Select(f => trackingFlights.TryGetValue(f.Icao24, out var state)
+            ? f with { VfrEtaMinutes = state.EtaViaPointMinutes, VfrEntryPointCode = state.PointCode }
+            : f);
+        return Ok(new { queryTimeUtc = DateTime.UtcNow, source = positions.Source, totalCount = positions.TotalCount, airborneCount = positions.AirborneCount, boundingBoxLamin = positions.BoundingBoxLamin, boundingBoxLamax = positions.BoundingBoxLamax, boundingBoxLomin = positions.BoundingBoxLomin, boundingBoxLomax = positions.BoundingBoxLomax, flights = enrichedFlights, vmc = VmcChecker.ToResponse(metar), points = _vfrGeofenceService.ReportingPoints, vfrFlights = states });
+    }
+
     /// <summary>
     /// Explică în română întrebarea ATC folosind un snapshot nou al simulării și METAR-ul decodat.
     /// Răspunsul este selectat doar dintre enunțuri aprobate de backend; nu reprezintă autorizare operațională.
@@ -183,3 +248,5 @@ public record CraiovaCustomEvaluationDto(
     WeatherCondition? Weather,
     List<CraiovaAircraft>? Aircrafts
 );
+
+public sealed record VfrCorrelationRequest(string FlightPlanId, string Callsign);

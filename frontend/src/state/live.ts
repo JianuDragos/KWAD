@@ -1,7 +1,7 @@
 // Starea paginii Live: poziții OpenSky și METAR, cu interogare periodică.
 import { create } from 'zustand';
-import { ApiError, fetchLivePositions, fetchMetar } from '../api/client';
-import type { LivePositions, Metar } from '../contracts/live';
+import { ApiError, fetchLivePositions, fetchMetar, fetchVfrTracking } from '../api/client';
+import type { LivePositions, Metar, VfrTracking } from '../contracts/live';
 
 /**
  * OpenSky anonim dă 400 de credite pe zi; un apel pe zona Craiova costă 1 credit.
@@ -14,8 +14,10 @@ export const METAR_EVERY_MS = 5 * 60_000;
 interface LiveState {
   positions: LivePositions | null;
   metar: Metar | null;
+  vfrTracking: VfrTracking | null;
   positionsError: string | null;
   metarError: string | null;
+  vfrTrackingError: string | null;
   updatedAtMs: number | null;
   selectedIcao: string | null;
   select: (icao: string | null) => void;
@@ -44,13 +46,22 @@ export const useLive = create<LiveState>()((set, get) => {
     } catch (e) {
       set({ metarError: message(e) });
     }
+    try {
+      const runway = get().metar?.windDirectionDegrees != null && get().metar!.windDirectionDegrees! >= 180 ? '27' : '09';
+      const vfrTracking = await fetchVfrTracking(runway);
+      set({ vfrTracking, positions: vfrTracking, vfrTrackingError: null, updatedAtMs: Date.now() });
+    } catch (e) {
+      set({ vfrTrackingError: message(e) });
+    }
   }
 
   return {
     positions: null,
     metar: null,
+    vfrTracking: null,
     positionsError: null,
     metarError: null,
+    vfrTrackingError: null,
     updatedAtMs: null,
     selectedIcao: null,
     select: (selectedIcao) => set({ selectedIcao }),
