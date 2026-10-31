@@ -30,6 +30,7 @@ builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
 // ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
 builder.Services.AddHttpClient<IMetarService, AviationWeatherService>();
+builder.Services.AddSingleton<MetarFetchCache>();
 builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyFetcher>();
 builder.Services.AddSingleton<VmcChecker>();
 builder.Services.AddSingleton<VfrGeofenceEngine>();

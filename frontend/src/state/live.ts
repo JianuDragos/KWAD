@@ -6,7 +6,7 @@ import type { LivePositions, Metar, VfrTracking } from '../contracts/live';
 /**
  * OpenSky anonim dă 400 de credite pe zi; un apel pe zona Craiova costă 1 credit.
  * La 15 s ajung pentru ~100 de minute de pagină deschisă pe zi.
- * shortcut: fără cache în backend, fiecare tab deschis consumă separat; de mutat cache-ul în backend.
+ * METAR-ul este și partajat în cache-ul backendului; tab-urile nu provoacă cereri dese către sursa meteo.
  */
 export const POSITIONS_EVERY_MS = 15_000;
 export const METAR_EVERY_MS = 5 * 60_000;
@@ -28,6 +28,7 @@ interface LiveState {
 const message = (e: unknown) => (e instanceof ApiError ? e.message : 'Serviciul de date reale nu răspunde.');
 
 export const useLive = create<LiveState>()((set, get) => {
+  let lastMetarRequestAtMs: number | null = null;
   async function loadPositions() {
     try {
       const positions = await fetchLivePositions();
@@ -41,6 +42,9 @@ export const useLive = create<LiveState>()((set, get) => {
     }
   }
   async function loadMetar() {
+    const now = Date.now();
+    if (lastMetarRequestAtMs !== null && now - lastMetarRequestAtMs < METAR_EVERY_MS) return;
+    lastMetarRequestAtMs = now;
     try {
       set({ metar: await fetchMetar(), metarError: null });
     } catch (e) {

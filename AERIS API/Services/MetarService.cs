@@ -12,6 +12,7 @@ public class MetarService : IMetarService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<MetarService> _logger;
+    private readonly MetarFetchCache _cache;
 
     // aviationweather.gov API – endpoint JSON pentru METAR
     // Docs: https://aviationweather.gov/api/doc/metar
@@ -24,10 +25,11 @@ public class MetarService : IMetarService
         NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
-    public MetarService(HttpClient httpClient, ILogger<MetarService> logger)
+    public MetarService(HttpClient httpClient, ILogger<MetarService> logger, MetarFetchCache cache)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _cache = cache;
         _httpClient.Timeout = TimeSpan.FromSeconds(8);
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "AERIS-Craiova-ATM/1.0 (atm-aeris@lrcv.ro)");
@@ -53,6 +55,9 @@ public class MetarService : IMetarService
     // ─────────────────────────────────────────────────────────────────────────
 
     private async Task<MetarRaw?> FetchLatestMetarAsync()
+        => await _cache.GetLatestAsync(FetchFromAviationWeatherAsync);
+
+    private async Task<MetarRaw?> FetchFromAviationWeatherAsync()
     {
         try
         {
