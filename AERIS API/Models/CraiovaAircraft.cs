@@ -1,3 +1,5 @@
+using Aeris.PlanningEngine.Models.TrajectorySeparation;
+
 namespace Aeris.PlanningEngine.Models;
 
 public record CraiovaAircraft(
@@ -34,7 +36,8 @@ public record OrbitPatternAdvice(
     double RecommendedAltitudeFeet, // ex: 1500 ft QNH
     double HoldingDurationMinutes,  // Timp estimat de așteptare în orbită
     double RemainingFuelMarginMinutes,
-    string SafetyInstructions
+    string SafetyInstructions,
+    HoldingRacetrackConfig? Racetrack = null
 );
 
 public record AircraftAdvisory(

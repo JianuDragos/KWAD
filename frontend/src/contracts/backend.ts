@@ -110,12 +110,26 @@ export interface AlternateAerodrome {
   suitabilityReason: string;
 }
 
+export interface HoldingRacetrackConfig {
+  fixId: string;
+  fixLatitude: number;
+  fixLongitude: number;
+  inboundHeadingDegrees: number;
+  turnDirection?: string;
+  legDurationSeconds?: number;
+  speedKnots?: number;
+  altitudeFeet?: number;
+  entryTimeSeconds?: number;
+  durationSeconds?: number;
+}
+
 export interface OrbitPatternAdvice {
   patternName: string;
   recommendedAltitudeFeet: number;
   holdingDurationMinutes: number;
   remainingFuelMarginMinutes: number;
   safetyInstructions: string;
+  racetrack?: HoldingRacetrackConfig | null;
 }
 
 export interface AircraftAdvisory {
@@ -153,6 +167,50 @@ export interface SimulationTrafficStats {
   divertAdvisedCount: number;
 }
 
+export type SeparationConflictType =
+  | 'LossOfSeparation_IFR_IFR'
+  | 'LossOfSeparation_IFR_VFR'
+  | 'LossOfSeparation_VFR_VFR'
+  | 'RunwayOccupancyViolation'
+  | 'WakeTurbulenceViolation'
+  | 'HoldingPatternConflict'
+  | 'MissedApproachConflict'
+  | 'StrictHorizontalOverlap';
+
+export type SafetyStatus = 'Safe' | 'Unsafe' | 'Incomplete';
+
+export interface SeparationConflict {
+  type: SeparationConflictType;
+  aircraft1Id: string;
+  aircraft2Id: string;
+  conflictTimeSeconds: number;
+  formattedTime: string;
+  horizontalDistanceNm: number;
+  verticalDistanceFt: number;
+  requiredHorizontalNm: number;
+  requiredVerticalFt: number;
+  severity: string;
+  description: string;
+  aircraft1Lat: number;
+  aircraft1Lon: number;
+  aircraft1AltFt: number;
+  aircraft2Lat: number;
+  aircraft2Lon: number;
+  aircraft2AltFt: number;
+  replanningRecommendation: string;
+}
+
+export interface SafetyAssessmentResult {
+  status: SafetyStatus;
+  isSafe: boolean;
+  summary: string;
+  conflicts: SeparationConflict[];
+  totalEvaluatedPairs: number;
+  totalTrajectoryPoints: number;
+  evaluatedAtUtc: string;
+  replanningSuggestions: string[];
+}
+
 export interface CraiovaSimulationResult {
   airport: CraiovaAirportInfo;
   weather: WeatherCondition;
@@ -165,6 +223,7 @@ export interface CraiovaSimulationResult {
   stats: SimulationTrafficStats;
   dataSource: string;
   generatedAtUtc: string; // ISO 8601
+  safetyAssessment?: SafetyAssessmentResult | null;
 }
 
 /** Body pentru POST /api/craiova/evaluate. Ambele câmpuri opționale: lipsă = vreme implicită / trafic simulat. */

@@ -23,7 +23,7 @@ import {
 } from '../data/geo';
 import { destination, type LatLon } from './geomath';
 import type { TrackPoint } from './interpolate';
-import { appendLeg, appendOrbit, inboundExtension, trackArrivingAt, type PlannedFix } from './synthetic';
+import { appendLeg, appendRacetrack, inboundExtension, trackArrivingAt, type PlannedFix } from './synthetic';
 
 export type FlightKind = 'approach' | 'hold' | 'divert';
 
@@ -84,9 +84,10 @@ export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimula
         const ifIndex = route.findIndex((f) => f.id === 'OZZET' || f.id === 'NECCO');
         const toIf = route.slice(0, ifIndex + 1);
         const holdAlt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 4000;
+        const fix = toIf[toIf.length - 1];
         let track = trackArrivingAt(toIf, ifrSpeeds(toIf), aircraft.etaSeconds);
-        track = appendOrbit(track, toIf[toIf.length - 1], 2.5, holdAlt, 210, endSeconds);
-        return { ...base, routeLabel: `${entry} → așteptare ${toIf[toIf.length - 1].id}`, plannedRoute: latLngs(toIf), track, landingSeconds: null, alternate: null };
+        track = appendRacetrack(track, fix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds);
+        return { ...base, routeLabel: `${entry} → hipodrom ${fix.id} (${holdAlt}ft)`, plannedRoute: latLngs(toIf), track, landingSeconds: null, alternate: null };
       }
       const landingSeconds = slot?.calculatedTimeSeconds ?? aircraft.etaSeconds;
       const track = withRollout(trackArrivingAt(route, ifrSpeeds(route), landingSeconds), runway);
@@ -104,8 +105,8 @@ export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimula
       if (kind === 'hold') {
         const center = destination(ARP, 180, 2.5); // latura sudică a pistei (Cârcea – Pielești, după backend)
         const alt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 1500;
-        track = appendOrbit(track, center, 1.2, alt, speed, endSeconds);
-        return { ...base, routeLabel: `${entryPoint.id} → orbită sud`, plannedRoute: latLngs(legs), track, landingSeconds: null, alternate: null };
+        track = appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds);
+        return { ...base, routeLabel: `${entryPoint.id} → hipodrom sud (${alt}ft)`, plannedRoute: latLngs(legs), track, landingSeconds: null, alternate: null };
       }
       const alternate = pickAlternate(advisory?.recommendedAlternates ?? null);
       if (alternate) track = appendLeg(track, alternate.point, 1000, speed);
