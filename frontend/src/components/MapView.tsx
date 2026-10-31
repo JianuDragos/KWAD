@@ -28,7 +28,7 @@ export function MapView() {
   const select = useApp((s) => s.select);
 
   return (
-    <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0.5} attributionControl>
+    <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0} zoomDelta={0.25} wheelPxPerZoomLevel={120} attributionControl>
       {basemap === 'osm' && (
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -149,7 +149,12 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
   const markerRef = useRef<L.Marker>(null);
   const lastHeading = useRef(0);
 
-  const pos = positionAt(flight.track, t);
+  // După capătul traseului (aterizat sau ajuns la alternativă) avionul rămâne pe hartă, estompat.
+  const last = flight.track[flight.track.length - 1];
+  const done = !!last && t > last.timeSeconds;
+  const pos = done
+    ? { lat: last.latitudeDeg, lon: last.longitudeDeg, altitudeMeters: last.altitudeMeters, headingDeg: null }
+    : positionAt(flight.track, t);
   const heading = pos?.headingDeg ?? null;
   const rules = flight.aircraft.flightRules.toLowerCase();
 
@@ -159,9 +164,9 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${STATUS_CLASS[flight.status]} ${selected ? 'ac--selected' : ''}">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</div>`,
+        html: `<div class="ac ac--${rules} ${STATUS_CLASS[flight.status]} ${selected ? 'ac--selected' : ''} ${done ? 'ac--done' : ''}">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</div>`,
       }),
-    [rules, flight.status, selected],
+    [rules, flight.status, selected, done],
   );
 
   // Rotim doar glifa, fără să recreăm iconița la fiecare cadru. Fără direcție (avion pe loc) păstrăm ultima.
@@ -174,8 +179,11 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
   const trail = useMemo(() => trailUntil(flight.track, t), [flight.track, t]);
   if (!pos) return null;
 
-  const tag =
-    flight.status === 'ClearedForApproach'
+  const tag = done
+    ? flight.alternate
+      ? `LA ${flight.alternate.code === 'LRBV' ? 'LRCW' : flight.alternate.code}`
+      : `ATERIZAT ${clockLabel(BASE_TIME_OFFSET_SECONDS + (flight.landingSeconds ?? last.timeSeconds), false)}`
+    : flight.status === 'ClearedForApproach'
       ? flight.slot
         ? `SLOT ${clockLabel(BASE_TIME_OFFSET_SECONDS + flight.slot.calculatedTimeSeconds, false)}`
         : 'FĂRĂ SLOT'
@@ -183,7 +191,7 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
 
   return (
     <>
-      <Polyline positions={trail} pathOptions={{ className: `trail trail--${rules}` }} interactive={false} />
+      {!done && <Polyline positions={trail} pathOptions={{ className: `trail trail--${rules}` }} interactive={false} />}
       {selected && <Polyline positions={flight.plannedRoute} pathOptions={{ className: 'planned' }} interactive={false} />}
       <Marker
         ref={markerRef}
@@ -198,7 +206,14 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
           },
         }}
       >
-        <Tooltip permanent direction="right" offset={[12, 0]} className={`datablock ${selected ? 'datablock--selected' : ''}`}>
+        {/* Avioanele aterizate stau grămadă la capătul pistei: eticheta lor apare doar la hover sau selecție. */}
+        <Tooltip
+          key={done && !selected ? 'hover' : 'permanent'}
+          permanent={!done || selected}
+          direction="right"
+          offset={[12, 0]}
+          className={`datablock ${selected ? 'datablock--selected' : ''}`}
+        >
           <span className="db-callsign">{flight.callsign}</span>
           <br />
           {altitudeLabel(pos.altitudeMeters)} · {flight.aircraft.flightRules}

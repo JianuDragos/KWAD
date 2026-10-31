@@ -22,9 +22,15 @@ export class ApiError extends Error {
 /** Verifică forma răspunsului; un contract schimbat devine o eroare clară, cu numele câmpului. */
 function parseResponse<T>(path: string, schema: z.ZodType<T>, data: unknown): T {
   const parsed = schema.safeParse(data);
-  if (!parsed.success) throw new ApiError(`Răspuns neașteptat de la ${path} (contract schimbat?): ${describeIssue(parsed.error)}`, 200);
+  if (!parsed.success) {
+    // Detaliile tehnice merg doar în consolă; utilizatorul nu vede rute sau structura serverului.
+    console.error(`Răspuns invalid de la ${path}: ${describeIssue(parsed.error)}`);
+    throw new ApiError('Serviciul de planificare a trimis date neașteptate.', 200);
+  }
   return parsed.data;
 }
+
+const UNAVAILABLE = 'Serviciul de planificare nu răspunde.';
 
 async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit & { signal?: AbortSignal } = {}): Promise<T> {
   let response: Response;
@@ -32,14 +38,16 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
     response = await fetch(path, { ...init, headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...init.headers } });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
-    throw new ApiError('Backendul nu răspunde. Pornește „AERIS API” (dotnet run) sau rulează frontendul cu npm run dev:mock.', 0);
+    console.error(`${path}: fără răspuns (pornește backendul cu dotnet run sau rulează npm run dev:mock)`, e);
+    throw new ApiError(UNAVAILABLE, 0);
   }
   if (!response.ok) {
     // Backendul are două formate de eroare: { error } (validare scenariu) și ProblemDetails (JSON invalid).
     const body = await response.json().catch(() => null);
     if (!body && response.status >= 500) {
       // Proxy-ul Vite răspunde cu 5xx fără corp JSON când serverul .NET nu e pornit.
-      throw new ApiError(`Backendul nu răspunde (HTTP ${response.status}). Pornește „AERIS API” (dotnet run) sau rulează frontendul cu npm run dev:mock.`, response.status);
+      console.error(`${path}: HTTP ${response.status} fără corp (backend oprit? dotnet run sau npm run dev:mock)`);
+      throw new ApiError(UNAVAILABLE, response.status);
     }
     const message = body?.error ?? body?.title ?? `HTTP ${response.status}`;
     throw new ApiError(message, response.status);

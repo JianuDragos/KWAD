@@ -137,6 +137,7 @@ select { background: var(--surface-2); border: 1px solid var(--line-strong); bor
 .ac--vfr .ac__glyph circle { stroke: var(--vfr); }
 .ac.st-hold { box-shadow: 0 0 0 2px var(--hold); }
 .ac.st-divert { box-shadow: 0 0 0 2px var(--divert); }
+.ac--done { opacity: .4; }
 .ac--selected { box-shadow: 0 0 0 2px var(--select), 0 0 12px rgba(255, 255, 255, .35) !important; }
 
 /* ---------- panou ---------- */

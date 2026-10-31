@@ -40,8 +40,7 @@ function ScenarioSummary() {
       <dl className="kv">
         <dt>Pista activă</dt>
         <dd>
-          <strong>{ev.traffic.runway}</strong>{' '}
-          <span className="muted" title="Backendul folosește denumirea veche a pistei">(backend: {r.activeRunway})</span>
+          <strong>{ev.traffic.runway}</strong>
         </dd>
         <dt>Vânt</dt>
         <dd>
@@ -103,7 +102,7 @@ function FlightDetails({ flight }: { flight: FlightView }) {
 
       {isUnsequenced(flight) && (
         <div className="notice notice--warn">
-          Backendul a aprobat apropierea, dar nu a dat slot: motorul secvențiază doar primul VFR (SequenceGenerator.cs). Pe hartă aterizează la ETA.
+          Aprobat pentru apropiere, dar fără slot de aterizare planificat. Pe hartă aterizează la ETA.
         </div>
       )}
 
@@ -160,14 +159,8 @@ function FlightDetails({ flight }: { flight: FlightView }) {
           <ul className="alts">
             {adv.recommendedAlternates.map((a) => (
               <li key={a.code} className={flight.alternate?.code === a.code ? 'is-chosen' : ''}>
-                <span>
-                  {a.name}
-                  {a.code === 'LRBV' && (
-                    <span className="tag tag--warn" title="LRBV este Brașov-Ghimbav. Terenul de la 8,5 km SV este Craiova-Sud (LRCW).">
-                      cod greșit → LRCW
-                    </span>
-                  )}
-                </span>
+                {/* Codul LRBV primit e greșit (e Brașov); terenul e Craiova-Sud, LRCW în AIP. */}
+                <span>{a.code === 'LRBV' ? 'Craiova-Sud (LRCW)' : a.name}</span>
                 <span className="muted small">
                   pista {a.bestRunway} · lateral {a.calculatedCrosswindKnots} kt · {a.estimatedFlightMinutes} min
                 </span>
@@ -185,7 +178,7 @@ function AiAnalysisBox() {
     <section className="ai">
       <h3 className="panel__sub">Analiză AI</h3>
       <div className="notice">
-        <strong>Indisponibilă.</strong> Backendul nu are încă endpoint de analiză (<code>/api/analysis</code>). Calculele de mai sus vin din motor.
+        <strong>Indisponibilă momentan.</strong> Calculele de mai sus vin din motorul de planificare.
       </div>
     </section>
   );

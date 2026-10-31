@@ -49,7 +49,7 @@ export function Timeline() {
                 title="Fereastra de sosire"
               />
               <span className="tl-eta" style={{ left: x(f.aircraft.etaSeconds) }} title="ETA" />
-              {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title="Slot planificat de backend" />}
+              {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title="Slot planificat" />}
               {!f.slot && <span className={`tl-flag ${isUnsequenced(f) ? 'tl-flag--warn' : STATUS_CLASS[f.status]}`} style={{ left: x(f.aircraft.etaSeconds) }}>{isUnsequenced(f) ? 'fără slot' : f.status === 'DivertRecommended' ? 'deviere' : 'așteptare'}</span>}
               <span className="tl-now" style={{ left: x(t) }} />
             </div>
@@ -59,7 +59,7 @@ export function Timeline() {
       <div className="tl-legend muted small">
         <span><i className="lg lg--window" /> fereastră</span>
         <span><i className="lg lg--eta" /> ETA</span>
-        <span><i className="lg lg--slot" /> slot backend</span>
+        <span><i className="lg lg--slot" /> slot planificat</span>
       </div>
     </section>
   );

@@ -58,11 +58,9 @@ export function TopBar() {
       <div className="pills">
         {status === 'loading' && <span className="pill pill--busy">se calculează…</span>}
         {stale && status !== 'loading' && <span className="pill pill--warn">rezultat depășit</span>}
-        {status === 'error' && <span className="pill pill--err">eroare backend</span>}
+        {status === 'error' && <span className="pill pill--err">serviciu indisponibil</span>}
         <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>
-        <span className={`pill ${API_MOCK ? 'pill--mock' : 'pill--live'}`} title={API_MOCK ? 'Port local al backendului (src/api/mockBackend.ts)' : 'Backend .NET prin proxy Vite → localhost:5271'}>
-          {API_MOCK ? 'MOCK · date de exemplu' : 'backend :5271'}
-        </span>
+        {API_MOCK && <span className="pill pill--mock">date de exemplu</span>}
       </div>
     </header>
   );
