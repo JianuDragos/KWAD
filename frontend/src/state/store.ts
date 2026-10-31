@@ -40,6 +40,9 @@ interface AppState {
   evaluation: Evaluation | null;
   firs: FirEntry[];
 
+  useTrajectoryEngine: boolean;
+  setUseTrajectoryEngine: (enabled: boolean) => void;
+
   simTimeSeconds: number;
   playing: boolean;
   speed: Speed;
@@ -76,10 +79,11 @@ export const useApp = create<AppState>()((set, get) => {
     inFlight = controller;
     set({ status: 'loading', error: null });
     try {
-      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts }, controller.signal);
+      const useTraj = get().useTrajectoryEngine;
+      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts, useTrajectoryEngine: useTraj }, controller.signal);
       // Răspuns pentru o revizie veche: îl ignorăm.
       if (get().scenario?.revision !== scenario.revision) return;
-      const traffic = buildTraffic(scenario.aircrafts, result, get().firs);
+      const traffic = buildTraffic(scenario.aircrafts, result, get().firs, useTraj);
       const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
       set((s) => ({
         status: 'ok',
@@ -103,6 +107,7 @@ export const useApp = create<AppState>()((set, get) => {
     error: null,
     evaluation: null,
     firs: FALLBACK_FIRS,
+    useTrajectoryEngine: true,
     simTimeSeconds: 0,
     playing: false,
     speed: 5,
@@ -120,7 +125,7 @@ export const useApp = create<AppState>()((set, get) => {
         if (ds.firs.length > FALLBACK_FIRS.length) {
           set((s) => {
             if (!s.evaluation || !s.scenario) return { firs: ds.firs };
-            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs);
+            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs, s.useTrajectoryEngine);
             return { firs: ds.firs, evaluation: { ...s.evaluation, traffic: updatedTraffic } };
           });
         }
@@ -179,6 +184,17 @@ export const useApp = create<AppState>()((set, get) => {
       if (!current || !preset) return;
       const scenario = { ...current, revision: current.revision + 1, weatherPresetId: id, weather: preset.weather };
       set({ scenario });
+      void evaluate(scenario, false);
+    },
+
+    setUseTrajectoryEngine: (enabled) => {
+      const current = get().scenario;
+      if (!current) {
+        set({ useTrajectoryEngine: enabled });
+        return;
+      }
+      const scenario = { ...current, revision: current.revision + 1 };
+      set({ useTrajectoryEngine: enabled, scenario });
       void evaluate(scenario, false);
     },
 

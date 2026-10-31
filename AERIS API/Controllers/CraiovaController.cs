@@ -47,12 +47,18 @@ public class CraiovaController : ControllerBase
     /// Execută simularea de aterizare pe Aeroportul Craiova (LRCV), colectând date OpenSky și evaluând aeronavele mari (IFR) și mici (Savannah, Wilga, etc.).
     /// În caz de vânt lateral critic, calculează sfaturi de orbită paralelă cu pista sau deviere către Balta Verde / Podari.
     /// </summary>
+    /// <param name="windSpeed">Viteza vântului în noduri (implicit 22 kts).</param>
+    /// <param name="windDirection">Direcția vântului în grade (implicit 180° - vânt perpendicular pe pista 09/27).</param>
+    /// <param name="windGust">Rafale de vânt în noduri (implicit 26 kts).</param>
+    /// <param name="forceSimulated">Dacă este true, folosește setul simulat demonstrativ fără a interoga OpenSky Network.</param>
+    /// <param name="useTrajectoryEngine">Dacă este true, activează noul motor de separare 3D, eșalonare de siaj și hipodrom ICAO; altfel folosește planificatorul vechi.</param>
     [HttpGet("simulation")]
     public async Task<IActionResult> RunSimulation(
         [FromQuery] double windSpeed = 22,
         [FromQuery] double windDirection = 180,
         [FromQuery] double windGust = 26,
-        [FromQuery] bool forceSimulated = false)
+        [FromQuery] bool forceSimulated = false,
+        [FromQuery] bool useTrajectoryEngine = true)
     {
         var weather = new WeatherCondition(
             WindDirectionDegrees: windDirection,
@@ -61,7 +67,7 @@ public class CraiovaController : ControllerBase
         );
 
         var (traffic, sourceDesc) = await _openSkyService.GetCraiovaTrafficAsync(forceSimulated);
-        var result = _advisoryEngine.EvaluateSimulation(traffic, weather, sourceDesc);
+        var result = _advisoryEngine.EvaluateSimulation(traffic, weather, sourceDesc, useTrajectoryEngine);
 
         return Ok(result);
     }
@@ -75,7 +81,7 @@ public class CraiovaController : ControllerBase
         var weather = request.Weather ?? new WeatherCondition();
         var traffic = request.Aircrafts ?? OpenSkyService.GetRealisticCraiovaTraffic();
 
-        var result = _advisoryEngine.EvaluateSimulation(traffic, weather, "Scenariu personalizat utilizator");
+        var result = _advisoryEngine.EvaluateSimulation(traffic, weather, "Scenariu personalizat utilizator", request.UseTrajectoryEngine);
         return Ok(result);
     }
 
@@ -442,7 +448,8 @@ public sealed record CraiovaExplainRequest(
 
 public record CraiovaCustomEvaluationDto(
     WeatherCondition? Weather,
-    List<CraiovaAircraft>? Aircrafts
+    List<CraiovaAircraft>? Aircrafts,
+    bool UseTrajectoryEngine = true
 );
 
 public sealed record VfrCorrelationRequest(string FlightPlanId, string Callsign);

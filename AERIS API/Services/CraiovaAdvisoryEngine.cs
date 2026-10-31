@@ -18,7 +18,8 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
     public CraiovaSimulationResult EvaluateSimulation(
         List<CraiovaAircraft> aircrafts,
         WeatherCondition weather,
-        string dataSource = "OpenSky Live / Craiova Simulation")
+        string dataSource = "OpenSky Live / Craiova Simulation",
+        bool useTrajectoryEngine = true)
     {
         // 1. Calcul componente vânt pe pista de referință Craiova (08/26)
         double effectiveWindSpeed = Math.Max(weather.WindSpeedKnots, weather.WindGustKnots);
@@ -94,23 +95,23 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                 }
                 else
                 {
-                    double ifrHoldAlt = 4000.0 + (ifrHoldingCount * 1000.0);
-                    string ifrFix = activeRwyId == RunwayConfiguration.Runway26 ? "OZZET" : "NECCO";
+                    double ifrHoldAlt = useTrajectoryEngine ? 4000.0 + (ifrHoldingCount * 1000.0) : 4000.0;
+                    string ifrFix = RunwayConfiguration.Normalize(activeRwyId) == RunwayConfiguration.Runway26 ? "OZZET" : "NECCO";
                     var ifrFixWp = AipAirwayData.Waypoints[ifrFix];
                     ifrHoldingCount++;
 
-                    var ifrRacetrack = new HoldingRacetrackConfig(
+                    var ifrRacetrack = useTrajectoryEngine ? new HoldingRacetrackConfig(
                         FixId: ifrFix,
                         FixLatitude: ifrFixWp.Latitude,
                         FixLongitude: ifrFixWp.Longitude,
                         InboundHeadingDegrees: activeRwyHeading,
                         TurnDirection: "Right",
                         LegDurationSeconds: 60.0,
-                        SpeedKnots: 210.0,
+                        SpeedKnots: ac.SpeedKnots > 0 ? ac.SpeedKnots : 210.0,
                         AltitudeFeet: ifrHoldAlt,
                         EntryTimeSeconds: ac.EtaSeconds,
                         DurationSeconds: 15 * 60
-                    );
+                    ) : null;
 
                     advisories.Add(new AircraftAdvisory(
                         AircraftId: ac.Id,
@@ -130,11 +131,15 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                             ? $"Vânt de spate excesiv ({Math.Abs(headwindCraiova)} kts > 10 kts). Se recomandă holding IFR sau schimbarea pistei în uz."
                             : $"Vânt lateral sever ({crosswindCraiova} kts > {ac.MaxCrosswindKnots} kts). Holding IFR standard.",
                         OrbitAdvice: new OrbitPatternAdvice(
-                            PatternName: $"Hipodrom IFR {ifrFix} ({ifrHoldAlt:F0} ft QNH)",
+                            PatternName: useTrajectoryEngine
+                                ? $"Hipodrom IFR {ifrFix} ({ifrHoldAlt:F0} ft QNH)"
+                                : "Standard IFR Holding Craiova (VOR/DME CRA)",
                             RecommendedAltitudeFeet: ifrHoldAlt,
                             HoldingDurationMinutes: 15,
                             RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 20,
-                            SafetyInstructions: $"Mențineți hipodromul publicat la {ifrFix}, nivelul {ifrHoldAlt:F0} ft (eșalonat vertical la 1.000 ft) până la stabilizarea condițiilor de vânt.",
+                            SafetyInstructions: useTrajectoryEngine
+                                ? $"Mențineți hipodromul publicat la {ifrFix}, nivelul {ifrHoldAlt:F0} ft (eșalonat vertical la 1.000 ft) până la stabilizarea condițiilor de vânt."
+                                : "Așteptare în holding standard până la stabilizarea condițiilor de vânt.",
                             Racetrack: ifrRacetrack
                         )
                     ));
@@ -192,10 +197,10 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                     bool canHoldInOrbit = ac.RemainingFuelMinutes > 40;
                     var status = canHoldInOrbit ? AdvisoryStatus.HoldInOrbitRecommended : AdvisoryStatus.DivertRecommended;
 
-                    double vfrHoldAlt = 1500.0 + (vfrHoldingCount * 1000.0);
+                    double vfrHoldAlt = useTrajectoryEngine ? 1500.0 + (vfrHoldingCount * 1000.0) : 1500.0;
                     vfrHoldingCount++;
 
-                    var vfrRacetrack = new HoldingRacetrackConfig(
+                    var vfrRacetrack = useTrajectoryEngine ? new HoldingRacetrackConfig(
                         FixId: "CARCEA",
                         FixLatitude: 44.2764,
                         FixLongitude: 23.8886,
@@ -206,14 +211,18 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                         AltitudeFeet: vfrHoldAlt,
                         EntryTimeSeconds: ac.EtaSeconds,
                         DurationSeconds: 12 * 60
-                    );
+                    ) : null;
 
                     var orbitAdvice = new OrbitPatternAdvice(
-                        PatternName: $"Circuit hipodrom VFR latura sudică pista {vfrRunway} (Cârcea la {vfrHoldAlt:F0} ft)",
+                        PatternName: useTrajectoryEngine
+                            ? $"Circuit hipodrom VFR latura sudică pista {vfrRunway} (Cârcea la {vfrHoldAlt:F0} ft)"
+                            : $"Orbită de așteptare paralelă cu latura sudică a pistei {vfrRunway} (Cârcea - Pielești)",
                         RecommendedAltitudeFeet: vfrHoldAlt,
                         HoldingDurationMinutes: 12,
                         RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 15,
-                        SafetyInstructions: $"Mențineți circuit hipodrom VFR la {vfrHoldAlt:F0} ft QNH (separare verticală 1.000 ft, PNR={vfrRedirection.PointOfNoReturnMinutes:F0} min), în afara zonei de turbulență de siaj. Alternativa optimă: {vfrRedirection.BestAlternateName} (pista {vfrRedirection.BestAlternateRunway}, cap {vfrRedirection.RedirectionHeadingToFlyDegrees:F0}°).",
+                        SafetyInstructions: useTrajectoryEngine
+                            ? $"Mențineți circuit hipodrom VFR la {vfrHoldAlt:F0} ft QNH (separare verticală 1.000 ft, PNR={vfrRedirection.PointOfNoReturnMinutes:F0} min), în afara zonei de turbulență de siaj. Alternativa optimă: {vfrRedirection.BestAlternateName} (pista {vfrRedirection.BestAlternateRunway}, cap {vfrRedirection.RedirectionHeadingToFlyDegrees:F0}°)."
+                            : "Mențineți zbor vizual (VFR) la 1500 ft QNH paralel cu axul pistei, în afara zonei de turbulență de siaj. Cedați prioritatea traficului comercial.",
                         Racetrack: vfrRacetrack
                     );
 
@@ -248,10 +257,11 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                     // Vântul lateral este acceptabil. Verificăm deconflictualizarea dacă aterizează din sens opus cu zboruri IFR comerciale
                     if (isOppositeLanding && hasCommercialTrafficOnPrimary)
                     {
-                        double vfrHoldAlt = 1500.0 + (vfrHoldingCount * 1000.0);
+                        // Există zbor comercial care aterizează pe sensul opus; avionul mic așteaptă în orbită până se eliberează pista
+                        double vfrHoldAlt = useTrajectoryEngine ? 1500.0 + (vfrHoldingCount * 1000.0) : 1500.0;
                         vfrHoldingCount++;
 
-                        var vfrRacetrack = new HoldingRacetrackConfig(
+                        var vfrRacetrack = useTrajectoryEngine ? new HoldingRacetrackConfig(
                             FixId: "CARCEA",
                             FixLatitude: 44.2764,
                             FixLongitude: 23.8886,
@@ -262,14 +272,18 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                             AltitudeFeet: vfrHoldAlt,
                             EntryTimeSeconds: ac.EtaSeconds,
                             DurationSeconds: 5 * 60
-                        );
+                        ) : null;
 
                         var orbitAdvice = new OrbitPatternAdvice(
-                            PatternName: $"Circuit hipodrom deconflictualizare (Latura sudică, Cârcea, {vfrHoldAlt:F0} ft)",
+                            PatternName: useTrajectoryEngine
+                                ? $"Circuit hipodrom deconflictualizare (Latura sudică, Cârcea, {vfrHoldAlt:F0} ft)"
+                                : "Orbită de așteptare deconflictualizare (Latura sudică, Cârcea, 1500 ft)",
                             RecommendedAltitudeFeet: vfrHoldAlt,
                             HoldingDurationMinutes: 5,
                             RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 10,
-                            SafetyInstructions: $"Așteptați în circuit hipodrom la {vfrHoldAlt:F0} ft până când zborul comercial IFR din sens opus (pista {activeRwyId}) aterizează și eliberează pista. Ulterior, liber pentru aterizare în sens invers pe pista {vfrRunway} cu vânt de față (+{vfrHeadwind} kts).",
+                            SafetyInstructions: useTrajectoryEngine
+                                ? $"Așteptați în circuit hipodrom la {vfrHoldAlt:F0} ft până când zborul comercial IFR din sens opus (pista {activeRwyId}) aterizează și eliberează pista. Ulterior, liber pentru aterizare în sens invers pe pista {vfrRunway} cu vânt de față (+{vfrHeadwind} kts)."
+                                : $"Așteptați în orbită la Cârcea până când zborul comercial IFR din sens opus (pista {activeRwyId}) aterizează și eliberează pista. Ulterior, liber pentru aterizare în sens invers pe pista {vfrRunway} cu vânt de față (+{vfrHeadwind} kts).",
                             Racetrack: vfrRacetrack
                         );
 
@@ -344,29 +358,32 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
             var bestVariant = landingSequences.ValidVariants.FirstOrDefault();
             if (bestVariant != null)
             {
-                var clearedAircraftList = aircrafts.Where(a => clearedForLandingInputs.Any(ci => ci.Id == a.Id)).ToList();
-                safetyAssessment = _separationEngine.ValidateSchedule(clearedAircraftList, bestVariant.Schedule, activeRwyId);
-
-                // Replanificare automată dacă planul este nesigur (ex: încălcare siaj Light după Medium sau ocupare pistă)
-                if (!safetyAssessment.IsSafe)
+                if (useTrajectoryEngine)
                 {
-                    bool hasWakeOrRotConflict = safetyAssessment.Conflicts.Any(c =>
-                        c.Type == SeparationConflictType.WakeTurbulenceViolation ||
-                        c.Type == SeparationConflictType.RunwayOccupancyViolation);
+                    var clearedAircraftList = aircrafts.Where(a => clearedForLandingInputs.Any(ci => ci.Id == a.Id)).ToList();
+                    safetyAssessment = _separationEngine.ValidateSchedule(clearedAircraftList, bestVariant.Schedule, activeRwyId);
 
-                    if (hasWakeOrRotConflict)
+                    // Replanificare automată dacă planul este nesigur (ex: încălcare siaj Light după Medium sau ocupare pistă)
+                    if (!safetyAssessment.IsSafe)
                     {
-                        var safeRules = rules with { MinimumGapSeconds = 180 };
-                        var replannedSeq = _planningService.EvaluateScenario(clearedForLandingInputs, safeRules);
-                        var replannedBest = replannedSeq.ValidVariants.FirstOrDefault();
-                        if (replannedBest != null)
+                        bool hasWakeOrRotConflict = safetyAssessment.Conflicts.Any(c =>
+                            c.Type == SeparationConflictType.WakeTurbulenceViolation ||
+                            c.Type == SeparationConflictType.RunwayOccupancyViolation);
+
+                        if (hasWakeOrRotConflict)
                         {
-                            var reAss = _separationEngine.ValidateSchedule(clearedAircraftList, replannedBest.Schedule, activeRwyId);
-                            if (reAss.IsSafe || reAss.Conflicts.Count < safetyAssessment.Conflicts.Count)
+                            var safeRules = rules with { MinimumGapSeconds = 180 };
+                            var replannedSeq = _planningService.EvaluateScenario(clearedForLandingInputs, safeRules);
+                            var replannedBest = replannedSeq.ValidVariants.FirstOrDefault();
+                            if (replannedBest != null)
                             {
-                                landingSequences = replannedSeq;
-                                bestVariant = replannedBest;
-                                safetyAssessment = reAss;
+                                var reAss = _separationEngine.ValidateSchedule(clearedAircraftList, replannedBest.Schedule, activeRwyId);
+                                if (reAss.IsSafe || reAss.Conflicts.Count < safetyAssessment.Conflicts.Count)
+                                {
+                                    landingSequences = replannedSeq;
+                                    bestVariant = replannedBest;
+                                    safetyAssessment = reAss;
+                                }
                             }
                         }
                     }

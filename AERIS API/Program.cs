@@ -29,6 +29,7 @@ builder.Services.AddScoped<IPlanningService, PlanningService>();
 builder.Services.AddSingleton<TrajectoryPredictor>();
 builder.Services.AddScoped<ITrajectorySeparationEngine, TrajectorySeparationEngine>();
 builder.Services.AddScoped<SafePlanningCoordinator>();
+builder.Services.AddScoped<ISafePlanningCoordinator>(sp => sp.GetRequiredService<SafePlanningCoordinator>());
 builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
