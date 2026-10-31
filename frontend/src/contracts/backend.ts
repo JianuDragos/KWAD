@@ -1,0 +1,190 @@
+// Tipuri TypeScript pentru backendul KWAD / AERIS API, așa cum este în commit ad6e098.
+// Derivate din recordurile C# din "AERIS API/Models" și din controllere.
+// JSON: camelCase (implicit ASP.NET), enum-uri ca string (JsonStringEnumConverter în Program.cs).
+// Copiază în frontend/src/contracts/ când pornești proiectul.
+
+export type FlightRules = 'IFR' | 'VFR';
+
+export type AircraftCategory =
+  | 'CommercialJet'
+  | 'RegionalTurboprop'
+  | 'GeneralAviation'
+  | 'UltralightAndGlider';
+
+export type AdvisoryStatus =
+  | 'ClearedForApproach'
+  | 'HoldInOrbitRecommended'
+  | 'DivertRecommended';
+
+// ---------- /api/planning ----------
+
+export interface AircraftInput {
+  id: string;
+  flightRules: FlightRules;
+  etaSeconds: number;
+  earliestSeconds: number;
+  latestSeconds: number;
+  frozenTimeSeconds?: number | null;
+}
+
+export interface ScenarioRules {
+  minimumGapSeconds: number;
+  allowVfr?: boolean;              // implicit true
+  baseTimeOffsetSeconds?: number;  // implicit 50400 (14:00), folosit doar pentru formattedTime
+}
+
+/** Body pentru POST /api/planning/evaluate. Câmpurile lipsă devin 0 pe server, fără eroare: trimite-le pe toate. */
+export interface EvaluationRequest {
+  aircrafts: AircraftInput[];
+  rules: ScenarioRules;
+}
+
+export interface ScheduleSlot {
+  aircraftId: string;
+  flightRules: FlightRules;
+  calculatedTimeSeconds: number;
+  delaySeconds: number;
+  formattedTime: string; // "HH:mm" = calculatedTimeSeconds + baseTimeOffsetSeconds; fără dată, fără fus orar
+  delayMinutes: number;
+}
+
+export interface EvaluationVariant {
+  sequenceOrder: string[];
+  schedule: ScheduleSlot[];          // la variantele respinse: doar sloturile calculate până la eroare
+  isValid: boolean;
+  rejectionReason: string | null;    // text liber; aeronava vinovată apare doar în text
+  totalDelaySeconds: number;         // 0 la variantele respinse (nu înseamnă „fără întârziere”)
+  totalDelayMinutes: number;
+  maxDelaySeconds: number;
+  maxDelayMinutes: number;
+  delayedAircraftCount: number;
+}
+
+export interface PlanningResponse {
+  validVariants: EvaluationVariant[];    // sortate, maxim 3
+  rejectedVariants: EvaluationVariant[];
+  totalEvaluatedVariants: number;
+}
+
+/** 400 de la /api/planning/evaluate când validarea scenariului eșuează. */
+export interface PlanningError {
+  error: string;
+}
+
+// ---------- /api/craiova ----------
+
+export interface WeatherCondition {
+  windDirectionDegrees: number; // implicit 180
+  windSpeedKnots: number;       // implicit 20
+  windGustKnots: number;        // implicit 26
+  visibilityMeters: number;     // implicit 9999 (nefolosit în calcule)
+}
+
+/** Atenție: nu conține poziție (lat/lon/altitudine/direcție). */
+export interface CraiovaAircraft {
+  id: string;
+  callsign: string;
+  modelName: string;
+  category: AircraftCategory;
+  flightRules: FlightRules;
+  hasInstrumentAvionics: boolean;
+  maxCrosswindKnots: number;
+  etaSeconds: number;
+  earliestSeconds: number;
+  latestSeconds: number;
+  frozenTimeSeconds?: number | null;
+  speedKnots?: number;            // implicit 100
+  remainingFuelMinutes?: number;  // implicit 90
+}
+
+export interface AlternateAerodrome {
+  name: string;
+  code: string;
+  distanceKm: number;
+  bearingDegrees: number;
+  runwayHeadingDegrees: number;
+  bestRunway: string;
+  calculatedCrosswindKnots: number;
+  calculatedHeadwindKnots: number;
+  estimatedFlightMinutes: number;
+  suitabilityReason: string;
+}
+
+export interface OrbitPatternAdvice {
+  patternName: string;
+  recommendedAltitudeFeet: number;
+  holdingDurationMinutes: number;
+  remainingFuelMarginMinutes: number;
+  safetyInstructions: string;
+}
+
+export interface AircraftAdvisory {
+  aircraftId: string;
+  callsign: string;
+  modelName: string;
+  category: AircraftCategory;
+  flightRules: FlightRules;
+  hasInstrumentAvionics: boolean;
+  currentCrosswindKnots: number;
+  maxCrosswindLimitKnots: number;
+  advisoryStatus: AdvisoryStatus;
+  advisoryReason: string;
+  orbitAdvice: OrbitPatternAdvice | null;
+  recommendedAlternates: AlternateAerodrome[] | null;
+  assignedLandingSlot: ScheduleSlot | null; // poate fi null chiar dacă statusul e ClearedForApproach
+}
+
+export interface CraiovaAirportInfo {
+  icao: string;
+  iata: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  elevationFeet: number;
+  runways: string; // text liber, ex. "09/27 (2500m x 45m, Asfalt)"
+}
+
+export interface SimulationTrafficStats {
+  totalInbounds: number;
+  commercialAirlinersCount: number;
+  lightAircraftCount: number;
+  clearedToLandCount: number;
+  holdingInOrbitCount: number;
+  divertAdvisedCount: number;
+}
+
+export interface CraiovaSimulationResult {
+  airport: CraiovaAirportInfo;
+  weather: WeatherCondition;
+  activeRunway: string; // "09" | "27" în codul actual
+  activeRunwayCrosswindKnots: number;
+  activeRunwayHeadwindKnots: number;
+  isCrosswindCriticalForLightAircraft: boolean;
+  advisories: AircraftAdvisory[];
+  clearedLandingSequences: PlanningResponse | null;
+  stats: SimulationTrafficStats;
+  dataSource: string;
+  generatedAtUtc: string; // ISO 8601
+}
+
+/** Body pentru POST /api/craiova/evaluate. Ambele câmpuri opționale: lipsă = vreme implicită / trafic simulat. */
+export interface CraiovaCustomEvaluationRequest {
+  weather?: WeatherCondition | null;
+  aircrafts?: CraiovaAircraft[] | null;
+}
+
+/** GET /api/craiova/live-traffic */
+export interface LiveTrafficResponse {
+  source: string;
+  count: number;
+  traffic: CraiovaAircraft[];
+}
+
+/** 400 automat de la [ApiController] când body-ul nu se poate deserializa (format ProblemDetails). */
+export interface ValidationProblem {
+  type?: string;
+  title: string;
+  status: number;
+  errors?: Record<string, string[]>;
+  traceId?: string;
+}
