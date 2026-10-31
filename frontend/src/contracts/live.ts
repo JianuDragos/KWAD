@@ -48,3 +48,14 @@ export const metarSchema = z.object({
   flightCategory: z.string(),
 });
 export type Metar = z.infer<typeof metarSchema>;
+
+/** Răspunsul de la POST /api/craiova/explain (recordul Explanation din GroundedExplainer.cs). */
+export const explanationSchema = z.object({
+  scenarioRevision: z.number(),
+  mode: z.enum(['grounded_selection', 'deterministic_fallback']),
+  statementIds: z.array(z.string()),
+  sentences: z.array(z.string()),
+  sourceIds: z.array(z.string()),
+  fallbackReason: z.string().nullable(),
+});
+export type Explanation = z.infer<typeof explanationSchema>;

@@ -4,6 +4,7 @@ import type { LiveFlight, Metar } from '../contracts/live';
 import { airlineFor, trendArrow } from '../sim/live';
 import { M_PER_NM, altitudeLabel } from '../sim/units';
 import { useLive } from '../state/live';
+import { AskAi } from './AskAi';
 
 export function LivePanel() {
   const positions = useLive((s) => s.positions);
@@ -37,6 +38,7 @@ export function LivePanel() {
         ))}
       </ol>
       {positions && <p className="muted small">Sursa: {positions.source}. Actualizare la 15 s.</p>}
+      <AskAi />
     </aside>
   );
 }

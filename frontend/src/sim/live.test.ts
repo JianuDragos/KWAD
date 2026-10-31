@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as mockLive from '../api/mockLive';
-import { livePositionsSchema, metarSchema, type LiveFlight } from '../contracts/live';
+import { explanationSchema, livePositionsSchema, metarSchema, type LiveFlight } from '../contracts/live';
 import { bearingDeg, distanceNm } from './geomath';
 import { MAX_EXTRAPOLATION_SECONDS, airlineFor, extrapolate, runwayForWind, trendArrow, windComponents } from './live';
 
@@ -62,6 +62,8 @@ describe('schemele datelor reale', () => {
   it('acceptă datele de exemplu (aceeași formă ca backendul)', () => {
     expect(livePositionsSchema.safeParse(mockLive.livePositions()).success).toBe(true);
     expect(metarSchema.safeParse(mockLive.metar()).success).toBe(true);
+    expect(explanationSchema.safeParse(mockLive.explanation()).success).toBe(true);
+    expect(explanationSchema.safeParse({ ...mockLive.explanation(), mode: 'free_text' }).success).toBe(false); // alt mod = contract schimbat
   });
   it('respinge o poziție cu câmp lipsă', () => {
     const data = mockLive.livePositions();

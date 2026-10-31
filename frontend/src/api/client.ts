@@ -7,7 +7,7 @@ import type {
 } from '../contracts/backend';
 import type { z } from 'zod';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from '../contracts/schemas';
-import { livePositionsSchema, metarSchema, type LivePositions, type Metar } from '../contracts/live';
+import { explanationSchema, livePositionsSchema, metarSchema, type Explanation, type LivePositions, type Metar } from '../contracts/live';
 import * as mock from './mockBackend';
 import * as mockLive from './mockLive';
 
@@ -121,4 +121,11 @@ export function fetchMetar(signal?: AbortSignal): Promise<Metar> {
   const path = '/api/weather/metar/decoded';
   if (API_MOCK) return mockDelay(() => parseResponse(path, metarSchema, mockLive.metar()), signal);
   return request(path, metarSchema, { signal });
+}
+
+/** Întrebare pentru modelul AI local; răspunsul e format doar din enunțuri aprobate de backend. */
+export function explain(question: string, signal?: AbortSignal): Promise<Explanation> {
+  const path = '/api/craiova/explain';
+  if (API_MOCK) return mockDelay(() => parseResponse(path, explanationSchema, mockLive.explanation()), signal, 1200);
+  return request(path, explanationSchema, { method: 'POST', body: JSON.stringify({ question }), signal });
 }

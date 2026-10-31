@@ -1,6 +1,6 @@
 // Date de exemplu pentru pagina live în modul mock (npm run dev:mock), când serverul .NET nu rulează.
 // Formele copiază recordurile LiveFlightState / MetarDecoded din backend.
-import type { LiveFlight, LivePositions, Metar } from '../contracts/live';
+import type { Explanation, LiveFlight, LivePositions, Metar } from '../contracts/live';
 import { destination } from '../sim/geomath';
 
 const now = () => Math.floor(Date.now() / 1000);
@@ -46,5 +46,21 @@ export function metar(): Metar {
     qnhHpa: 1020,
     weatherPhenomena: null,
     flightCategory: 'LIFR',
+  };
+}
+
+/** În mock nu rulează niciun model: răspunsul arată ca rezerva backendului când modelul lipsește. */
+export function explanation(): Explanation {
+  return {
+    scenarioRevision: 1,
+    mode: 'deterministic_fallback',
+    statementIds: ['decision', 'weather', 'limits'],
+    sentences: [
+      'Snapshot simulare LRCV: pista activă 27; 5 aeronave evaluate, 5 cu apropiere recomandată, 0 în așteptare și 0 cu deviere recomandată.',
+      'METAR LRCV: vânt 240° 9 kt, vizibilitate 7000 m, plafon la 300 ft. Categorie: LIFR.',
+      'Acesta este un rezultat de simulare și suport decizional. Nu este o autorizare ATC și nu înlocuiește procedurile, verificările sau judecata controlorului.',
+    ],
+    sourceIds: ['SIM-1', 'LRCV 310730Z 24009KT 7000 BKN003 OVC007 11/11 Q1020', 'RULES-1'],
+    fallbackReason: 'inference_unavailable',
   };
 }

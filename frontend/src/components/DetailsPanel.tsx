@@ -47,7 +47,7 @@ export function DetailsPanel() {
       </ol>
       <section className="ai" aria-label="Analiză AI">
         <h3 className="panel__sub">Analiză AI</h3>
-        <p className="muted small">Indisponibilă momentan. Timpii și recomandările de mai sus vin din motorul de planificare.</p>
+        <p className="muted small">Disponibilă pe pagina Live: modelul răspunde din METAR-ul și traficul real, nu din scenariul simulat. Timpii și recomandările de mai sus vin din motorul de planificare.</p>
       </section>
     </aside>
   );
