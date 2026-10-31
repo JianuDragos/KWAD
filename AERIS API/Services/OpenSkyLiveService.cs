@@ -12,6 +12,9 @@ public class OpenSkyLiveService : IOpenSkyLiveService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<OpenSkyLiveService> _logger;
+    private readonly IConfiguration _configuration;
+    private string? _accessToken;
+    private DateTime _tokenExpiresUtc;
 
     // Coordonate LRCV (Craiova International Airport)
     private const double LrcvLat = 44.3182;
@@ -25,10 +28,11 @@ public class OpenSkyLiveService : IOpenSkyLiveService
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public OpenSkyLiveService(HttpClient httpClient, ILogger<OpenSkyLiveService> logger)
+    public OpenSkyLiveService(HttpClient httpClient, ILogger<OpenSkyLiveService> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
         _httpClient.Timeout = TimeSpan.FromSeconds(6);
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "AERIS-Craiova-ATM/1.0");
@@ -44,7 +48,10 @@ public class OpenSkyLiveService : IOpenSkyLiveService
             string url = $"https://opensky-network.org/api/states/all" +
                          $"?lamin={Lamin}&lomin={Lomin}&lamax={Lamax}&lomax={Lomax}";
 
-            var response = await _httpClient.GetAsync(url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            var token = await GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token)) request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -86,6 +93,25 @@ public class OpenSkyLiveService : IOpenSkyLiveService
             _logger.LogError(ex, "Eroare la obținerea pozițiilor live din OpenSky.");
             return EmptyResponse(queryTime, $"Eroare OpenSky: {ex.Message}");
         }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var clientId = _configuration["OpenSky:ClientId"];
+        var clientSecret = _configuration["OpenSky:ClientSecret"];
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret)) return null;
+        if (!string.IsNullOrEmpty(_accessToken) && _tokenExpiresUtc > DateTime.UtcNow.AddMinutes(1)) return _accessToken;
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "client_credentials", ["client_id"] = clientId, ["client_secret"] = clientSecret
+        });
+        using var response = await _httpClient.PostAsync("https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token", content);
+        response.EnsureSuccessStatusCode();
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        _accessToken = document.RootElement.GetProperty("access_token").GetString();
+        var expires = document.RootElement.TryGetProperty("expires_in", out var seconds) ? seconds.GetInt32() : 300;
+        _tokenExpiresUtc = DateTime.UtcNow.AddSeconds(expires);
+        return _accessToken;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -163,6 +189,7 @@ public class OpenSkyLiveService : IOpenSkyLiveService
                 TimePosition: timePosUnix,
                 LastContact: lastContact,
                 Squawk: squawk,
+                FlightRules: ClassifyFlightRules(squawk),
                 Spi: spi,
                 Category: category,
                 DistanceFromLrcvKm: distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
@@ -173,6 +200,15 @@ public class OpenSkyLiveService : IOpenSkyLiveService
         // Sortăm după distanța față de LRCV (cele mai apropiete primele)
         return result.OrderBy(f => f.DistanceFromLrcvKm ?? double.MaxValue).ToList();
     }
+
+    private static FlightRules ClassifyFlightRules(string? squawk) => squawk switch
+    {
+        "1200" => FlightRules.VFR,
+        "7000" => FlightRules.VFR,
+        // OpenSky's state vector has no filed-flight-rules field. Unknown squawks
+        // remain unknown to this VFR feed and are conservatively classified IFR.
+        _ => FlightRules.IFR
+    };
 
     // ─────────────────────────────────────────────────────────────────────────
     // Geo helpers

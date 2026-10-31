@@ -36,12 +36,15 @@ public record LiveFlightState(
 
     // ── Squawk & Categorii ────────────────────────────────────────────────────
     string? Squawk,                    // Codul squawk transponder: "1200", "7700", etc.
+    FlightRules FlightRules,            // Feed-ul OpenSky nu conține reguli; VFR e estimat din squawk-ul standard
     bool? Spi,                         // Special Purpose Indicator (urgență)
     int? Category,                     // Categoria ICAO a aeronavei (0-20)
 
     // ── Distanța față de LRCV ─────────────────────────────────────────────────
     double? DistanceFromLrcvKm,       // Distanța calculată față de LRCV (km)
-    double? BearingFromLrcvDegrees    // Azimut față de LRCV (°)
+    double? BearingFromLrcvDegrees,   // Azimut față de LRCV (°)
+    double? VfrEtaMinutes = null,
+    string? VfrEntryPointCode = null
 );
 
 /// <summary>

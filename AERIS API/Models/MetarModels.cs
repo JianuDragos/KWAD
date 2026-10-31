@@ -84,8 +84,31 @@ public record MetarDecoded(
 
     // ── Rezumat pentru controller aerian ─────────────────────────────────────
     string ControllerSummary,          // Un paragraf: condiții curente, impactul operațional
-    string AiContextPrompt             // Prompt gata de injectat în LLM: toate datele într-un text structurat
+    string AiContextPrompt,            // Prompt gata de injectat în LLM: toate datele într-un text structurat
+    bool IsStale = false,
+    string SourceProvider = "NOAA AviationWeather.gov",
+    bool CeilingKnown = true
 );
+
+/// <summary>Provider-neutral weather snapshot used by the resilient fetch chain and VMC checker.</summary>
+public sealed record MetarData(
+    string IcaoCode,
+    string? RawMetar,
+    DateTime ObservationTimeUtc,
+    int? WindDirectionDegrees,
+    int? WindSpeedKnots,
+    int? WindGustKnots,
+    int? VisibilityMeters,
+    int? CeilingFeet,
+    bool CeilingKnown,
+    string? CeilingCover,
+    int? CloudCoverPercent,
+    double? TemperatureCelsius,
+    double? DewPointCelsius,
+    int? QnhHpa,
+    string FlightCategory,
+    string SourceProvider,
+    bool IsStale = false);
 
 /// <summary>
 /// Un strat de nori decodat cu denumiri human-readable.

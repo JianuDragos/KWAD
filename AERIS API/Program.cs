@@ -35,8 +35,25 @@ builder.Services.AddScoped<ITrajectorySeparationEngine, TrajectorySeparationEngi
 builder.Services.AddScoped<ISafePlanningCoordinator, SafePlanningCoordinator>();
 
 // ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
-builder.Services.AddHttpClient<IMetarService, MetarService>();
-builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyLiveService>();
+builder.Services.AddHttpClient("aviation-weather", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AERIS-Craiova-ATM/1.0 (weather monitoring)");
+});
+builder.Services.AddSingleton<IResilientWeatherService, ResilientWeatherService>();
+builder.Services.AddScoped<IMetarService, AviationWeatherService>();
+builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyFetcher>();
+builder.Services.AddSingleton<VmcChecker>();
+builder.Services.AddSingleton<VfrGeofenceEngine>();
+builder.Services.AddSingleton<IVfrGeofenceService>(sp => sp.GetRequiredService<VfrGeofenceEngine>());
+builder.Services.Configure<OpenAipOptions>(builder.Configuration.GetSection("OpenAIP"));
+builder.Services.AddHttpClient<OpenAipService>();
+builder.Services.AddSingleton<IOpenAipService>(sp => sp.GetRequiredService<OpenAipService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<OpenAipService>());
+builder.Services.Configure<OgnAprsOptions>(builder.Configuration.GetSection("OGN"));
+builder.Services.AddHostedService<OgnAprsListener>();
+builder.Services.Configure<Sbs1Options>(builder.Configuration.GetSection("SBS1"));
+builder.Services.AddHostedService<Sbs1Listener>();
 
 // ── Local AI grounded explainer (inferență separată, doar loopback) ──────────
 builder.Services.AddHttpClient<GroundedExplainer>(client =>

@@ -7,7 +7,7 @@ import type {
 } from '../contracts/backend';
 import type { z } from 'zod';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from '../contracts/schemas';
-import { explanationSchema, livePositionsSchema, metarSchema, type Explanation, type LivePositions, type Metar } from '../contracts/live';
+import { explanationSchema, livePositionsSchema, metarSchema, vfrTrackingSchema, type Explanation, type LivePositions, type Metar, type VfrTracking } from '../contracts/live';
 import * as mock from './mockBackend';
 import * as mockLive from './mockLive';
 
@@ -128,4 +128,10 @@ export function explain(question: string, signal?: AbortSignal): Promise<Explana
   const path = '/api/craiova/explain';
   if (API_MOCK) return mockDelay(() => parseResponse(path, explanationSchema, mockLive.explanation()), signal, 1200);
   return request(path, explanationSchema, { method: 'POST', body: JSON.stringify({ question }), signal });
+}
+
+export function fetchVfrTracking(runway: string, signal?: AbortSignal): Promise<VfrTracking> {
+  const path = `/api/craiova/vfr/tracking?runway=${encodeURIComponent(runway)}`;
+  if (API_MOCK) return mockDelay(() => parseResponse(path, vfrTrackingSchema, mockLive.vfrTracking()), signal);
+  return request(path, vfrTrackingSchema, { signal });
 }

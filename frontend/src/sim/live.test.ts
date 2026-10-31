@@ -7,6 +7,7 @@ import { MAX_EXTRAPOLATION_SECONDS, airlineFor, extrapolate, runwayForWind, tren
 const flight = (over: Partial<LiveFlight> = {}): LiveFlight => ({
   icao24: 'abc123',
   callsign: 'TEST1',
+  flightRules: 'IFR',
   latitude: 44.3,
   longitude: 23.9,
   baroAltitudeMeters: 3000,
