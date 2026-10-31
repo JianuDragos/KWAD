@@ -25,6 +25,8 @@ Sistemul integrează date în timp real din rețeaua **OpenSky Network** pentru 
 
 ## 🚀 Rulare și Testare
 
+Interfața (React) e în `frontend/`; pașii de pornire și ce trebuie instalat (Node.js și .NET 10 SDK) sunt în [frontend/README.md](frontend/README.md).
+
 ### 1. Pornire API
 ```bash
 cd "AERIS API"

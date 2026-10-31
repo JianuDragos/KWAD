@@ -2,17 +2,48 @@
 
 React 19 + TypeScript + Vite 8, hartă Leaflet (react-leaflet 5), stare comună Zustand.
 
+## Ce trebuie instalat
+
+Doar două programe; restul (biblioteci, fonturi, date AIP) e în proiect.
+
+| Program | Versiune | De unde |
+|---|---|---|
+| Node.js | 22.12+ sau 24 (vezi `.nvmrc`) | https://nodejs.org |
+| .NET SDK | 10 (pentru backend) | https://dotnet.microsoft.com/download |
+
+Fonturile (IBM Plex Sans Condensed și IBM Plex Mono) sunt în `src/assets/fonts`, cu licența OFL; nu se instalează pe sistem și nu se descarcă de pe internet.
+
 ## Pornire
 
+Backendul, din `KWAD/AERIS API`:
+
 ```bash
-npm install
-npm run dev:mock   # fără backend: port local al motorului (src/api/mockBackend.ts), pill „MOCK” în UI
-npm run dev        # cu backend: pornește întâi „AERIS API” (dotnet run → http://localhost:5271)
-npm test           # vitest: interpolare, rute AIP, mock = backend, traiectorii, scheme zod, store (revizii, reset)
-npm run build      # build de producție (tsc + vite)
+dotnet run
 ```
 
-Backendul nu are CORS: în dev, `/api` trece prin proxy-ul Vite spre `http://localhost:5271` (`vite.config.ts`). Folosește profilul `http` al backendului.
+Frontendul, din `KWAD/frontend` (prima dată `npm ci` instalează bibliotecile exact din `package-lock.json`):
+
+```bash
+npm ci
+```
+
+```bash
+npm run dev
+```
+
+Deschide http://localhost:5173 (pagina Live) sau http://localhost:5173/#/demo (simularea).
+
+Alte comenzi:
+
+```bash
+npm run dev:mock   # fără backend: date de exemplu din src/api/mockBackend.ts și src/api/mockLive.ts
+npm test           # testele (vitest)
+npm run build      # build de producție în dist/
+```
+
+Backendul nu are CORS: în dev, `/api` trece prin proxy-ul Vite spre `http://localhost:5271`. Dacă backendul rulează pe alt port, pornește frontendul cu variabila `AERIS_API`, de exemplu în PowerShell `$env:AERIS_API="http://localhost:5272"; npm run dev`.
+
+**Internet:** pagina Live are nevoie de internet (backendul cere datele de la OpenSky și aviationweather.gov), la fel fundalul „Hartă geografică”. Pagina Demo și modul `dev:mock` merg fără internet.
 
 ## Două pagini
 
