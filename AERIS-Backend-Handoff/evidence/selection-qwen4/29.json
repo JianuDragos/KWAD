@@ -1,0 +1,31 @@
+{
+  "id": "29",
+  "question": "Ce \u00EEnseamn\u0103 IFR \u0219i VFR?",
+  "expected": [
+    "terms"
+  ],
+  "seconds": 4.4351357,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "terms",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "IFR means instrument flight rules; VFR means visual flight rules. ETA is estimated arrival time; planned landing is the engine-assigned time.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "DEFINITIONS-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022terms\\\u0022]}\u0022}}],\u0022created\u0022:1793435290,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:7,\u0022prompt_tokens\u0022:509,\u0022total_tokens\u0022:516,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-TAAur8QFGIOrmVqQPsLPxGOGrcuAXrrh\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:397,\u0022prompt_ms\u0022:4023.1150000000002,\u0022prompt_per_token_ms\u0022:10.133790931989925,\u0022prompt_per_second\u0022:98.6797543694376,\u0022predicted_n\u0022:7,\u0022predicted_ms\u0022:407.73900000000003,\u0022predicted_per_token_ms\u0022:67.9565,\u0022predicted_per_second\u0022:14.715295814234105}}"
+}

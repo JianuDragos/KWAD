@@ -1,0 +1,9 @@
+{
+  "model": "aeris-local",
+  "count": 40,
+  "relevance_pass": 37,
+  "factual_preservation_pass": 40,
+  "fallbacks": 4,
+  "acceptance_target": 0.9,
+  "task": "backend-approved statement selection; not free-form generation"
+}

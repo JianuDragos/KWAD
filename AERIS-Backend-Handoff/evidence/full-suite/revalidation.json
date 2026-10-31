@@ -1,0 +1,710 @@
+[
+  {
+    "key": "qwen3-4b-cpu/A-1.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/A-2.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/A-3.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/B-1.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/B-2.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/B-3.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": [
+        "facts"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/C-1.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/C-2.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/C-3.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/D-1.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/D-2.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/D-3.json",
+    "original": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": false,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "invalid_json_or_type:JsonReaderException"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/E-1.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/E-2.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/E-3.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/G-1.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/G-2.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/G-3.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/H-1.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/H-2.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/H-3.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/I-1.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/I-2.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/I-3.json",
+    "original": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "validation": {
+      "pass": true,
+      "grounding": true,
+      "instructions": true,
+      "structure": true,
+      "completion": true,
+      "failures": []
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J-1.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J-2.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J-3.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J2-1.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J2-2.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  },
+  {
+    "key": "qwen3-4b-cpu/J2-3.json",
+    "original": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "validation": {
+      "pass": false,
+      "grounding": true,
+      "instructions": false,
+      "structure": false,
+      "completion": true,
+      "failures": [
+        "source_ids",
+        "missing_or_warning"
+      ]
+    },
+    "timing_valid": true,
+    "timing_note": null
+  }
+]

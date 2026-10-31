@@ -1,0 +1,7 @@
+{
+  "signatureStatus": "Valid",
+  "installedByThisTask": false,
+  "sha256": "B70EF586669A620A0A30A1156969C05C6A3831DC8F8BC992DA75779D2A92F944",
+  "signer": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+  "source": "https://aka.ms/vc14/vc_redist.arm64.exe"
+}

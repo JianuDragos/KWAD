@@ -1,0 +1,30 @@
+{
+  "id": "04",
+  "question": "Why is P2 preferred over P1 on total delay?",
+  "expected": [
+    "delays"
+  ],
+  "seconds": 4.3712693,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "delays",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "The supplied plans have total delays of 8 minutes for P1 and 5 minutes for P2. P2 has the lower total delay.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022delays\\\u0022]}\u0022}}],\u0022created\u0022:1793435179,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:8,\u0022prompt_tokens\u0022:494,\u0022total_tokens\u0022:502,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-sLZMJ9HgVRntB3miU1NZZ95AH9xVeXo6\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:382,\u0022prompt_ms\u0022:3918.293,\u0022prompt_per_token_ms\u0022:10.257311518324608,\u0022prompt_per_second\u0022:97.49143313172343,\u0022predicted_n\u0022:8,\u0022predicted_ms\u0022:447.201,\u0022predicted_per_token_ms\u0022:63.88585714285715,\u0022predicted_per_second\u0022:15.652916697413467}}"
+}

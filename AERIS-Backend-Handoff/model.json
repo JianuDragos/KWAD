@@ -1,0 +1,14 @@
+{
+  "alias": "aeris-local",
+  "model": "Qwen3-4B-Instruct-2507",
+  "architecture": "Windows ARM64",
+  "bytes": 2497281120,
+  "contextTokens": 4096,
+  "provider": "CPU",
+  "localFile": "models/qwen3-4b-instruct-2507-q4_k_m.gguf",
+  "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "runtime": "llama.cpp b11960 (8642541b2)",
+  "quantization": "Q4_K_M",
+  "sourceRevision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+  "source": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+}

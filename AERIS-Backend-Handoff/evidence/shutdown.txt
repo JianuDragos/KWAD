@@ -1,0 +1,1 @@
+Stopped the LLM process owned by this folder.

@@ -1,0 +1,4 @@
+Independent read-only review of new backend adapter, sample API, ownership scripts, and docs: no Critical/Important C# defects found.
+Review notes addressed: ownership persistence moved into cleanup-protected try; cancellation during inference tested; evaluation rejects nonempty output directories.
+Additional root-agent finding: PowerShell ConvertFrom-Json may deserialize ISO timestamps into DateTime; compare UTC ticks rather than implicit string conversion. Verified same process accepted, changed start time rejected, and actual owned-process shutdown succeeded.
+Review did not assess final model quality, final archives, production multi-user authentication/concurrency, or upstream native runtime internals. Model quality is covered by recorded benchmarks; archive execution is checked separately. Production service design and upstream internals remain outside this local handoff scope.

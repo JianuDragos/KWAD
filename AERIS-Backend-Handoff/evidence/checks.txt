@@ -1,0 +1,15 @@
+PASS: required engine facts survive model omission
+PASS: exact backend text and revision preserved
+PASS: invalid selection falls back without invented prose: {"statement_ids":["I9"]}
+PASS: invalid selection falls back without invented prose: {"statement_ids":["weather","weather"]}
+PASS: invalid selection falls back without invented prose: {"statement_ids":[]}
+PASS: invalid selection falls back without invented prose: {"statement_ids":["weather"],"explanation":"clearance granted"}
+PASS: invalid selection falls back without invented prose: not json
+PASS: HTTP failure returns backend statements
+PASS: duplicate backend IDs rejected
+PASS: empty question rejected
+PASS: remote inference endpoint rejected
+PASS: caller cancellation propagates
+PASS: inference deadline uses deterministic fallback
+PASS: caller cancellation during inference propagates instead of returning fallback
+14 checks passed

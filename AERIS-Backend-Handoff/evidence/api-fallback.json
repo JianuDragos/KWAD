@@ -1,0 +1,35 @@
+{
+  "scenarioRevision": 42,
+  "mode": "deterministic_fallback",
+  "statementIds": [
+    "decision",
+    "delays",
+    "arrivals",
+    "weather",
+    "hypothetical",
+    "aircraft",
+    "crosswind",
+    "terms",
+    "limits"
+  ],
+  "sentences": [
+    "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+    "The supplied plans have total delays of 8 minutes for P1 and 5 minutes for P2. P2 has the lower total delay.",
+    "The planned arrival order is IFR101 at 10:00, VFR201 at 10:03, then IFR102 at 10:06. VFR201's ETA is 10:01.",
+    "The synthetic weather observation reports wind from 240 degrees at 12 knots and visibility of 6000 metres. It is not a forecast.",
+    "Visibility of 3000 metres is a hypothetical change, not an observation or forecast.",
+    "Supplied simulated approach speeds are A320: 135 knots, C172: 65 knots, ATR72: 110 knots. C172 is slowest; ATR72 uses turboprop propulsion.",
+    "Maximum demonstrated crosswind for this C172 is not supplied. No crosswind capability is inferred.",
+    "IFR means instrument flight rules; VFR means visual flight rules. ETA is estimated arrival time; planned landing is the engine-assigned time.",
+    "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+  ],
+  "sourceIds": [
+    "ENGINE-42",
+    "WEATHER-42",
+    "SCENARIO-42",
+    "AIRCRAFT-42",
+    "DEFINITIONS-42",
+    "RULES-42"
+  ],
+  "fallbackReason": "inference_unavailable"
+}

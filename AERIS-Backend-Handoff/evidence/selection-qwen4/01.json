@@ -1,0 +1,28 @@
+{
+  "id": "01",
+  "question": "Which plan did the engine select?",
+  "expected": [
+    "decision"
+  ],
+  "seconds": 5.7280386,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022decision\\\u0022]}\u0022}}],\u0022created\u0022:1793435166,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:7,\u0022prompt_tokens\u0022:489,\u0022total_tokens\u0022:496,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:3}},\u0022id\u0022:\u0022chatcmpl-UdXJ0uWS41NP11qlUft3NQ4gfwTVaMmU\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:3,\u0022prompt_n\u0022:486,\u0022prompt_ms\u0022:5107.588,\u0022prompt_per_token_ms\u0022:10.509440329218107,\u0022prompt_per_second\u0022:95.15254558511768,\u0022predicted_n\u0022:7,\u0022predicted_ms\u0022:379.205,\u0022predicted_per_token_ms\u0022:63.20083333333333,\u0022predicted_per_second\u0022:15.822576179111563}}"
+}

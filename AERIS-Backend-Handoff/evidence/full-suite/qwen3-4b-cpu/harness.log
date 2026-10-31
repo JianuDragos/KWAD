@@ -1,0 +1,33 @@
+qwen3-4b-instruct-2507 A/1 25.29s first=4.87s pass=True error= 
+qwen3-4b-instruct-2507 B/1 16.09s first=1.47s pass=False error= facts
+qwen3-4b-instruct-2507 C/1 18.22s first=1.52s pass=True error= 
+qwen3-4b-instruct-2507 D/1 14.99s first=2.16s pass=False error= invalid_json_or_type:JsonReaderException
+qwen3-4b-instruct-2507 E/1 10.83s first=1.10s pass=True error= 
+qwen3-4b-instruct-2507 G/1 18.28s first=2.25s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 H/1 17.53s first=1.71s pass=True error= 
+qwen3-4b-instruct-2507 I/1 11.97s first=1.18s pass=True error= 
+qwen3-4b-instruct-2507 J/1 19.33s first=2.89s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 J2/1 18.53s first=1.84s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 A/2 24.02s first=2.29s pass=True error= 
+qwen3-4b-instruct-2507 B/2 16.61s first=1.42s pass=False error= facts
+qwen3-4b-instruct-2507 C/2 22.72s first=1.61s pass=True error= 
+qwen3-4b-instruct-2507 D/2 13.85s first=1.80s pass=False error= invalid_json_or_type:JsonReaderException
+qwen3-4b-instruct-2507 E/2 13.15s first=1.12s pass=True error= 
+qwen3-4b-instruct-2507 G/2 17.90s first=2.25s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 H/2 17.63s first=1.78s pass=True error= 
+qwen3-4b-instruct-2507 I/2 11.98s first=1.17s pass=True error= 
+qwen3-4b-instruct-2507 J/2 18.92s first=2.22s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 J2/2 17.85s first=1.87s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 A/3 24.06s first=2.39s pass=True error= 
+qwen3-4b-instruct-2507 B/3 16.74s first=1.46s pass=False error= facts
+qwen3-4b-instruct-2507 C/3 19.09s first=1.56s pass=True error= 
+qwen3-4b-instruct-2507 D/3 14.14s first=2.00s pass=False error= invalid_json_or_type:JsonReaderException
+qwen3-4b-instruct-2507 E/3 13.11s first=1.10s pass=True error= 
+qwen3-4b-instruct-2507 G/3 18.50s first=2.23s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 H/3 17.62s first=1.71s pass=True error= 
+qwen3-4b-instruct-2507 I/3 11.83s first=1.18s pass=True error= 
+qwen3-4b-instruct-2507 J/3 18.19s first=2.22s pass=False error= source_ids;missing_or_warning
+qwen3-4b-instruct-2507 J2/3 17.46s first=1.84s pass=False error= source_ids;missing_or_warning
+Tool/1: pass=True; error=
+Tool/2: pass=True; error=
+Tool/3: pass=True; error=

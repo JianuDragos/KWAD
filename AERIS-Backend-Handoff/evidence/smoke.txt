@@ -1,0 +1,2 @@
+The selected option is P2 with a delay of 5 minutes.
+Transport smoke test completed. This is not a factual-quality acceptance test.

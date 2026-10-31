@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+models/*.gguf
+models/*.gguf.partial
+runtime/
+logs/
+demo/
+prerequisites/*.exe
+sample/bin/
+sample/obj/
+checks/bin/
+checks/obj/
+benchmarks/bin/
+benchmarks/obj/
+evaluation/bin/
+evaluation/obj/
