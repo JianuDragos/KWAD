@@ -10,7 +10,7 @@ Sistemul integrează date în timp real din rețeaua **OpenSky Network** pentru 
 - **Integrare OpenSky Network API:** Preluare automată a zborurilor active din sectorul Craiova (bounding box Oltenia) cu fallback transparent pe simulare realistă a orarului regulat (Wizz Air A320/A321 din Londra Luton și Milano Bergamo).
 - **Trafic mixt & Aviație de agrement:** Modele pentru aeronave mici fără instrumentație IFR avansată (ICP Savannah S, PZL-104 Wilga 35A, Cessna 172 Skyhawk).
 - **Trigonometria Vântului Lateral (*Crosswind*):**
-  - Calcul al componentei de vânt lateral și de față pentru pista 09/27 (capete 092° / 272°).
+  - Calculul componentei de vânt lateral și de față pentru pista 08/26 (capete 082° / 262°).
   - Selectarea automată a pistei active pentru maximizarea componentei de vânt de față.
 - **Reguli de Prioritizare:**
   - Aeronavele comerciale IFR au prioritate pe pistă și limite superioare de vânt lateral (32-35 kts).
