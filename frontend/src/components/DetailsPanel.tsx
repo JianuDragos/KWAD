@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FuturePredictionSummary } from '../contracts/backend';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
-import { altitudeLabel, clockLabel, minutesLabel } from '../sim/units';
+import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { AskAi } from './AskAi';
@@ -71,19 +71,19 @@ function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
     <section className="math-box math-box--future" aria-label="Predicția Viitorului 4D">
       <button className="math-box__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="math-box__title">Predicția Viitorului 4D (T+0 → T+45m)</span>
-        <span className="math-box__badge">DA {fp.densityAltitudeFeet} ft</span>
+        <span className="math-box__badge">DA {feetLabel(fp.densityAltitudeFeet)}</span>
       </button>
       {open && (
         <div className="math-box__body">
           <div className="math-metrics">
             <div className="math-metric">
-              <span className="math-metric__lbl">Vânt 2000 ft</span>
+              <span className="math-metric__lbl">Vânt {feetLabel(2000)}</span>
               <span className="math-metric__val">
                 {fp.windAt2000FtDegrees}° / {fp.windAt2000FtKnots} kt
               </span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">Vânt 5000 ft</span>
+              <span className="math-metric__lbl">Vânt {feetLabel(5000)}</span>
               <span className="math-metric__val">
                 {fp.windAt5000FtDegrees}° / {fp.windAt5000FtKnots} kt
               </span>
@@ -287,7 +287,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 </span>
                 <span className="step-node__fix">{st.fixOrLocation}</span>
                 <span className="step-node__kin num">
-                  {st.altitudeFeet} ft · GS {st.groundSpeedKnots} kt · HDG {st.headingDegrees}°
+                  {feetLabel(st.altitudeFeet)} · GS {st.groundSpeedKnots} kt · HDG {st.headingDegrees}°
                 </span>
                 <span className="step-node__act">{st.controllerAction}</span>
               </button>
@@ -312,7 +312,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Pantă {ttl.optimalGlidepathDegrees}° ROD</span>
-              <span className="math-metric__val">-{ttl.requiredRateOfDescentFpm} fpm</span>
+              <span className="math-metric__val">{verticalRateLabel(-feetToMeters(ttl.requiredRateOfDescentFpm) / 60)}</span>
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Unghi derivă WCA</span>
@@ -341,7 +341,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={p.phaseCode} className="phase-item">
                   <span className="phase-item__name">{p.phaseName}</span>
                   <span className="num muted">
-                    {p.distanceNm} NM · {p.endAltitudeFeet} ft · GS {p.groundSpeedKnots} kt · VS {p.verticalRateFpm} fpm
+                    {p.distanceNm} NM · {feetLabel(p.endAltitudeFeet)} · GS {p.groundSpeedKnots} kt · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
                   </span>
                 </li>
               ))}
@@ -385,7 +385,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
         <div className="card">
           <strong>{adv.orbitAdvice.patternName}</strong>
           <span className="muted small">
-            {adv.orbitAdvice.recommendedAltitudeFeet} ft, circa {adv.orbitAdvice.holdingDurationMinutes} min, marjă de combustibil{' '}
+            {feetLabel(adv.orbitAdvice.recommendedAltitudeFeet)}, circa {adv.orbitAdvice.holdingDurationMinutes} min, marjă de combustibil{' '}
             {adv.orbitAdvice.remainingFuelMarginMinutes} min
           </span>
           <span className="small">{adv.orbitAdvice.safetyInstructions}</span>

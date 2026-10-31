@@ -27,7 +27,7 @@ import {
 import { destination, distanceNm, greatCircleInterpolate, greatCirclePoints, type LatLon } from './geomath';
 import type { TrackPoint } from './interpolate';
 import { appendLeg, appendRacetrack, trackArrivingAt, type PlannedFix } from './synthetic';
-import { metersToFeet } from './units';
+import { feetLabel, metersToFeet } from './units';
 
 export type FlightKind = 'approach' | 'hold' | 'divert';
 
@@ -133,7 +133,7 @@ export function buildTraffic(
         track = appendRacetrack(track, holdFix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds);
         const fullRoute = latLngs(fixes);
         const routeDistanceNm = Math.round(polylineDistanceNm(fixes));
-        const holdLabel = `${origin.icao} → ${iaf} → hipodrom ${holdFix.id} (${holdAlt}ft)`;
+        const holdLabel = `${origin.icao} → ${iaf} → hipodrom ${holdFix.id} (${feetLabel(holdAlt)})`;
         return {
           ...base,
           entryFixId: iaf,
@@ -187,7 +187,7 @@ export function buildTraffic(
         const alt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 1500;
         track = appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds);
         const fullRoute = latLngs(vfrEnrouteFixes);
-        const holdLabel = `${origin.icao} → ${entryPoint.id} → hipodrom sud (${alt}ft)`;
+        const holdLabel = `${origin.icao} → ${entryPoint.id} → hipodrom sud (${feetLabel(alt)})`;
         return {
           ...base,
           entryFixId: entryPoint.id,

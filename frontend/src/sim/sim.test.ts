@@ -6,7 +6,7 @@ import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
 import { destination, distanceNm, greatCirclePoints } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
-import { altitudeBand, speedLabel } from './units';
+import { altitudeBand, altitudeLabel, feetLabel, speedLabel, verticalRateLabel } from './units';
 import { buildTraffic } from './traffic';
 
 const P = (t: number, lat: number, lon: number, alt = 0, source: TrackPoint['source'] = 'synthetic'): TrackPoint => ({
@@ -228,14 +228,22 @@ describe('buildTraffic', () => {
 
 describe('altitudeBand', () => {
   it('pune avionul în banda corectă; limitele aparțin benzii de deasupra', () => {
-    const ft = (f: number) => f * 0.3048;
-    expect(altitudeBand(ft(628))).toBe('alt-0'); // pe pistă
-    expect(altitudeBand(ft(1500))).toBe('alt-1');
-    expect(altitudeBand(ft(4999))).toBe('alt-1');
-    expect(altitudeBand(ft(9000))).toBe('alt-2');
-    expect(altitudeBand(ft(24000))).toBe('alt-3');
-    expect(altitudeBand(ft(36000))).toBe('alt-4');
+    expect(altitudeBand(191)).toBe('alt-0'); // pe pistă
+    expect(altitudeBand(500)).toBe('alt-1');
+    expect(altitudeBand(1499)).toBe('alt-1');
+    expect(altitudeBand(2700)).toBe('alt-2');
+    expect(altitudeBand(7300)).toBe('alt-3');
+    expect(altitudeBand(11000)).toBe('alt-4');
     expect(altitudeBand(null)).toBe('alt-unknown');
+  });
+});
+
+describe('altitudeLabel', () => {
+  it('arată metri rotunjiți la 10 m, cu separator de mii', () => {
+    expect(altitudeLabel(191.4)).toBe('190 m');
+    expect(altitudeLabel(10972)).toBe('10 970 m');
+    expect(feetLabel(4000)).toBe('1 220 m');
+    expect(verticalRateLabel(-5.08)).toBe('-5.1 m/s');
   });
 });
 

@@ -20,7 +20,7 @@ import {
 import { destination, trackBearingDegSafe } from './mapHelpers';
 import { positionAt, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
-import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetToMeters } from '../sim/units';
+import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetLabel, feetToMeters } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp, type MapViewPreset } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 import { useLive } from '../state/live';
@@ -33,7 +33,6 @@ const FIR_ATTRIBUTION = 'FIR: <a href="https://github.com/vatsimnetwork/vatspy-d
 
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
-  const basemap = useApp((s) => s.basemap);
   const renderer = useMemo(() => L.svg({ padding: 0.75 }), []);
 
   return (
@@ -50,14 +49,12 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
       attributionControl
       ref={hideLeafletPrefix}
     >
-      {basemap === 'osm' && (
-        <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          className="basemap-osm"
-          maxZoom={18}
-        />
-      )}
+      <TileLayer
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        className="basemap-osm"
+        maxZoom={18}
+      />
       <ViewController />
       <BackgroundClick onClick={onBackgroundClick} />
       <AirspaceAndGridLayers />
@@ -186,6 +183,10 @@ function ViewController() {
       const done = Math.abs(diff) < 0.002;
       const zoom = done ? target : map.getZoom() + diff * ZOOM_EASING;
       m._move(centerFor(zoom), zoom, { pinch: true, round: false });
+      // În timpul zoom-ului Leaflet doar scalează imaginea SVG desenată la zoom-ul de start: la zoom out
+      // liniile rămân strânse în zona veche, iar avioanele (markere) sunt deja la locul nou. Redesenăm des.
+      const renderer = map.options.renderer as (L.Renderer & { _map?: L.Map; _zoom: number; _reset(): void }) | undefined;
+      if (!done && renderer?._map && Math.abs(zoom - renderer._zoom) > REDRAW_EVERY_ZOOM) renderer._reset();
       if (done) {
         target = null;
         frame = 0;
@@ -218,6 +219,8 @@ function ViewController() {
 const WHEEL_ZOOM_PER_PX = 0.0032;
 const PINCH_ZOOM_PER_PX = 0.0065;
 const ZOOM_EASING = 0.18;
+/** Cât se depărtează zoom-ul de ultima redesenare a liniilor: sub ~1,3 (padding 0.75) zona desenată acoperă harta. */
+const REDRAW_EVERY_ZOOM = 0.5;
 
 function BackgroundClick({ onClick }: { onClick: () => void }) {
   const map = useMap();
@@ -378,12 +381,12 @@ function AirspaceAndGridLayers() {
           );
         })}
 
-      {/* 3. TMA Craiova (2500 ft – FL145) + Căi aeriene ATS (L605, N133, M747, W85) */}
+      {/* 3. TMA Craiova (760 m – FL145 ≈ 4 420 m) + Căi aeriene ATS (L605, N133, M747, W85) */}
       {showSectors && vp.zoom >= 6.2 && (
         <Polygon positions={TMA_CRAIOVA_POLYGON} pathOptions={{ className: 'tma-poly' }} interactive={false}>
           {vp.zoom >= 7.2 && vp.zoom <= 10.5 && (
             <Tooltip permanent direction="top" className="lbl lbl--tma">
-              TMA CRAIOVA (2500ft–FL145)
+              TMA CRAIOVA (760–4 420 m)
             </Tooltip>
           )}
         </Polygon>
@@ -588,9 +591,9 @@ function AircraftMarkerView({
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${band} ${statusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
+        html: `<div class="ac ac--${rules} ${statusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
       }),
-    [rules, band, statusClass, selected, dimmed, heading],
+    [rules, statusClass, selected, dimmed, heading],
   );
 
   const trail = useMemo(() => (preTakeoff ? [] : trailUntil(flight.track, Math.min(t, lastTime))), [flight.track, t, preTakeoff, lastTime]);
@@ -626,7 +629,7 @@ function AircraftMarkerView({
           interactive={false}
         >
           <Tooltip permanent direction="top" className="lbl lbl--tod" offset={[0, -5]}>
-            TOD · FL{Math.round(flight.todPoint.altitudeFt / 100)} ({flight.todPoint.distanceToLandingNm} NM)
+            TOD · {feetLabel(flight.todPoint.altitudeFt)} ({flight.todPoint.distanceToLandingNm} NM)
           </Tooltip>
         </CircleMarker>
       )}

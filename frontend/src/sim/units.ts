@@ -7,12 +7,19 @@ export const KT_PER_MPS = 1.943844;
 export const metersToFeet = (m: number) => m * FT_PER_M;
 export const feetToMeters = (ft: number) => ft / FT_PER_M;
 
-/** Eticheta de altitudine pentru blocul de date: FL peste altitudinea de tranziție, altfel picioare. */
-export function altitudeLabel(altitudeMeters: number, transitionAltitudeFt = 4000): string {
-  const ft = metersToFeet(altitudeMeters);
-  if (ft > transitionAltitudeFt) return `FL${String(Math.round(ft / 100)).padStart(3, '0')}`;
-  return `${Math.round(ft / 100) * 100} ft`;
+/** 10970 → „10 970”: separator de mii cu spațiu (punctul din ro-RO s-ar confunda cu zecimalele). */
+const thousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+/** Altitudinea afișată, în metri rotunjiți la 10 m; datele (backend, OpenSky) rămân în unitățile lor. */
+export function altitudeLabel(altitudeMeters: number): string {
+  return `${thousands(Math.round(altitudeMeters / 10) * 10)} m`;
 }
+
+/** Altitudine din backend (în picioare), afișată în metri. */
+export const feetLabel = (ft: number) => altitudeLabel(feetToMeters(ft));
+
+/** Viteza verticală în m/s, cu semn și o zecimală. */
+export const verticalRateLabel = (metersPerSecond: number) => `${metersPerSecond > 0 ? '+' : ''}${metersPerSecond.toFixed(1)} m/s`;
 
 /** Secunde de la începutul zilei → "HH:MM:SS". Backendul are doar o bază „14:00”, fără dată sau fus orar. */
 export function clockLabel(secondsOfDay: number, withSeconds = true): string {
@@ -33,20 +40,19 @@ export function minutesLabel(seconds: number): string {
 
 /**
  * Benzile de altitudine pentru culoarea avioanelor pe hartă (altitudine barometrică, față de nivelul mării;
- * aerodromul e la 628 ft). Culorile sunt în index.css, clasele alt-0 … alt-4.
+ * aerodromul e la 191 m). Culorile sunt în index.css, clasele alt-0 … alt-4.
  */
 export const ALTITUDE_BANDS = [
-  { id: 'alt-0', maxFt: 1500, label: 'sub 1 500 ft (aterizare, decolare)' },
-  { id: 'alt-1', maxFt: 5000, label: '1 500–5 000 ft (apropiere)' },
-  { id: 'alt-2', maxFt: 10000, label: '5 000–10 000 ft' },
-  { id: 'alt-3', maxFt: 25000, label: '10 000–25 000 ft' },
-  { id: 'alt-4', maxFt: Infinity, label: 'peste 25 000 ft (croazieră)' },
+  { id: 'alt-0', maxM: 500, label: 'sub 500 m (aterizare, decolare)' },
+  { id: 'alt-1', maxM: 1500, label: '500–1 500 m (apropiere)' },
+  { id: 'alt-2', maxM: 3000, label: '1 500–3 000 m' },
+  { id: 'alt-3', maxM: 7500, label: '3 000–7 500 m' },
+  { id: 'alt-4', maxM: Infinity, label: 'peste 7 500 m (croazieră)' },
 ] as const;
 
 export function altitudeBand(altitudeMeters: number | null): string {
   if (altitudeMeters == null) return 'alt-unknown';
-  const ft = metersToFeet(altitudeMeters);
-  return ALTITUDE_BANDS.find((b) => ft < b.maxFt)!.id;
+  return ALTITUDE_BANDS.find((b) => altitudeMeters < b.maxM)!.id;
 }
 
 /** Unitatea în care se afișează vitezele (vânt, viteză sol); datele vin în noduri și rămân în noduri în calcule. */

@@ -46,7 +46,6 @@ interface AppState {
   selectedId: string | null;
   view: MapViewPreset;
   viewNonce: number;
-  basemap: 'none' | 'osm';
   showSectors: boolean;
   showAllRoutes: boolean;
   timelineScope: TimelineScope;
@@ -61,7 +60,6 @@ interface AppState {
   seek: (t: number) => void;
   select: (id: string | null) => void;
   setView: (v: MapViewPreset) => void;
-  setBasemap: (b: 'none' | 'osm') => void;
   setShowSectors: (show: boolean) => void;
   setShowAllRoutes: (show: boolean) => void;
   setTimelineScope: (scope: TimelineScope) => void;
@@ -109,7 +107,6 @@ export const useApp = create<AppState>()((set, get) => {
     selectedId: null,
     view: 'wide',
     viewNonce: 0,
-    basemap: 'osm',
     showSectors: true,
     showAllRoutes: true,
     timelineScope: 'approach',
@@ -211,7 +208,6 @@ export const useApp = create<AppState>()((set, get) => {
     },
     select: (selectedId) => set({ selectedId }),
     setView: (view) => set((s) => ({ view, viewNonce: s.viewNonce + 1 })),
-    setBasemap: (basemap) => set({ basemap }),
     setShowSectors: (showSectors) => set({ showSectors }),
     setShowAllRoutes: (showAllRoutes) => set({ showAllRoutes }),
     setTimelineScope: (timelineScope) =>

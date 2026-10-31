@@ -30,7 +30,7 @@ export function LiveControls() {
           {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`}>lateral {speed.label(xw)}</span>}
         </div>
       )}
-      {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title="Validare VMC după vizibilitate ≥ 5 km și plafon ≥ 1500 ft">{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}
+      {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title="Validare VMC după vizibilitate ≥ 5 km și plafon ≥ 450 m">{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}
       <div className="spacer" />
       <div className="pills" aria-live="polite">
         {error && <span className="pill pill--err">Fără date noi</span>}

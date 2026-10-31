@@ -104,7 +104,6 @@ describe('store', () => {
   it('comută pe scenariul Eurasia Long-Haul (China ZBAA → LRCV), vedere continentală și permite seek la decolare', async () => {
     const useApp = await freshStore();
     await useApp.getState().load();
-    expect(useApp.getState().basemap).toBe('osm');
     expect(useApp.getState().showSectors).toBe(true);
     expect(useApp.getState().showAllRoutes).toBe(true);
 

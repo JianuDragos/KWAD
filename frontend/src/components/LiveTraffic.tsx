@@ -71,7 +71,7 @@ export function LiveTraffic() {
               [live.latitude, live.longitude],
               [point.lat, point.long],
             ]}
-            pathOptions={{ color: '#e58ad6', dashArray: '5 5', weight: 1.5 }}
+            pathOptions={{ className: 'full-route full-route--vfr' }}
             interactive={false}
           />
         ) : null;
@@ -97,9 +97,9 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--live ac--${rulesLower} ${band} ${selected ? 'ac--selected' : ''} ${stale ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${flight.flightRules === 'IFR' ? GLYPH_IFR : '<path d="M12 4 L17 18 L12 15 L7 18 Z"/><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/>'}</svg></div>`,
+        html: `<div class="ac ac--live ac--${rulesLower} ${selected ? 'ac--selected' : ''} ${stale ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${flight.flightRules === 'IFR' ? GLYPH_IFR : '<path d="M12 4 L17 18 L12 15 L7 18 Z"/><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/>'}</svg></div>`,
       }),
-    [flight.flightRules, rulesLower, band, selected, stale, heading],
+    [flight.flightRules, rulesLower, selected, stale, heading],
   );
   if (!pos) return null;
 
@@ -127,7 +127,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
             [pos.lat, pos.lon],
             [projEnd.lat, projEnd.lon],
           ]}
-          pathOptions={{ className: 'live-vector' }}
+          pathOptions={{ className: `live-vector trail--${rulesLower}` }}
           interactive={false}
         />
       )}
@@ -137,7 +137,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
             [pos.lat, pos.lon],
             [ARP.lat, ARP.lon],
           ]}
-          pathOptions={{ className: selected ? 'planned planned--selected' : 'full-route full-route--ifr' }}
+          pathOptions={{ className: selected ? 'planned planned--selected' : `full-route full-route--${rulesLower}` }}
           interactive={false}
         />
       )}

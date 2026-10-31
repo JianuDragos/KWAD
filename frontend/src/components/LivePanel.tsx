@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import type { LiveFlight, Metar } from '../contracts/live';
 import { airlineFor, trendArrow } from '../sim/live';
-import { M_PER_NM, altitudeLabel } from '../sim/units';
+import { M_PER_NM, altitudeLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { AskAi } from './AskAi';
@@ -125,7 +125,7 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
             <dt>Direcție</dt>
             <dd className="num">{flight.trueTrackDegrees != null ? `${String(Math.round(flight.trueTrackDegrees)).padStart(3, '0')}°` : '—'}</dd>
             <dt>Rată verticală</dt>
-            <dd className="num">{flight.verticalRateMs != null ? `${Math.round(flight.verticalRateMs * 196.85)} ft/min` : '—'}</dd>
+            <dd className="num">{flight.verticalRateMs != null ? verticalRateLabel(flight.verticalRateMs) : '—'}</dd>
             <dt>Squawk</dt>
             <dd className="num">{flight.squawk ?? '—'}</dd>
             <dt>Reguli</dt>

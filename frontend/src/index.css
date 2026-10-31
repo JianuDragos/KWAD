@@ -114,7 +114,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .fir-poly { stroke: rgba(122, 165, 160, .34); stroke-width: 1.1; fill: rgba(80, 120, 115, .02); }
 .fir-poly--sector { stroke: rgba(185, 163, 227, .28); stroke-width: 1; stroke-dasharray: 5 5; fill: none; }
 .fir-poly--lrbb { stroke: #63c5b8; stroke-width: 1.8; fill: rgba(99, 197, 184, .06); }
-.fir-poly--active { stroke: #a9d8ea; stroke-width: 1.8; fill: rgba(169, 216, 234, .07); }
+.fir-poly--active { stroke: var(--ifr); stroke-width: 1.8; fill: rgba(169, 216, 234, .07); }
 .tma-poly { stroke: #7fc8b8; stroke-width: 1.4; stroke-dasharray: 7 4; fill: rgba(127, 200, 184, .04); }
 .atz { stroke: #9fb8b0; stroke-width: 1; stroke-dasharray: 3 4; }
 .ats-airway { stroke: rgba(169, 216, 234, .28); stroke-width: 1.2; stroke-dasharray: 8 6; fill: none; }
@@ -127,7 +127,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .full-route--vfr { stroke: var(--vfr); }
 .planned { stroke: var(--select); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-opacity: .85; fill: none; }
 .planned--selected { stroke: var(--select); stroke-width: 2.1; stroke-dasharray: 6 4; stroke-opacity: .95; }
-.live-vector { stroke: #7ee081; stroke-width: 1.6; stroke-opacity: .75; fill: none; }
+.live-vector { stroke-width: 1.6; stroke-opacity: .6; fill: none; }
 
 .origin-apt { stroke: var(--ifr); fill: var(--scope); stroke-width: 2; }
 .hub-apt { stroke: var(--cleared); fill: var(--cleared); stroke-width: 2; }
@@ -137,15 +137,12 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .thr { stroke: var(--text); fill: var(--text); }
 .wpt { stroke: var(--faint); fill: var(--scope); stroke-width: 1.5; }
 .wpt--iaf { stroke: var(--ifr); }
-.wpt--synthetic { stroke: #e58ad6; stroke-dasharray: 2 2; }
+.wpt--synthetic { stroke: var(--synthetic); stroke-dasharray: 2 2; }
 .wpt--alt { stroke: var(--divert); }
 .navaid { stroke: var(--muted); fill: none; stroke-width: 1.5; }
 .trail { fill: none; stroke-width: 2; stroke-opacity: .72; }
 .trail--ifr { stroke: var(--ifr); }
 .trail--vfr { stroke: var(--vfr); }
-.ac--live.ac--vfr .ac__glyph path { fill: #e58ad6; }
-.ac--live.ac--vfr .ac__glyph circle { stroke: #e58ad6; }
-.ac--live.ac--ifr .ac__glyph path { fill: #56d8e8; }
 .vmc-badge { padding: 7px 9px; margin: 8px 0; border-radius: 3px; font: 700 12px/1.2 var(--mono); letter-spacing: .04em; }
 .vmc-badge--vmc, .vmc-pill--vmc { color: #0b2118; background: #72d7a0; }
 .vmc-badge--mvfr, .vmc-pill--mvfr { color: #241b00; background: #f0bd55; }
@@ -182,14 +179,16 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 
 .ac { width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
 .ac__glyph { width: 22px; height: 22px; }
-.alt-0 { --alt: #7ee081; }
-.alt-1 { --alt: #5fd4e8; }
-.alt-2 { --alt: #6f9dff; }
-.alt-3 { --alt: #b48cff; }
-.alt-4 { --alt: #f28bd2; }
+.alt-0 { --alt: #5fe0c8; }
+.alt-1 { --alt: #5fb8ff; }
+.alt-2 { --alt: #7c8cff; }
+.alt-3 { --alt: #ad7cff; }
+.alt-4 { --alt: #e47cdf; }
 .alt-unknown { --alt: var(--text); }
-.ac__glyph path { fill: var(--alt, var(--text)); }
-.ac--vfr .ac__glyph circle { stroke: var(--alt, var(--text)); }
+.ac--ifr .ac__glyph path { fill: var(--ifr); }
+.ac--vfr .ac__glyph path { fill: var(--vfr); }
+.ac--vfr .ac__glyph circle { stroke: var(--vfr); }
+/* Culoarea benzii de altitudine doar pe valoarea altitudinii din blocul de date. */
 .db-alt { color: var(--alt); }
 .ac.st-hold { box-shadow: 0 0 0 2px var(--hold); }
 .ac.st-divert { box-shadow: 0 0 0 2px var(--divert); }

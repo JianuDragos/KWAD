@@ -13,10 +13,9 @@ import { useApp } from './state/store';
 
 export default function App() {
   const view = useApp((s) => s.view);
-  const basemap = useApp((s) => s.basemap);
   const showSectors = useApp((s) => s.showSectors);
   const showAllRoutes = useApp((s) => s.showAllRoutes);
-  const { setView, setBasemap, setShowSectors, setShowAllRoutes } = useApp.getState();
+  const { setView, setShowSectors, setShowAllRoutes } = useApp.getState();
 
   const mode = useMode();
   const simRunway = useApp((s) => s.evaluation?.traffic.runway ?? null);
@@ -121,14 +120,6 @@ export default function App() {
             title="Afișează traiectoria completă Decolare → Aterizare pentru fiecare aeronavă"
           >
             Rute complete
-          </button>
-          <button
-            className={`seg__btn seg__btn--solo ${basemap === 'osm' ? 'is-on' : ''}`}
-            onClick={() => setBasemap(basemap === 'osm' ? 'none' : 'osm')}
-            aria-pressed={basemap === 'osm'}
-            title="Fundal OpenStreetMap întunecat (necesită internet)"
-          >
-            Hartă geografică
           </button>
         </div>
       </main>
