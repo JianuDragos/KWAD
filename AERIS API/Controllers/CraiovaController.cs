@@ -6,14 +6,20 @@ namespace AERIS_API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class CraiovaController : ControllerBase
 {
     private readonly IOpenSkyService _openSkyService;
+    private readonly IOpenSkyLiveService _openSkyLiveService;
     private readonly ICraiovaAdvisoryEngine _advisoryEngine;
 
-    public CraiovaController(IOpenSkyService openSkyService, ICraiovaAdvisoryEngine advisoryEngine)
+    public CraiovaController(
+        IOpenSkyService openSkyService,
+        IOpenSkyLiveService openSkyLiveService,
+        ICraiovaAdvisoryEngine advisoryEngine)
     {
         _openSkyService = openSkyService;
+        _openSkyLiveService = openSkyLiveService;
         _advisoryEngine = advisoryEngine;
     }
 
@@ -73,12 +79,37 @@ public class CraiovaController : ControllerBase
 
     /// <summary>
     /// Colectează traficul aerian în timp real din spațiul aerian Craiova prin OpenSky Network.
+    /// Utilizat de motorul de simulare și advisory engine (legacy support păstrat).
     /// </summary>
     [HttpGet("live-traffic")]
     public async Task<IActionResult> GetLiveTraffic([FromQuery] bool forceSimulated = false)
     {
         var (traffic, source) = await _openSkyService.GetCraiovaTrafficAsync(forceSimulated);
         return Ok(new { source, count = traffic.Count, traffic });
+    }
+
+    /// <summary>
+    /// Returnează pozițiile în timp real (lat/lon/altitudine/track/viteză) ale tuturor
+    /// aeronavelor detectate de OpenSky Network în sectorul Craiova.
+    /// Destinat frontend-ului (afișare pe hartă) și modulului AI.
+    /// Complet independent de motorul de simulare – nu afectează funcționalitatea existentă.
+    /// </summary>
+    /// <remarks>
+    /// Câmpurile cheie per aeronavă:
+    /// - icao24, callsign, originCountry
+    /// - latitude, longitude, baroAltitudeMeters, baroAltitudeFeet, flightLevelApprox
+    /// - velocityKnots, trueTrackDegrees, verticalRateMs, verticalTrend
+    /// - onGround, squawk, distanceFromLrcvKm, bearingFromLrcvDegrees
+    /// 
+    /// Nota: OpenSky Network poate fi indisponibil sau rate-limited.
+    /// În acest caz răspunsul conține source cu explicația și flights=[].
+    /// </remarks>
+    [HttpGet("live-positions")]
+    [ProducesResponseType(typeof(object), 200)]
+    public async Task<IActionResult> GetLivePositions()
+    {
+        var result = await _openSkyLiveService.GetLivePositionsAsync();
+        return Ok(result);
     }
 }
 
