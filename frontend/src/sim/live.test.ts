@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as mockLive from '../api/mockLive';
 import { livePositionsSchema, metarSchema, type LiveFlight } from '../contracts/live';
 import { bearingDeg, distanceNm } from './geomath';
-import { MAX_EXTRAPOLATION_SECONDS, extrapolate, runwayForWind, trendArrow, windComponents } from './live';
+import { MAX_EXTRAPOLATION_SECONDS, airlineFor, extrapolate, runwayForWind, trendArrow, windComponents } from './live';
 
 const flight = (over: Partial<LiveFlight> = {}): LiveFlight => ({
   icao24: 'abc123',
@@ -29,8 +29,12 @@ describe('extrapolate', () => {
     expect(bearingDeg(from, p)).toBeCloseTo(90, 0);
     expect(p.extrapolatedSeconds).toBe(10);
   });
-  it('nu extrapolează date vechi, la sol sau fără viteză', () => {
-    expect(extrapolate(flight(), 1000 + MAX_EXTRAPOLATION_SECONDS + 1)).toMatchObject({ lat: 44.3, lon: 23.9, extrapolatedSeconds: 0 });
+  it('date vechi: se oprește la limită, nu sare înapoi la poziția raportată', () => {
+    const atLimit = extrapolate(flight(), 1000 + MAX_EXTRAPOLATION_SECONDS)!;
+    expect(extrapolate(flight(), 1000 + MAX_EXTRAPOLATION_SECONDS + 60)).toEqual(atLimit);
+    expect(atLimit.extrapolatedSeconds).toBe(MAX_EXTRAPOLATION_SECONDS);
+  });
+  it('nu extrapolează la sol sau fără viteză', () => {
     expect(extrapolate(flight({ onGround: true }), 1010)!.extrapolatedSeconds).toBe(0);
     expect(extrapolate(flight({ velocityKnots: null }), 1010)!.extrapolatedSeconds).toBe(0);
   });
@@ -63,5 +67,14 @@ describe('schemele datelor reale', () => {
     const data = mockLive.livePositions();
     const broken = { ...data, flights: data.flights.map(({ lastContact: _drop, ...rest }) => rest) };
     expect(livePositionsSchema.safeParse(broken).success).toBe(false);
+  });
+});
+
+describe('airlineFor', () => {
+  it('recunoaște operatorul din indicativ, fără să ghicească', () => {
+    expect(airlineFor('WZZ3751')).toBe('Wizz Air');
+    expect(airlineFor('THY5AD')).toBe('Turkish Airlines');
+    expect(airlineFor('XYZ123')).toBeNull(); // operator necunoscut
+    expect(airlineFor('YR-CRA')).toBeNull(); // înmatriculare, nu zbor de linie
   });
 });

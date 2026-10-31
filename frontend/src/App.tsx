@@ -73,11 +73,9 @@ export default function App() {
             <LiveTraffic />
           </MapView>
         )}
-        <p className={`map-banner ${mode === 'live' ? 'map-banner--live' : ''}`}>
-          {mode === 'demo'
-            ? 'Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.'
-            : 'Date reale OpenSky, cu întârziere de câteva secunde. Doar pentru informare, nu pentru uz operațional.'}
-        </p>
+        {mode === 'demo' && (
+          <p className="map-banner">Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.</p>
+        )}
         <div className="map-controls">
           <div className="seg" role="group" aria-label="Vedere hartă">
             <button className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`} onClick={() => setView('wide')} aria-pressed={view === 'wide'} aria-keyshortcuts="1">

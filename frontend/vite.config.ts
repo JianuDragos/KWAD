@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5271',
+      // AERIS_API permite alt port (de ex. când pe 5271 rulează deja o versiune veche).
+      '/api': process.env.AERIS_API ?? 'http://localhost:5271',
     },
   },
   test: {

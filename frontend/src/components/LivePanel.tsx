@@ -1,7 +1,7 @@
 // Panoul paginii Live: METAR-ul real și benzile avioanelor detectate, cele mai apropiate primele.
 import { useEffect, useRef } from 'react';
 import type { LiveFlight, Metar } from '../contracts/live';
-import { trendArrow } from '../sim/live';
+import { airlineFor, trendArrow } from '../sim/live';
 import { M_PER_NM, altitudeLabel } from '../sim/units';
 import { useLive } from '../state/live';
 
@@ -92,7 +92,7 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
         <span className="strip__time">
           {flight.baroAltitudeMeters != null ? altitudeLabel(flight.baroAltitudeMeters) : '—'} {trendArrow(flight.verticalRateMs)}
         </span>
-        <span className="strip__type">{flight.originCountry ?? 'țară necunoscută'}</span>
+        <span className="strip__type">{airlineFor(flight.callsign) ?? flight.originCountry ?? 'țară necunoscută'}</span>
         <span className="strip__when">
           {nm != null ? `${nm.toFixed(0)} NM` : ''}
           {flight.bearingFromLrcvDegrees != null ? ` la ${String(Math.round(flight.bearingFromLrcvDegrees)).padStart(3, '0')}°` : ''}
@@ -101,6 +101,10 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
       {expanded && (
         <div className="strip__body" id={bodyId}>
           <dl className="kv">
+            <dt>Companie</dt>
+            <dd>{airlineFor(flight.callsign) ?? 'necunoscută'}</dd>
+            <dt>Înmatriculare</dt>
+            <dd>{flight.originCountry ?? '—'}</dd>
             <dt>Viteză sol</dt>
             <dd className="num">{flight.velocityKnots != null ? `${Math.round(flight.velocityKnots)} kt` : '—'}</dd>
             <dt>Direcție</dt>

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { API_MOCK } from '../api/client';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
 import { runwayForWind, windComponents } from '../sim/live';
 import { clockLabel } from '../sim/units';
@@ -55,7 +54,6 @@ function LiveControls() {
       <div className="pills" aria-live="polite">
         {error && <span className="pill pill--err">Fără date noi</span>}
         {updatedAtMs && <UpdatedAgo at={updatedAtMs} />}
-        {API_MOCK && <span className="pill pill--mock">Date de exemplu</span>}
       </div>
     </>
   );
@@ -135,7 +133,6 @@ function DemoControls() {
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
         <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>
-        {API_MOCK && <span className="pill pill--mock">Date de exemplu</span>}
       </div>
     </>
   );

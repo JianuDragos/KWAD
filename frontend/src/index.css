@@ -92,7 +92,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .pill--busy { color: var(--text); }
 .pill--warn { color: var(--hold); border-color: currentColor; }
 .pill--err { color: var(--divert); border-color: currentColor; }
-.pill--mock { color: var(--synthetic); border-color: currentColor; }
 
 /* ---------- harta ---------- */
 .map-area { grid-area: map; position: relative; min-height: 0; }
@@ -266,7 +265,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .seg--mode .seg__btn.is-demo { background: var(--synthetic); }
 .clock { display: flex; align-items: baseline; gap: 6px; }
 .clock__zone { color: var(--muted); font-size: 13px; }
-.map-banner--live { color: var(--ifr); border-left-color: var(--ifr); }
 .ac--live .ac__glyph path { fill: var(--text); }
 .strip--live { border-left-color: var(--faint); }
 .metar { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
