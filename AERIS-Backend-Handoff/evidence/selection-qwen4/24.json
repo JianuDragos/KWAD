@@ -1,0 +1,34 @@
+{
+  "id": "24",
+  "question": "List the supplied aircraft speeds and tell me whether C172 crosswind capability is provided.",
+  "expected": [
+    "aircraft",
+    "crosswind"
+  ],
+  "seconds": 4.7433711,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "aircraft",
+      "crosswind",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "Supplied simulated approach speeds are A320: 135 knots, C172: 65 knots, ATR72: 110 knots. C172 is slowest; ATR72 uses turboprop propulsion.",
+      "Maximum demonstrated crosswind for this C172 is not supplied. No crosswind capability is inferred.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "AIRCRAFT-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022aircraft\\\u0022,\\\u0022crosswind\\\u0022]}\u0022}}],\u0022created\u0022:1793435267,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:11,\u0022prompt_tokens\u0022:500,\u0022total_tokens\u0022:511,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-T3f4AmXNDEFPDboLGqtdiyIwWMTH2Fz7\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:388,\u0022prompt_ms\u0022:3984.077,\u0022prompt_per_token_ms\u0022:10.26823969072165,\u0022prompt_per_second\u0022:97.38767599120197,\u0022predicted_n\u0022:11,\u0022predicted_ms\u0022:755.121,\u0022predicted_per_token_ms\u0022:75.5121,\u0022predicted_per_second\u0022:13.242910738808748}}"
+}

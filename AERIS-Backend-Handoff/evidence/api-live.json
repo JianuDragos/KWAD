@@ -1,0 +1,20 @@
+{
+  "scenarioRevision": 42,
+  "mode": "grounded_selection",
+  "statementIds": [
+    "decision",
+    "weather",
+    "limits"
+  ],
+  "sentences": [
+    "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+    "The synthetic weather observation reports wind from 240 degrees at 12 knots and visibility of 6000 metres. It is not a forecast.",
+    "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+  ],
+  "sourceIds": [
+    "ENGINE-42",
+    "WEATHER-42",
+    "RULES-42"
+  ],
+  "fallbackReason": null
+}

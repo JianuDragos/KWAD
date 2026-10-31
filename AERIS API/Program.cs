@@ -1,4 +1,5 @@
 using Aeris.PlanningEngine.Services;
+using Aeris.LocalAI;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -30,6 +31,13 @@ builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 // ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
 builder.Services.AddHttpClient<IMetarService, MetarService>();
 builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyLiveService>();
+
+// ── Local AI grounded explainer (inferență separată, doar loopback) ──────────
+builder.Services.AddHttpClient<GroundedExplainer>(client =>
+{
+    client.BaseAddress = new Uri("http://127.0.0.1:18090/");
+    client.Timeout = Timeout.InfiniteTimeSpan; // deadline-ul de 30s este gestionat de helper
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseProxy = false });
 
 var app = builder.Build();
 

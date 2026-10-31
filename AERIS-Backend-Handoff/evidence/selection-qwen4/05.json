@@ -1,0 +1,30 @@
+{
+  "id": "05",
+  "question": "In what order will the three aircraft arrive?",
+  "expected": [
+    "arrivals"
+  ],
+  "seconds": 4.2153378,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "arrivals",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "The planned arrival order is IFR101 at 10:00, VFR201 at 10:03, then IFR102 at 10:06. VFR201\u0027s ETA is 10:01.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022arrivals\\\u0022]}\u0022}}],\u0022created\u0022:1793435183,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:8,\u0022prompt_tokens\u0022:491,\u0022total_tokens\u0022:499,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-mwot31Hov3DzYa11XQOkR4qrh7iJpy5S\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:379,\u0022prompt_ms\u0022:3764.221,\u0022prompt_per_token_ms\u0022:9.931981530343007,\u0022prompt_per_second\u0022:100.6848428931245,\u0022predicted_n\u0022:8,\u0022predicted_ms\u0022:445.228,\u0022predicted_per_token_ms\u0022:63.604,\u0022predicted_per_second\u0022:15.722281617508333}}"
+}

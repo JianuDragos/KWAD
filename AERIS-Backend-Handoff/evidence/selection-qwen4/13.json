@@ -1,0 +1,31 @@
+{
+  "id": "13",
+  "question": "Which aircraft has the slowest supplied approach speed?",
+  "expected": [
+    "aircraft"
+  ],
+  "seconds": 4.6756791,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "aircraft",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "Supplied simulated approach speeds are A320: 135 knots, C172: 65 knots, ATR72: 110 knots. C172 is slowest; ATR72 uses turboprop propulsion.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "AIRCRAFT-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022aircraft\\\u0022]}\u0022}}],\u0022created\u0022:1793435219,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:8,\u0022prompt_tokens\u0022:492,\u0022total_tokens\u0022:500,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-Z4MDJryPuBCPILrFqdDWRE4OC1AWvLak\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:380,\u0022prompt_ms\u0022:4147.437,\u0022prompt_per_token_ms\u0022:10.914307894736842,\u0022prompt_per_second\u0022:91.62285044956681,\u0022predicted_n\u0022:8,\u0022predicted_ms\u0022:524.115,\u0022predicted_per_token_ms\u0022:74.87357142857142,\u0022predicted_per_second\u0022:13.355847476221822}}"
+}

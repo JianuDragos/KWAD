@@ -1,0 +1,37 @@
+[
+  {
+    "label": "qwen3-4b-cpu",
+    "model": "qwen3-4b-instruct-2507",
+    "observed_requests": 30,
+    "expected_requests": 30,
+    "passed": 15,
+    "grounded": 24,
+    "instruction_pass": 18,
+    "structure_pass": 18,
+    "completed": 30,
+    "repetitions": 0,
+    "errors": 0,
+    "tool_pass": 3,
+    "tool_test_count": 3,
+    "median_total_seconds": 17.62515775,
+    "median_first_content_seconds": 1.7933036,
+    "peak_process_working_set_gib": 5.339195251464844,
+    "minimum_system_available_gib": 1.0372848510742188,
+    "median_reported_tokens_per_second": 13.020967568356632,
+    "score_components": {
+      "grounding": 24,
+      "instructions": 12,
+      "structure": 9,
+      "stability": 15,
+      "speed": 5.673708083548926,
+      "efficiency": 7.217337290445963
+    },
+    "weighted_score": 72.8910453739949,
+    "automatic_gate": false,
+    "load_seconds": 9.4088718,
+    "load_exit_code": 0,
+    "manual_review_required": true,
+    "timing_excluded": 0,
+    "scoring_validation": "v2-revalidation"
+  }
+]
