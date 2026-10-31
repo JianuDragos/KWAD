@@ -230,6 +230,7 @@ export interface CraiovaSimulationResult {
 export interface CraiovaCustomEvaluationRequest {
   weather?: WeatherCondition | null;
   aircrafts?: CraiovaAircraft[] | null;
+  useTrajectoryEngine?: boolean;
 }
 
 /** GET /api/craiova/live-traffic */

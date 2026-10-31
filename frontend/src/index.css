@@ -90,8 +90,45 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .pills { display: flex; gap: 6px; align-items: center; }
 .pill { font-size: 13px; padding: 1px 8px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--muted); font-variant-numeric: tabular-nums; }
 .pill--busy { color: var(--text); }
+.pill--ok { color: #34d399; border-color: currentColor; }
 .pill--warn { color: var(--hold); border-color: currentColor; }
+.pill--legacy { color: #f59e0b; border-color: currentColor; }
 .pill--err { color: var(--divert); border-color: currentColor; }
+
+.checkbox-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  transition: all .15s ease;
+}
+.checkbox-toggle:hover:not(:has(:disabled)) {
+  border-color: var(--text);
+}
+.checkbox-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #38bdf8;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+.checkbox-toggle.is-active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe;
+  font-weight: 500;
+}
+.checkbox-toggle:has(:disabled) {
+  opacity: .4;
+  cursor: default;
+}
 
 /* ---------- harta ---------- */
 .map-area { grid-area: map; position: relative; min-height: 0; }

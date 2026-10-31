@@ -92,7 +92,12 @@ export function evaluateCraiova(body: CraiovaCustomEvaluationRequest, signal?: A
         parseResponse(
           path,
           simulationResultSchema,
-          mock.evaluateSimulation(body.aircrafts ?? mock.realisticCraiovaTraffic(), body.weather!, 'Scenariu personalizat utilizator'),
+          mock.evaluateSimulation(
+            body.aircrafts ?? mock.realisticCraiovaTraffic(),
+            body.weather!,
+            'Scenariu personalizat utilizator',
+            body.useTrajectoryEngine ?? true,
+          ),
         ),
       signal,
     );

@@ -23,7 +23,7 @@ import {
 } from '../data/geo';
 import { destination, type LatLon } from './geomath';
 import type { TrackPoint } from './interpolate';
-import { appendLeg, appendRacetrack, inboundExtension, trackArrivingAt, type PlannedFix } from './synthetic';
+import { appendLeg, appendOrbit, appendRacetrack, inboundExtension, trackArrivingAt, type PlannedFix } from './synthetic';
 
 export type FlightKind = 'approach' | 'hold' | 'divert';
 
@@ -55,7 +55,7 @@ const ROLLOUT_NM = 0.7;
 /** Fereastra ceasului când scenariul nu are niciun avion. */
 const EMPTY_WINDOW_SECONDS = 600;
 
-export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimulationResult): TrafficModel {
+export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimulationResult, useTrajectoryEngine: boolean = true): TrafficModel {
   const runway = runwayFromBackend(result.activeRunway);
   if (aircrafts.length === 0) return { runway, flights: [], startSeconds: 0, endSeconds: EMPTY_WINDOW_SECONDS };
   const advisories = new Map(result.advisories.map((a) => [a.aircraftId, a]));
@@ -86,8 +86,13 @@ export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimula
         const holdAlt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 4000;
         const fix = toIf[toIf.length - 1];
         let track = trackArrivingAt(toIf, ifrSpeeds(toIf), aircraft.etaSeconds);
-        track = appendRacetrack(track, fix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds);
-        return { ...base, routeLabel: `${entry} → hipodrom ${fix.id} (${holdAlt}ft)`, plannedRoute: latLngs(toIf), track, landingSeconds: null, alternate: null };
+        if (useTrajectoryEngine) {
+          track = appendRacetrack(track, fix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds);
+          return { ...base, routeLabel: `${entry} → hipodrom ${fix.id} (${holdAlt}ft)`, plannedRoute: latLngs(toIf), track, landingSeconds: null, alternate: null };
+        } else {
+          track = appendOrbit(track, fix, 2.5, holdAlt, 210, endSeconds);
+          return { ...base, routeLabel: `${entry} → așteptare ${fix.id}`, plannedRoute: latLngs(toIf), track, landingSeconds: null, alternate: null };
+        }
       }
       const landingSeconds = slot?.calculatedTimeSeconds ?? aircraft.etaSeconds;
       const track = withRollout(trackArrivingAt(route, ifrSpeeds(route), landingSeconds), runway);
@@ -105,8 +110,13 @@ export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimula
       if (kind === 'hold') {
         const center = destination(ARP, 180, 2.5); // latura sudică a pistei (Cârcea – Pielești, după backend)
         const alt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 1500;
-        track = appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds);
-        return { ...base, routeLabel: `${entryPoint.id} → hipodrom sud (${alt}ft)`, plannedRoute: latLngs(legs), track, landingSeconds: null, alternate: null };
+        if (useTrajectoryEngine) {
+          track = appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds);
+          return { ...base, routeLabel: `${entryPoint.id} → hipodrom sud (${alt}ft)`, plannedRoute: latLngs(legs), track, landingSeconds: null, alternate: null };
+        } else {
+          track = appendOrbit(track, center, 1.2, alt, speed, endSeconds);
+          return { ...base, routeLabel: `${entryPoint.id} → orbită sud`, plannedRoute: latLngs(legs), track, landingSeconds: null, alternate: null };
+        }
       }
       const alternate = pickAlternate(advisory?.recommendedAlternates ?? null);
       if (alternate) track = appendLeg(track, alternate.point, 1000, speed);

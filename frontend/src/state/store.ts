@@ -35,6 +35,9 @@ interface AppState {
   error: string | null;
   evaluation: Evaluation | null;
 
+  useTrajectoryEngine: boolean;
+  setUseTrajectoryEngine: (enabled: boolean) => void;
+
   simTimeSeconds: number;
   playing: boolean;
   speed: Speed;
@@ -63,10 +66,11 @@ export const useApp = create<AppState>()((set, get) => {
     inFlight = controller;
     set({ status: 'loading', error: null });
     try {
-      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts }, controller.signal);
+      const useTraj = get().useTrajectoryEngine;
+      const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts, useTrajectoryEngine: useTraj }, controller.signal);
       // Răspuns pentru o revizie veche: îl ignorăm.
       if (get().scenario?.revision !== scenario.revision) return;
-      const traffic = buildTraffic(scenario.aircrafts, result);
+      const traffic = buildTraffic(scenario.aircrafts, result, useTraj);
       set((s) => ({
         status: 'ok',
         evaluation: { revision: scenario.revision, result, traffic },
@@ -84,6 +88,7 @@ export const useApp = create<AppState>()((set, get) => {
     status: 'idle',
     error: null,
     evaluation: null,
+    useTrajectoryEngine: true,
     simTimeSeconds: 0,
     playing: false,
     speed: 5,
@@ -110,6 +115,17 @@ export const useApp = create<AppState>()((set, get) => {
       if (!current || !preset) return;
       const scenario = { ...current, revision: current.revision + 1, weatherPresetId: id, weather: preset.weather };
       set({ scenario });
+      void evaluate(scenario, false);
+    },
+
+    setUseTrajectoryEngine: (enabled) => {
+      const current = get().scenario;
+      if (!current) {
+        set({ useTrajectoryEngine: enabled });
+        return;
+      }
+      const scenario = { ...current, revision: current.revision + 1 };
+      set({ useTrajectoryEngine: enabled, scenario });
       void evaluate(scenario, false);
     },
 
