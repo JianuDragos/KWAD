@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AltitudeLegend } from './components/AltitudeLegend';
 import { DetailsPanel } from './components/DetailsPanel';
 import { LivePanel } from './components/LivePanel';
 import { LiveTraffic } from './components/LiveTraffic';
@@ -7,7 +8,7 @@ import { Timeline } from './components/Timeline';
 import { TopBar } from './components/TopBar';
 import { runwayForWind } from './sim/live';
 import { useLive } from './state/live';
-import { useMode } from './state/mode';
+import { currentMode, useMode } from './state/mode';
 import { useApp } from './state/store';
 
 export default function App() {
@@ -46,7 +47,7 @@ export default function App() {
       const s = useApp.getState();
       if (e.code === 'Space') {
         // Pe un buton focusat, Space trebuie să apese butonul, nu să pornească redarea.
-        if (target.closest('button, a[href], [role="button"]') || window.location.hash !== '#/demo') return;
+        if (target.closest('button, a[href], [role="button"]') || currentMode() !== 'demo') return;
         e.preventDefault();
         if (s.evaluation) s.togglePlay();
       } else if (e.key === 'Escape') {
@@ -73,6 +74,7 @@ export default function App() {
             <LiveTraffic />
           </MapView>
         )}
+        <AltitudeLegend />
         {mode === 'demo' && (
           <p className="map-banner">Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.</p>
         )}

@@ -1,0 +1,31 @@
+{
+  "id": "14",
+  "question": "What propulsion type is supplied for ATR72?",
+  "expected": [
+    "aircraft"
+  ],
+  "seconds": 4.4411706,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "aircraft",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "Supplied simulated approach speeds are A320: 135 knots, C172: 65 knots, ATR72: 110 knots. C172 is slowest; ATR72 uses turboprop propulsion.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "AIRCRAFT-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022aircraft\\\u0022]}\u0022}}],\u0022created\u0022:1793435223,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:8,\u0022prompt_tokens\u0022:493,\u0022total_tokens\u0022:501,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-rW7McZ4RGIhBqtFNa0nRJixAQUc8iLye\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:381,\u0022prompt_ms\u0022:3978.264,\u0022prompt_per_token_ms\u0022:10.441637795275591,\u0022prompt_per_second\u0022:95.77041644295099,\u0022predicted_n\u0022:8,\u0022predicted_ms\u0022:458.678,\u0022predicted_per_token_ms\u0022:65.52542857142858,\u0022predicted_per_second\u0022:15.261250812116561}}"
+}

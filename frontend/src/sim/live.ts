@@ -48,6 +48,9 @@ export function trendArrow(verticalRateMs: number | null): string {
   return verticalRateMs > 0 ? '↑' : '↓';
 }
 
+/** Peste acest vânt lateral (kt) avioanele mici nu mai pot ateriza; același prag ca în motorul din backend. */
+export const CRITICAL_CROSSWIND_KT = 12;
+
 /** Componentele vântului pe o pistă, în noduri, rotunjite la întreg. */
 export function windComponents(windDirectionDegrees: number, windSpeedKnots: number, rwy: RunwayId) {
   const a = ((windDirectionDegrees - runwayTrueBearing(rwy)) * Math.PI) / 180;

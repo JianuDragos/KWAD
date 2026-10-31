@@ -1,0 +1,30 @@
+{
+  "id": "27",
+  "question": "Compar\u0103 \u00EEnt\u00E2rzierile totale pentru P1 \u0219i P2.",
+  "expected": [
+    "delays"
+  ],
+  "seconds": 4.9389342,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "delays",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "The supplied plans have total delays of 8 minutes for P1 and 5 minutes for P2. P2 has the lower total delay.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022delays\\\u0022]}\u0022}}],\u0022created\u0022:1793435280,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:8,\u0022prompt_tokens\u0022:516,\u0022total_tokens\u0022:524,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-0kAwOtRPpA5kgqyo9Uko3mtHSXcLwNEP\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:404,\u0022prompt_ms\u0022:4427.54,\u0022prompt_per_token_ms\u0022:10.959257425742575,\u0022prompt_per_second\u0022:91.24705818580973,\u0022predicted_n\u0022:8,\u0022predicted_ms\u0022:507.00600000000003,\u0022predicted_per_token_ms\u0022:72.42942857142857,\u0022predicted_per_second\u0022:13.806542723360275}}"
+}

@@ -1,0 +1,31 @@
+{
+  "id": "11",
+  "question": "Is the 3000 metre visibility an actual observation?",
+  "expected": [
+    "hypothetical"
+  ],
+  "seconds": 4.3948794,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "grounded_selection",
+    "statementIds": [
+      "decision",
+      "hypothetical",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "Visibility of 3000 metres is a hypothetical change, not an observation or forecast.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "SCENARIO-42",
+      "RULES-42"
+    ],
+    "fallbackReason": null
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\\u0022statement_ids\\\u0022:[\\\u0022hypothetical\\\u0022]}\u0022}}],\u0022created\u0022:1793435210,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:9,\u0022prompt_tokens\u0022:495,\u0022total_tokens\u0022:504,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:113}},\u0022id\u0022:\u0022chatcmpl-raneakjefkXZVtV8lOzMGZpjXFtdA1bt\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:113,\u0022prompt_n\u0022:382,\u0022prompt_ms\u0022:3721.9990000000003,\u0022prompt_per_token_ms\u0022:9.743452879581152,\u0022prompt_per_second\u0022:102.63302058920488,\u0022predicted_n\u0022:9,\u0022predicted_ms\u0022:667.807,\u0022predicted_per_token_ms\u0022:83.475875,\u0022predicted_per_second\u0022:11.979509049770368}}"
+}

@@ -1,0 +1,48 @@
+{
+  "min_seconds": 4.1203446,
+  "max_seconds": 5.7280386,
+  "failures": [
+    {
+      "id": "06",
+      "question": "When is VFR201 expected, and when is its planned landing?",
+      "expected": [
+        "arrivals"
+      ],
+      "actual": [
+        "decision",
+        "arrivals",
+        "terms",
+        "limits"
+      ]
+    },
+    {
+      "id": "19",
+      "question": "Explain ETA versus planned landing time.",
+      "expected": [
+        "terms"
+      ],
+      "actual": [
+        "decision",
+        "delays",
+        "arrivals",
+        "terms",
+        "limits"
+      ]
+    },
+    {
+      "id": "22",
+      "question": "Compare P1 and P2 and tell me the observed wind.",
+      "expected": [
+        "delays",
+        "weather"
+      ],
+      "actual": [
+        "decision",
+        "weather",
+        "limits"
+      ]
+    }
+  ],
+  "count": 40,
+  "median_seconds": 4.43
+}

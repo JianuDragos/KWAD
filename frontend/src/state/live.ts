@@ -25,10 +25,14 @@ interface LiveState {
 
 const message = (e: unknown) => (e instanceof ApiError ? e.message : 'Serviciul de date reale nu răspunde.');
 
-export const useLive = create<LiveState>()((set) => {
+export const useLive = create<LiveState>()((set, get) => {
   async function loadPositions() {
     try {
       const positions = await fetchLivePositions();
+      // Două cereri pot fi în zbor deodată (de ex. la revenirea în tab); un răspuns mai vechi
+      // decât cel afișat ar muta avioanele înapoi, deci îl ignorăm.
+      const shown = get().positions;
+      if (shown && Date.parse(positions.queryTimeUtc) < Date.parse(shown.queryTimeUtc)) return;
       set({ positions, positionsError: null, updatedAtMs: Date.now() });
     } catch (e) {
       set({ positionsError: message(e) });

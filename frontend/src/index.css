@@ -150,9 +150,17 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 
 .ac { width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
 .ac__glyph { width: 22px; height: 22px; }
-.ac--ifr .ac__glyph path { fill: var(--ifr); }
-.ac--vfr .ac__glyph path { fill: var(--vfr); }
-.ac--vfr .ac__glyph circle { stroke: var(--vfr); }
+/* Culoarea avionului arată altitudinea (benzile din sim/units.ts); IFR și VFR se deosebesc prin formă:
+   VFR are un cerc în jurul săgeții. Culorile nu se confundă cu inelele de stare (chihlimbar, roșu). */
+.alt-0 { --alt: #7ee081; }
+.alt-1 { --alt: #5fd4e8; }
+.alt-2 { --alt: #6f9dff; }
+.alt-3 { --alt: #b48cff; }
+.alt-4 { --alt: #f28bd2; }
+.alt-unknown { --alt: var(--text); }
+.ac__glyph path { fill: var(--alt, var(--text)); }
+.ac--vfr .ac__glyph circle { stroke: var(--alt, var(--text)); }
+.db-alt { color: var(--alt); }
 .ac.st-hold { box-shadow: 0 0 0 2px var(--hold); }
 .ac.st-divert { box-shadow: 0 0 0 2px var(--divert); }
 .ac--done { opacity: .4; }
@@ -265,7 +273,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .seg--mode .seg__btn.is-demo { background: var(--synthetic); }
 .clock { display: flex; align-items: baseline; gap: 6px; }
 .clock__zone { color: var(--muted); font-size: 13px; }
-.ac--live .ac__glyph path { fill: var(--text); }
 .strip--live { border-left-color: var(--faint); }
 .metar { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .metar__raw { font: 13px/1.4 var(--mono); background: var(--raised); padding: 6px 8px; border-radius: 3px; overflow-wrap: anywhere; }
@@ -275,3 +282,14 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .fltcat--mvfr { background: #7fb3ff; }
 .fltcat--ifr { background: var(--divert); }
 .fltcat--lifr { background: #e58ad6; }
+
+/* ---------- legenda altitudinii ---------- */
+.alt-legend {
+  position: absolute; left: 12px; top: 100px; z-index: 500;
+  background: rgba(29, 37, 35, .9); border: 1px solid var(--line-strong); border-radius: 4px;
+  padding: 6px 10px; font-size: 12px;
+}
+.alt-legend__toggle { background: transparent; border: 0; padding: 0; cursor: pointer; font-weight: 600; }
+.alt-legend ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; }
+.alt-legend li { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.alt-legend__swatch { width: 10px; height: 10px; border-radius: 2px; background: var(--alt); flex: none; }

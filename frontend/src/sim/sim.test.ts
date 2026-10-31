@@ -5,6 +5,7 @@ import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
 import { bearingDeg, destination, distanceNm } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
+import { altitudeBand } from './units';
 import { appendOrbit } from './synthetic';
 import { buildTraffic } from './traffic';
 
@@ -206,5 +207,18 @@ describe('appendOrbit', () => {
     expect(bearings[2]).toBeCloseTo(45, 1);
     for (const p of orbit.slice(1)) expect(distanceNm(center, { lat: p.latitudeDeg, lon: p.longitudeDeg })).toBeCloseTo(1.2, 3);
     expect(orbit[orbit.length - 1].timeSeconds).toBeGreaterThanOrEqual(600);
+  });
+});
+
+describe('altitudeBand', () => {
+  it('pune avionul în banda corectă; limitele aparțin benzii de deasupra', () => {
+    const ft = (f: number) => f * 0.3048;
+    expect(altitudeBand(ft(628))).toBe('alt-0'); // pe pistă
+    expect(altitudeBand(ft(1500))).toBe('alt-1');
+    expect(altitudeBand(ft(4999))).toBe('alt-1');
+    expect(altitudeBand(ft(9000))).toBe('alt-2');
+    expect(altitudeBand(ft(24000))).toBe('alt-3');
+    expect(altitudeBand(ft(36000))).toBe('alt-4');
+    expect(altitudeBand(null)).toBe('alt-unknown');
   });
 });

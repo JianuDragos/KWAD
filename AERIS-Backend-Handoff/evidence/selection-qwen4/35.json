@@ -1,0 +1,44 @@
+{
+  "id": "35",
+  "question": "Write a chocolate cake recipe.",
+  "expected": [],
+  "seconds": 4.5596744,
+  "relevance_pass": true,
+  "factual_preservation_pass": true,
+  "result": {
+    "scenarioRevision": 42,
+    "mode": "deterministic_fallback",
+    "statementIds": [
+      "decision",
+      "delays",
+      "arrivals",
+      "weather",
+      "hypothetical",
+      "aircraft",
+      "crosswind",
+      "terms",
+      "limits"
+    ],
+    "sentences": [
+      "The engine selected P2 for this simulated arrival scenario; its total delay is 5 minutes.",
+      "The supplied plans have total delays of 8 minutes for P1 and 5 minutes for P2. P2 has the lower total delay.",
+      "The planned arrival order is IFR101 at 10:00, VFR201 at 10:03, then IFR102 at 10:06. VFR201\u0027s ETA is 10:01.",
+      "The synthetic weather observation reports wind from 240 degrees at 12 knots and visibility of 6000 metres. It is not a forecast.",
+      "Visibility of 3000 metres is a hypothetical change, not an observation or forecast.",
+      "Supplied simulated approach speeds are A320: 135 knots, C172: 65 knots, ATR72: 110 knots. C172 is slowest; ATR72 uses turboprop propulsion.",
+      "Maximum demonstrated crosswind for this C172 is not supplied. No crosswind capability is inferred.",
+      "IFR means instrument flight rules; VFR means visual flight rules. ETA is estimated arrival time; planned landing is the engine-assigned time.",
+      "Simulation only. Operational criteria are missing; this report grants no real-world flight permission or clearance."
+    ],
+    "sourceIds": [
+      "ENGINE-42",
+      "WEATHER-42",
+      "SCENARIO-42",
+      "AIRCRAFT-42",
+      "DEFINITIONS-42",
+      "RULES-42"
+    ],
+    "fallbackReason": "no_matching_statement"
+  },
+  "raw_response": "{\u0022choices\u0022:[{\u0022finish_reason\u0022:\u0022stop\u0022,\u0022index\u0022:0,\u0022message\u0022:{\u0022role\u0022:\u0022assistant\u0022,\u0022content\u0022:\u0022{\\n  \\\u0022statement_ids\\\u0022: []\\n}\u0022}}],\u0022created\u0022:1793435317,\u0022model\u0022:\u0022aeris-local\u0022,\u0022system_fingerprint\u0022:\u0022b11960-8642541b2\u0022,\u0022object\u0022:\u0022chat.completion\u0022,\u0022usage\u0022:{\u0022completion_tokens\u0022:13,\u0022prompt_tokens\u0022:487,\u0022total_tokens\u0022:500,\u0022prompt_tokens_details\u0022:{\u0022cached_tokens\u0022:112}},\u0022id\u0022:\u0022chatcmpl-9CNke8og0qRHzXQeW4skqSR95vwFuQLU\u0022,\u0022timings\u0022:{\u0022cache_n\u0022:112,\u0022prompt_n\u0022:375,\u0022prompt_ms\u0022:3731.426,\u0022prompt_per_token_ms\u0022:9.950469333333333,\u0022prompt_per_second\u0022:100.49777216538664,\u0022predicted_n\u0022:13,\u0022predicted_ms\u0022:823.873,\u0022predicted_per_token_ms\u0022:68.65608333333334,\u0022predicted_per_second\u0022:14.565351698623452}}"
+}

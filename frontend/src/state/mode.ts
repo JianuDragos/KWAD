@@ -3,14 +3,15 @@ import { useSyncExternalStore } from 'react';
 
 export type Mode = 'live' | 'demo';
 
-const read = (): Mode => (window.location.hash === '#/demo' ? 'demo' : 'live');
+/** Modul curent, citit direct (pentru cod din afara componentelor, ca tastele rapide). */
+export const currentMode = (): Mode => (window.location.hash === '#/demo' ? 'demo' : 'live');
 const subscribe = (cb: () => void) => {
   window.addEventListener('hashchange', cb);
   return () => window.removeEventListener('hashchange', cb);
 };
 
 export function useMode(): Mode {
-  return useSyncExternalStore(subscribe, read);
+  return useSyncExternalStore(subscribe, currentMode);
 }
 
 export function setMode(mode: Mode) {
