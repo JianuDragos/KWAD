@@ -1,0 +1,513 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "_description": "ROMATSA R.A. (Administratia Romana a Serviciilor de Trafic Aerian) - Mock Database pentru operatiuni IFR (Instrument Flight Rules), proceduri PANS-OPS LRCV (RWY 08/26), profiluri cinematice Takeoff-to-Landing si separare 4D conform AIP Romania (AIRAC 2026-10) / EUROCONTROL / ICAO Doc 4444.",
+  "metadata": {
+    "provider": "ROMATSA R.A. - Directia Operatiuni IFR & ASM",
+    "certificationBody": "Autoritatea Aeronautica Civila Romana (AACR) & EASA",
+    "airacCycle": "2026-10 (Effective 2026-10-01 / 2026-10-29)",
+    "regulatoryFramework": [
+      "ICAO Doc 4444 (PANS-ATM) - Air Traffic Management",
+      "ICAO Doc 8168 (PANS-OPS) - Aircraft Operations & Instrument Procedures",
+      "EASA Part-ATS / SERA (Standardised European Rules of the Air)",
+      "EUROCONTROL Network Manager (NM) ATFM & Free Route Airspace (SECSI FRA)"
+    ],
+    "fir": {
+      "icaoCode": "LRBB",
+      "name": "Bucuresti Flight Information Region",
+      "transitionAltitudeFeet": 4000,
+      "transitionLevelRule": "Determined by QNH (FL050 for QNH >= 1013 hPa, FL055 for QNH < 1013 hPa)",
+      "rvsmBand": "FL290 - FL410 (Reduced Vertical Separation Minimum: 1000 ft)"
+    },
+    "ifrGeneralRules": {
+      "standardRadarSeparationTmaNm": 3.0,
+      "standardRadarSeparationEnRouteNm": 5.0,
+      "standardVerticalSeparationFeet": 1000,
+      "maxTailwindComponentCommercialLandingKnots": 10.0,
+      "stabilizedApproachGateFeetAal": 1000,
+      "finalReserveFuelMinutesJet": 30,
+      "finalReserveFuelMinutesTurboprop": 45,
+      "semicircularCruisingLevels": {
+        "eastboundMagneticTrack_000_179": ["FL050", "FL070", "FL090", "FL110", "FL130", "FL150", "FL170", "FL190", "FL210", "FL230", "FL250", "FL270", "FL290", "FL310", "FL330", "FL350", "FL370", "FL390", "FL410"],
+        "westboundMagneticTrack_180_359": ["FL060", "FL080", "FL100", "FL120", "FL140", "FL160", "FL180", "FL200", "FL220", "FL240", "FL260", "FL280", "FL300", "FL320", "FL340", "FL360", "FL380", "FL400"]
+      },
+      "wakeTurbulenceSeparationMatrix": [
+        { "leader": "H", "follower": "H", "minDistanceNm": 4.0, "minTimeSeconds": 120 },
+        { "leader": "H", "follower": "M", "minDistanceNm": 5.0, "minTimeSeconds": 120 },
+        { "leader": "H", "follower": "L", "minDistanceNm": 6.0, "minTimeSeconds": 180 },
+        { "leader": "M", "follower": "M", "minDistanceNm": 3.0, "minTimeSeconds": 120 },
+        { "leader": "M", "follower": "L", "minDistanceNm": 5.0, "minTimeSeconds": 180 },
+        { "leader": "L", "follower": "L", "minDistanceNm": 3.0, "minTimeSeconds": 90 }
+      ]
+    }
+  },
+  "lrcvInstrumentProcedures": {
+    "aerodromeIcao": "LRCV",
+    "aerodromeName": "Aeroportul International Craiova",
+    "arp": { "latitude": 44.318056, "longitude": 23.888611, "elevationFeet": 626 },
+    "magneticVariationDegrees": 5.0,
+    "runways": [
+      {
+        "designator": "08",
+        "legacyDesignator": "09",
+        "trueBearingDegrees": 88.93,
+        "magneticBearingDegrees": 83.93,
+        "threshold": { "latitude": 44.317936, "longitude": 23.872867, "elevationFeet": 628.0 },
+        "toraMeters": 2500,
+        "todaMeters": 2560,
+        "asdaMeters": 2500,
+        "ldaMeters": 2500,
+        "widthMeters": 45,
+        "surface": "Asphalt (PCN 54/F/A/W/T)",
+        "instrumentAids": ["RNP (LNAV/VNAV, LNAV)", "PAPI Left 3.0 deg"]
+      },
+      {
+        "designator": "26",
+        "legacyDesignator": "27",
+        "trueBearingDegrees": 268.95,
+        "magneticBearingDegrees": 263.95,
+        "threshold": { "latitude": 44.318356, "longitude": 23.904197, "elevationFeet": 615.4 },
+        "toraMeters": 2500,
+        "todaMeters": 2560,
+        "asdaMeters": 2500,
+        "ldaMeters": 2500,
+        "widthMeters": 45,
+        "surface": "Asphalt (PCN 54/F/A/W/T)",
+        "instrumentAids": ["ILS CAT I (ICV 108.7 MHz)", "RNP (LNAV/VNAV, LNAV)", "PAPI Left 3.0 deg"]
+      }
+    ],
+    "navaidsAndWaypoints": [
+      { "id": "CRA", "type": "VOR/DME", "frequencyMhz": 112.20, "latitude": 44.318333, "longitude": 23.913611, "role": "Aerodrome Navaid" },
+      { "id": "ICV", "type": "ILS/DME", "frequencyMhz": 108.70, "latitude": 44.317944, "longitude": 23.869139, "role": "LOC/GP RWY 26" },
+      { "id": "TITEK", "type": "RNAV_WP", "latitude": 44.493278, "longitude": 23.573861, "altitudeConstraintFeet": 6000, "speedLimitKnots": 250, "role": "IAF North-West (Airway L605 / Western Arrivals)" },
+      { "id": "PEMOK", "type": "RNAV_WP", "latitude": 44.364694, "longitude": 24.348472, "altitudeConstraintFeet": 5000, "speedLimitKnots": 250, "role": "IAF East (TMA Bucuresti / Eastern Arrivals)" },
+      { "id": "PANZU", "type": "RNAV_WP", "latitude": 44.036667, "longitude": 24.136944, "altitudeConstraintFeet": 6000, "speedLimitKnots": 250, "role": "IAF South-East (Airway M747 / Southern Arrivals)" },
+      { "id": "OZZET", "type": "RNAV_WP", "latitude": 44.321611, "longitude": 24.176917, "altitudeConstraintFeet": 2500, "speedLimitKnots": 210, "role": "IF & Holding Fix RWY 26 (11.7 NM from THR26)" },
+      { "id": "CV508", "type": "RNAV_WP", "latitude": 44.320028, "longitude": 24.037639, "altitudeConstraintFeet": 2500, "speedLimitKnots": 185, "role": "FAF RWY 26 (5.7 NM from THR26)" },
+      { "id": "SDF", "type": "RNAV_WP", "latitude": 44.318944, "longitude": 23.950611, "altitudeConstraintFeet": 1500, "speedLimitKnots": 160, "role": "Stepdown Fix RWY 26 (2.0 NM from THR26)" },
+      { "id": "NECCO", "type": "RNAV_WP", "latitude": 44.314306, "longitude": 23.623944, "altitudeConstraintFeet": 2500, "speedLimitKnots": 210, "role": "IF & Holding Fix RWY 08 (10.7 NM from THR08)" },
+      { "id": "CV408", "type": "RNAV_WP", "latitude": 44.316083, "longitude": 23.740000, "altitudeConstraintFeet": 2500, "speedLimitKnots": 185, "role": "FAF RWY 08 (5.7 NM from THR08)" },
+      { "id": "CV518", "type": "RNAV_WP", "latitude": 44.315750, "longitude": 23.718528, "altitudeConstraintFeet": 2000, "speedLimitKnots": 185, "role": "Missed Approach Turn Fix RWY 26" },
+      { "id": "CV420", "type": "RNAV_WP", "latitude": 44.320278, "longitude": 24.058556, "altitudeConstraintFeet": 2000, "speedLimitKnots": 185, "role": "Missed Approach Turn Fix RWY 08" },
+      { "id": "CV520", "type": "RNAV_WP", "latitude": 44.418583, "longitude": 23.920222, "altitudeConstraintFeet": 4000, "speedLimitKnots": 230, "role": "Transition / Missed Approach North Fix" },
+      { "id": "CV514", "type": "RNAV_WP", "latitude": 44.421611, "longitude": 24.174806, "altitudeConstraintFeet": 4000, "speedLimitKnots": 210, "role": "Transition North-East Fix" },
+      { "id": "CV516", "type": "RNAV_WP", "latitude": 44.221639, "longitude": 24.179000, "altitudeConstraintFeet": 2500, "speedLimitKnots": 210, "role": "Transition South-East Fix" },
+      { "id": "CV412", "type": "RNAV_WP", "latitude": 44.414278, "longitude": 23.620917, "altitudeConstraintFeet": 4000, "speedLimitKnots": 210, "role": "Transition North-West Fix" },
+      { "id": "CV414", "type": "RNAV_WP", "latitude": 44.214333, "longitude": 23.627000, "altitudeConstraintFeet": 2500, "speedLimitKnots": 210, "role": "Transition South-West Fix" }
+    ],
+    "approaches": [
+      {
+        "procedureId": "ILS-OR-RNP-RWY26",
+        "chartRef": "AD 2 LRCV 2.9-71",
+        "runway": "26",
+        "finalApproachTrackMagnetic": 264,
+        "finalApproachTrackTrue": 268.95,
+        "glidepathAngleDegrees": 3.0,
+        "decisionAltitudeFeetAmsl": 815,
+        "decisionHeightFeetAgl": 200,
+        "minimumRvrMeters": 550,
+        "transitions": [
+          { "iaf": "PEMOK", "sequence": ["PEMOK", "OZZET", "CV508", "THR26"], "totalDistanceNm": 19.6 },
+          { "iaf": "PANZU", "sequence": ["PANZU", "CV516", "OZZET", "CV508", "THR26"], "totalDistanceNm": 29.0 },
+          { "iaf": "TITEK", "sequence": ["TITEK", "CV520", "CV514", "OZZET", "CV508", "THR26"], "totalDistanceNm": 44.1 }
+        ],
+        "missedApproach": {
+          "sequence": ["THR26", "CV518", "CV520", "CV514", "OZZET"],
+          "finalAltitudeFeet": 4000,
+          "instructions": "Climb straight ahead to CV518 (at or above 2000 ft), turn right to CV520 (at or above 4000 ft), then CV514 to OZZET and hold at 4000 ft."
+        }
+      },
+      {
+        "procedureId": "RNP-RWY08",
+        "chartRef": "AD 2 LRCV 2.9-72",
+        "runway": "08",
+        "finalApproachTrackMagnetic": 84,
+        "finalApproachTrackTrue": 88.93,
+        "glidepathAngleDegrees": 3.0,
+        "decisionAltitudeFeetAmsl": 950,
+        "decisionHeightFeetAgl": 322,
+        "minimumRvrMeters": 750,
+        "transitions": [
+          { "iaf": "TITEK", "sequence": ["TITEK", "CV412", "NECCO", "CV408", "THR08"], "totalDistanceNm": 21.8 },
+          { "iaf": "PANZU", "sequence": ["PANZU", "CV414", "NECCO", "CV408", "THR08"], "totalDistanceNm": 35.2 },
+          { "iaf": "PEMOK", "sequence": ["PEMOK", "CV514", "CV520", "CV412", "NECCO", "CV408", "THR08"], "totalDistanceNm": 45.7 }
+        ],
+        "missedApproach": {
+          "sequence": ["THR08", "CV420", "CV520", "CV412", "NECCO"],
+          "finalAltitudeFeet": 4000,
+          "instructions": "Climb straight ahead to CV420 (at or above 2000 ft), turn left to CV520 (at or above 4000 ft), then CV412 to NECCO and hold at 4000 ft."
+        }
+      }
+    ],
+    "publishedHoldings": [
+      {
+        "fixId": "OZZET",
+        "associatedRunway": "26",
+        "latitude": 44.321611,
+        "longitude": 24.176917,
+        "inboundTrackMagnetic": 264,
+        "inboundTrackTrue": 268.95,
+        "turnDirection": "Right",
+        "outboundTimeSeconds": 60,
+        "minimumAltitudeFeet": 2500,
+        "maximumAltitudeFeet": 6000,
+        "maxIndicatedAirspeedKnots": 210
+      },
+      {
+        "fixId": "NECCO",
+        "associatedRunway": "08",
+        "latitude": 44.314306,
+        "longitude": 23.623944,
+        "inboundTrackMagnetic": 84,
+        "inboundTrackTrue": 88.93,
+        "turnDirection": "Right",
+        "outboundTimeSeconds": 60,
+        "minimumAltitudeFeet": 2500,
+        "maximumAltitudeFeet": 6000,
+        "maxIndicatedAirspeedKnots": 210
+      }
+    ]
+  },
+  "ifrAircraftPerformanceDatabase": [
+    {
+      "icaoCode": "A320",
+      "aircraftName": "Airbus A320-232",
+      "manufacturer": "AIRBUS",
+      "wakeTurbulenceCategory": "M",
+      "approachCategoryCode": "C",
+      "kinematics": {
+        "takeoffRollMeters": 1780,
+        "v1Knots": 138,
+        "vrKnots": 143,
+        "v2Knots": 148,
+        "initialClimbRateFpm": 2400,
+        "cruiseSpeedTasKnots": 450,
+        "cruiseMach": 0.78,
+        "optimalCruiseFlightLevel": "FL360",
+        "standardDescentGradientDegrees": 3.0,
+        "standardDescentRateFpm": 1800,
+        "cleanApproachSpeedKnots": 210,
+        "intermediateApproachSpeedKnots": 180,
+        "finalApproachSpeedVappKnots": 138,
+        "thresholdReferenceSpeedVrefKnots": 133,
+        "landingDistanceDryMeters": 1440,
+        "landingDistanceWetMeters": 1680,
+        "averageDecelerationKnotsPerSecond": 4.2,
+        "runwayOccupancyTimeSeconds": 52,
+        "maxCrosswindDryKnots": 33,
+        "maxCrosswindWetKnots": 27,
+        "maxTailwindKnots": 10,
+        "fuelBurnKgPerMinute": {
+          "takeoffAndClimb": 68.0,
+          "cruise": 40.5,
+          "descent": 16.0,
+          "approach": 28.0,
+          "holding": 34.0
+        }
+      }
+    },
+    {
+      "icaoCode": "A321",
+      "aircraftName": "Airbus A321neo",
+      "manufacturer": "AIRBUS",
+      "wakeTurbulenceCategory": "M",
+      "approachCategoryCode": "C",
+      "kinematics": {
+        "takeoffRollMeters": 1980,
+        "v1Knots": 145,
+        "vrKnots": 150,
+        "v2Knots": 154,
+        "initialClimbRateFpm": 2250,
+        "cruiseSpeedTasKnots": 455,
+        "cruiseMach": 0.78,
+        "optimalCruiseFlightLevel": "FL350",
+        "standardDescentGradientDegrees": 3.0,
+        "standardDescentRateFpm": 1850,
+        "cleanApproachSpeedKnots": 215,
+        "intermediateApproachSpeedKnots": 185,
+        "finalApproachSpeedVappKnots": 144,
+        "thresholdReferenceSpeedVrefKnots": 139,
+        "landingDistanceDryMeters": 1580,
+        "landingDistanceWetMeters": 1840,
+        "averageDecelerationKnotsPerSecond": 4.0,
+        "runwayOccupancyTimeSeconds": 55,
+        "maxCrosswindDryKnots": 35,
+        "maxCrosswindWetKnots": 29,
+        "maxTailwindKnots": 10,
+        "fuelBurnKgPerMinute": {
+          "takeoffAndClimb": 72.0,
+          "cruise": 42.0,
+          "descent": 17.5,
+          "approach": 30.0,
+          "holding": 36.5
+        }
+      }
+    },
+    {
+      "icaoCode": "B738",
+      "aircraftName": "Boeing 737-800",
+      "manufacturer": "BOEING",
+      "wakeTurbulenceCategory": "M",
+      "approachCategoryCode": "D",
+      "kinematics": {
+        "takeoffRollMeters": 1850,
+        "v1Knots": 142,
+        "vrKnots": 146,
+        "v2Knots": 151,
+        "initialClimbRateFpm": 2500,
+        "cruiseSpeedTasKnots": 460,
+        "cruiseMach": 0.79,
+        "optimalCruiseFlightLevel": "FL370",
+        "standardDescentGradientDegrees": 3.0,
+        "standardDescentRateFpm": 1900,
+        "cleanApproachSpeedKnots": 210,
+        "intermediateApproachSpeedKnots": 180,
+        "finalApproachSpeedVappKnots": 142,
+        "thresholdReferenceSpeedVrefKnots": 137,
+        "landingDistanceDryMeters": 1600,
+        "landingDistanceWetMeters": 1860,
+        "averageDecelerationKnotsPerSecond": 4.1,
+        "runwayOccupancyTimeSeconds": 53,
+        "maxCrosswindDryKnots": 33,
+        "maxCrosswindWetKnots": 27,
+        "maxTailwindKnots": 10,
+        "fuelBurnKgPerMinute": {
+          "takeoffAndClimb": 70.0,
+          "cruise": 41.5,
+          "descent": 16.5,
+          "approach": 29.0,
+          "holding": 35.0
+        }
+      }
+    },
+    {
+      "icaoCode": "AT72",
+      "aircraftName": "ATR 72-600",
+      "manufacturer": "ATR",
+      "wakeTurbulenceCategory": "M",
+      "approachCategoryCode": "B",
+      "kinematics": {
+        "takeoffRollMeters": 1220,
+        "v1Knots": 108,
+        "vrKnots": 112,
+        "v2Knots": 116,
+        "initialClimbRateFpm": 1450,
+        "cruiseSpeedTasKnots": 275,
+        "cruiseMach": 0.45,
+        "optimalCruiseFlightLevel": "FL210",
+        "standardDescentGradientDegrees": 3.0,
+        "standardDescentRateFpm": 1200,
+        "cleanApproachSpeedKnots": 170,
+        "intermediateApproachSpeedKnots": 150,
+        "finalApproachSpeedVappKnots": 118,
+        "thresholdReferenceSpeedVrefKnots": 113,
+        "landingDistanceDryMeters": 1100,
+        "landingDistanceWetMeters": 1280,
+        "averageDecelerationKnotsPerSecond": 4.5,
+        "runwayOccupancyTimeSeconds": 42,
+        "maxCrosswindDryKnots": 30,
+        "maxCrosswindWetKnots": 24,
+        "maxTailwindKnots": 10,
+        "fuelBurnKgPerMinute": {
+          "takeoffAndClimb": 18.5,
+          "cruise": 12.2,
+          "descent": 6.5,
+          "approach": 10.0,
+          "holding": 10.5
+        }
+      }
+    },
+    {
+      "icaoCode": "C56X",
+      "aircraftName": "Cessna 560XL Citation Excel",
+      "manufacturer": "CESSNA",
+      "wakeTurbulenceCategory": "M",
+      "approachCategoryCode": "B",
+      "kinematics": {
+        "takeoffRollMeters": 1090,
+        "v1Knots": 106,
+        "vrKnots": 111,
+        "v2Knots": 118,
+        "initialClimbRateFpm": 3200,
+        "cruiseSpeedTasKnots": 430,
+        "cruiseMach": 0.75,
+        "optimalCruiseFlightLevel": "FL410",
+        "standardDescentGradientDegrees": 3.0,
+        "standardDescentRateFpm": 1750,
+        "cleanApproachSpeedKnots": 180,
+        "intermediateApproachSpeedKnots": 155,
+        "finalApproachSpeedVappKnots": 120,
+        "thresholdReferenceSpeedVrefKnots": 115,
+        "landingDistanceDryMeters": 890,
+        "landingDistanceWetMeters": 1050,
+        "averageDecelerationKnotsPerSecond": 4.4,
+        "runwayOccupancyTimeSeconds": 38,
+        "maxCrosswindDryKnots": 24,
+        "maxCrosswindWetKnots": 20,
+        "maxTailwindKnots": 10,
+        "fuelBurnKgPerMinute": {
+          "takeoffAndClimb": 22.0,
+          "cruise": 11.5,
+          "descent": 5.5,
+          "approach": 9.0,
+          "holding": 9.8
+        }
+      }
+    }
+  ],
+  "ifrAlternateAerodromes": [
+    {
+      "code": "LROP",
+      "name": "Bucuresti Henri Coanda (Otopeni)",
+      "distanceFromLrcvNm": 98.0,
+      "distanceFromLrcvKm": 181.5,
+      "bearingFromLrcvDegrees": 86,
+      "runways": ["08R/26L (3500m ILS CAT III)", "08L/26R (3500m ILS CAT III)"],
+      "runwayHeadingDegrees": 80,
+      "estimatedJetFlightMinutes": 21.0
+    },
+    {
+      "code": "LRBS",
+      "name": "Bucuresti Aurel Vlaicu (Baneasa)",
+      "distanceFromLrcvNm": 97.0,
+      "distanceFromLrcvKm": 179.6,
+      "bearingFromLrcvDegrees": 88,
+      "runways": ["07/25 (3200m ILS CAT I)"],
+      "runwayHeadingDegrees": 70,
+      "estimatedJetFlightMinutes": 21.0
+    },
+    {
+      "code": "LRSB",
+      "name": "Sibiu International Airport",
+      "distanceFromLrcvNm": 90.5,
+      "distanceFromLrcvKm": 167.6,
+      "bearingFromLrcvDegrees": 7,
+      "runways": ["09/27 (2630m ILS CAT II)"],
+      "runwayHeadingDegrees": 90,
+      "estimatedJetFlightMinutes": 19.5
+    },
+    {
+      "code": "LRTR",
+      "name": "Timisoara Traian Vuia",
+      "distanceFromLrcvNm": 135.0,
+      "distanceFromLrcvKm": 250.0,
+      "bearingFromLrcvDegrees": 302,
+      "runways": ["11/29 (3500m ILS CAT III)"],
+      "runwayHeadingDegrees": 110,
+      "estimatedJetFlightMinutes": 27.0
+    },
+    {
+      "code": "LBSF",
+      "name": "Sofia International Airport (Bulgaria)",
+      "distanceFromLrcvNm": 104.0,
+      "distanceFromLrcvKm": 192.6,
+      "bearingFromLrcvDegrees": 195,
+      "runways": ["09/27 (3600m ILS CAT III)"],
+      "runwayHeadingDegrees": 90,
+      "estimatedJetFlightMinutes": 22.0
+    }
+  ],
+  "mockLiveIfrFlights": [
+    {
+      "flightId": "IFR-RO-20261031-01",
+      "aircraftId": "W4-3751",
+      "callsign": "WZZ3751",
+      "aircraftIcao": "A320",
+      "aircraftModel": "Airbus A320-232",
+      "operator": "Wizz Air Malta",
+      "wakeTurbulence": "M",
+      "flightRules": "IFR",
+      "transponderSquawk": "2145",
+      "flightPlan": {
+        "departureAerodrome": "EGGW",
+        "departureName": "London Luton",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LROP",
+        "alternateAerodromeSecondary": "LRSB",
+        "cruisingLevel": "FL370",
+        "atsRoute": "DCT DVR UL9 KONAN UL607 KOPIT L605 TITEK",
+        "arrivalEntryFix": "TITEK",
+        "totalRouteDistanceNm": 1125.0,
+        "estimatedElapsedTimeMinutes": 165,
+        "remainingFuelMinutes": 110,
+        "personsOnBoard": 176
+      },
+      "takeoffToLandingProfile": {
+        "takeoffUtc": "2026-10-31T11:15:00Z",
+        "topOfClimbUtc": "2026-10-31T11:39:00Z",
+        "topOfDescentUtc": "2026-10-31T13:38:00Z",
+        "topOfDescentDistanceFromLrcvNm": 114.0,
+        "targetStabilizationAltitudeFeetAmsl": 1626,
+        "expectedTouchdownSpeedKnots": 133,
+        "expectedLandingDistanceMeters": 1440
+      }
+    },
+    {
+      "flightId": "IFR-RO-20261031-02",
+      "aircraftId": "W4-3762",
+      "callsign": "WZZ3762",
+      "aircraftIcao": "A321",
+      "aircraftModel": "Airbus A321neo",
+      "operator": "Wizz Air Malta",
+      "wakeTurbulence": "M",
+      "flightRules": "IFR",
+      "transponderSquawk": "2152",
+      "flightPlan": {
+        "departureAerodrome": "LIME",
+        "departureName": "Milan Bergamo",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LROP",
+        "alternateAerodromeSecondary": "LRTR",
+        "cruisingLevel": "FL350",
+        "atsRoute": "DCT ABESI UN850 EVRIP L605 TITEK",
+        "arrivalEntryFix": "PEMOK",
+        "totalRouteDistanceNm": 640.0,
+        "estimatedElapsedTimeMinutes": 102,
+        "remainingFuelMinutes": 125,
+        "personsOnBoard": 224
+      },
+      "takeoffToLandingProfile": {
+        "takeoffUtc": "2026-10-31T12:24:00Z",
+        "topOfClimbUtc": "2026-10-31T12:46:00Z",
+        "topOfDescentUtc": "2026-10-31T13:44:00Z",
+        "topOfDescentDistanceFromLrcvNm": 108.0,
+        "targetStabilizationAltitudeFeetAmsl": 1626,
+        "expectedTouchdownSpeedKnots": 139,
+        "expectedLandingDistanceMeters": 1580
+      }
+    },
+    {
+      "flightId": "IFR-RO-20261031-03",
+      "aircraftId": "ROT-641",
+      "callsign": "ROT641",
+      "aircraftIcao": "AT72",
+      "aircraftModel": "ATR 72-600",
+      "operator": "TAROM",
+      "wakeTurbulence": "M",
+      "flightRules": "IFR",
+      "transponderSquawk": "5412",
+      "flightPlan": {
+        "departureAerodrome": "LROP",
+        "departureName": "Bucuresti Otopeni",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LRSB",
+        "alternateAerodromeSecondary": "LRBS",
+        "cruisingLevel": "FL160",
+        "atsRoute": "DCT PITESTI Z505 PEMOK",
+        "arrivalEntryFix": "PEMOK",
+        "totalRouteDistanceNm": 98.0,
+        "estimatedElapsedTimeMinutes": 32,
+        "remainingFuelMinutes": 135,
+        "personsOnBoard": 64
+      },
+      "takeoffToLandingProfile": {
+        "takeoffUtc": "2026-10-31T13:34:00Z",
+        "topOfClimbUtc": "2026-10-31T13:45:00Z",
+        "topOfDescentUtc": "2026-10-31T13:55:00Z",
+        "topOfDescentDistanceFromLrcvNm": 46.0,
+        "targetStabilizationAltitudeFeetAmsl": 1626,
+        "expectedTouchdownSpeedKnots": 113,
+        "expectedLandingDistanceMeters": 1100
+      }
+    }
+  ]
+}

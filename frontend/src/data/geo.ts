@@ -2,7 +2,7 @@
 import raw from './lrcv-geo.json';
 import { destination, type LatLon } from '../sim/geomath';
 
-export type RunwayId = '09' | '27';
+export type RunwayId = '08' | '26' | '09' | '27';
 
 export type NamedPoint = LatLon & { id: string; role: string; synthetic?: boolean };
 
@@ -11,20 +11,26 @@ export const AERODROME_ELEVATION_FT = raw.aerodrome.elevationFt;
 export const CTR_RADIUS_NM = raw.airspace.ctr.radiusNm;
 export const AIRAC_NOTE = raw._meta.source;
 
-const runwayById = Object.fromEntries(raw.runways.map((r) => [r.designator, r])) as Record<RunwayId, (typeof raw.runways)[number]>;
+export function normalizeRunway(rwy: string): '08' | '26' {
+  return rwy === '26' || rwy === '27' ? '26' : '08';
+}
+
+const runwayById = Object.fromEntries(raw.runways.map((r) => [r.designator, r])) as Record<string, (typeof raw.runways)[number]>;
 
 export function threshold(rwy: RunwayId): NamedPoint & { elevationFt: number } {
-  const t = runwayById[rwy].threshold;
-  return { id: `THR${rwy}`, role: 'THR', lat: t.latitudeDeg, lon: t.longitudeDeg, elevationFt: t.elevationFt };
+  const norm = normalizeRunway(rwy);
+  const t = (runwayById[norm] ?? runwayById['08']).threshold;
+  return { id: `THR${norm}`, role: 'THR', lat: t.latitudeDeg, lon: t.longitudeDeg, elevationFt: t.elevationFt };
 }
 
 export function runwayTrueBearing(rwy: RunwayId): number {
-  return runwayById[rwy].trueBearingDeg;
+  const norm = normalizeRunway(rwy);
+  return (runwayById[norm] ?? runwayById['08']).trueBearingDeg;
 }
 
 export const RUNWAY_LINE: [number, number][] = [
-  [threshold('09').lat, threshold('09').lon],
-  [threshold('27').lat, threshold('27').lon],
+  [threshold('08').lat, threshold('08').lon],
+  [threshold('26').lat, threshold('26').lon],
 ];
 
 export const WAYPOINTS: Record<string, NamedPoint> = Object.fromEntries(
@@ -37,8 +43,8 @@ export const IAF_IDS = ['TITEK', 'PEMOK', 'PANZU'] as const;
 export type IafId = (typeof IAF_IDS)[number];
 
 export function pointById(id: string): NamedPoint {
-  if (id === 'THR09') return threshold('09');
-  if (id === 'THR27') return threshold('27');
+  if (id === 'THR08' || id === 'THR09') return threshold('08');
+  if (id === 'THR26' || id === 'THR27') return threshold('26');
   const p = WAYPOINTS[id];
   if (!p) throw new Error(`Punct necunoscut în lrcv-geo.json: ${id}`);
   return p;
@@ -47,7 +53,8 @@ export function pointById(id: string): NamedPoint {
 type Approach = (typeof raw.approaches)[number];
 
 function approach(rwy: RunwayId): Approach {
-  const a = raw.approaches.find((x) => x.runway === rwy);
+  const norm = normalizeRunway(rwy);
+  const a = raw.approaches.find((x) => x.runway === norm || x.runway === rwy);
   if (!a) throw new Error(`Lipsește abordarea pentru pista ${rwy}`);
   return a;
 }
@@ -77,9 +84,9 @@ export function allArrivalRoutes(rwy: RunwayId): { iaf: IafId; points: [number, 
   return IAF_IDS.map((iaf) => ({ iaf, points: arrivalRoute(rwy, iaf).map((p) => [p.lat, p.lon] as [number, number]) }));
 }
 
-/** Backendul trimite pista activă ca "09" sau "27", aceeași denumire ca pe hartă. */
+/** Backendul trimite pista activă ca "08" sau "26" (sau istoric "09" / "27"). */
 export function runwayFromBackend(backendRunway: string): RunwayId {
-  return backendRunway === '27' ? '27' : '09';
+  return normalizeRunway(backendRunway);
 }
 
 // ---------- Puncte sintetice (nu există în AIP) ----------
@@ -93,9 +100,10 @@ export const VFR_ENTRY_POINTS: NamedPoint[] = [
 
 /** Punct de aliniere VFR pe prelungirea axului, la 3 NM de prag (sintetic). */
 export function vfrFinalJoin(rwy: RunwayId): NamedPoint {
-  const thr = threshold(rwy);
-  const reciprocal = (runwayTrueBearing(rwy) + 180) % 360;
-  return { id: `F${rwy}-3NM`, role: 'Aliniere finală VFR (sintetic)', synthetic: true, ...destination(thr, reciprocal, 3) };
+  const norm = normalizeRunway(rwy);
+  const thr = threshold(norm);
+  const reciprocal = (runwayTrueBearing(norm) + 180) % 360;
+  return { id: `F${norm}-3NM`, role: 'Aliniere finală VFR (sintetic)', synthetic: true, ...destination(thr, reciprocal, 3) };
 }
 
 /** Craiova-Sud din AIP (AD 2.32 LRCW). Backendul îl numește greșit „Balta Verde LRBV”. */

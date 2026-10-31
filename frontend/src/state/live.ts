@@ -1,12 +1,12 @@
 // Starea paginii Live: poziții OpenSky și METAR, cu interogare periodică.
 import { create } from 'zustand';
-import { ApiError, fetchLivePositions, fetchMetar } from '../api/client';
-import type { LivePositions, Metar } from '../contracts/live';
+import { ApiError, fetchLivePositions, fetchMetar, fetchVfrTracking } from '../api/client';
+import type { LivePositions, Metar, VfrTracking } from '../contracts/live';
 
 /**
  * OpenSky anonim dă 400 de credite pe zi; un apel pe zona Craiova costă 1 credit.
  * La 15 s ajung pentru ~100 de minute de pagină deschisă pe zi.
- * shortcut: fără cache în backend, fiecare tab deschis consumă separat; de mutat cache-ul în backend.
+ * METAR-ul este și partajat în cache-ul backendului; tab-urile nu provoacă cereri dese către sursa meteo.
  */
 export const POSITIONS_EVERY_MS = 15_000;
 export const METAR_EVERY_MS = 5 * 60_000;
@@ -14,8 +14,10 @@ export const METAR_EVERY_MS = 5 * 60_000;
 interface LiveState {
   positions: LivePositions | null;
   metar: Metar | null;
+  vfrTracking: VfrTracking | null;
   positionsError: string | null;
   metarError: string | null;
+  vfrTrackingError: string | null;
   updatedAtMs: number | null;
   selectedIcao: string | null;
   select: (icao: string | null) => void;
@@ -26,6 +28,7 @@ interface LiveState {
 const message = (e: unknown) => (e instanceof ApiError ? e.message : 'Serviciul de date reale nu răspunde.');
 
 export const useLive = create<LiveState>()((set, get) => {
+  let lastMetarRequestAtMs: number | null = null;
   async function loadPositions() {
     try {
       const positions = await fetchLivePositions();
@@ -39,18 +42,30 @@ export const useLive = create<LiveState>()((set, get) => {
     }
   }
   async function loadMetar() {
+    const now = Date.now();
+    if (lastMetarRequestAtMs !== null && now - lastMetarRequestAtMs < METAR_EVERY_MS) return;
+    lastMetarRequestAtMs = now;
     try {
       set({ metar: await fetchMetar(), metarError: null });
     } catch (e) {
       set({ metarError: message(e) });
+    }
+    try {
+      const runway = get().metar?.windDirectionDegrees != null && get().metar!.windDirectionDegrees! >= 180 ? '26' : '08';
+      const vfrTracking = await fetchVfrTracking(runway);
+      set({ vfrTracking, positions: vfrTracking, vfrTrackingError: null, updatedAtMs: Date.now() });
+    } catch (e) {
+      set({ vfrTrackingError: message(e) });
     }
   }
 
   return {
     positions: null,
     metar: null,
+    vfrTracking: null,
     positionsError: null,
     metarError: null,
+    vfrTrackingError: null,
     updatedAtMs: null,
     selectedIcao: null,
     select: (selectedIcao) => set({ selectedIcao }),

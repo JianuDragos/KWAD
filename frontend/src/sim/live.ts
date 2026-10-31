@@ -19,11 +19,11 @@ export function extrapolate(f: LiveFlight, nowUnixSeconds: number): (LatLon & { 
   return { ...destination(from, f.trueTrackDegrees, (f.velocityKnots * seconds) / 3600), extrapolatedSeconds: seconds };
 }
 
-/** Pista cu cel mai mult vânt de față (METAR raportează direcția adevărată). Fără vânt definit: 27, pista cu ILS. */
+/** Pista cu cel mai mult vânt de față (METAR raportează direcția adevărată). Fără vânt definit: 26, pista cu ILS. */
 export function runwayForWind(windDirectionDegrees: number | null, windSpeedKnots: number): RunwayId {
-  if (windDirectionDegrees == null || windSpeedKnots === 0) return '27';
+  if (windDirectionDegrees == null || windSpeedKnots === 0) return '26';
   const headwind = (rwy: RunwayId) => Math.cos(((windDirectionDegrees - runwayTrueBearing(rwy)) * Math.PI) / 180);
-  return headwind('09') > headwind('27') ? '09' : '27';
+  return headwind('08') > headwind('26') ? '08' : '26';
 }
 
 /** Codurile ICAO de operator (primele 3 litere din indicativ) ale companiilor care trec frecvent pe aici. */

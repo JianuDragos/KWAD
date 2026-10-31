@@ -1,0 +1,1172 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "_description": "ROMATSA R.A. (Administratia Romana a Serviciilor de Trafic Aerian) - Mock Database pentru operatiuni VFR (Visual Flight Rules) si interoperabilitate ATS conform specificatiilor AACR/OACI/SES.",
+  "metadata": {
+    "provider": "ROMATSA R.A.",
+    "certificationBody": "Autoritatea Aeronautica Civila Romana (AACR)",
+    "regulatoryFramework": [
+      "SES (Single European Sky)",
+      "Codul Aerian Civil al Romaniei",
+      "Conventia privind Aviatia Civila Internationala (OACI/ICAO Doc 4444, Anexa 2, Anexa 3, Anexa 11)"
+    ],
+    "fir": {
+      "icaoCode": "LRBB",
+      "name": "Bucuresti Flight Information Region",
+      "country": "Romania"
+    },
+    "standardUnits": {
+      "distance": "NM (Nautical Mile) - 1 NM = 1.852 km",
+      "altitude": "ft (feet) - 1 ft = 0.3048 m",
+      "speed": "kt (knots / noduri) - 1 kt = 1 NM/h = 1.852 km/h (0.5144 m/s)",
+      "atmosphericPressure": "hPa (QNH / QFE)",
+      "runwayDimension": "m (metri)"
+    },
+    "vfrGeneralRules": {
+      "standardSquawkUncontrolled": "7000",
+      "emergencySquawk": "7700",
+      "radioFailureSquawk": "7600",
+      "unlawfulInterferenceSquawk": "7500",
+      "semicircularCruisingLevels": {
+        "eastboundTrackDegrees_000_179": ["FL035", "FL055", "FL075", "FL095", "FL115", "FL135", "FL155", "FL175", "FL195"],
+        "westboundTrackDegrees_180_359": ["FL045", "FL065", "FL085", "FL105", "FL125", "FL145", "FL165", "FL185"]
+      }
+    }
+  },
+  "airspaceClasses": [
+    {
+      "class": "A",
+      "statusInRomania": "Activ",
+      "serviceProvided": "Control al traficului aerian (ATC)",
+      "allowedFlights": ["IFR"],
+      "vfrPermitted": false,
+      "description": "Spatiu aerian controlat superior (de la FL195 pana la FL660). Zborurile VFR sunt strict interzise.",
+      "speedLimitKnots": null,
+      "radioContactRequired": true,
+      "atcClearanceRequired": true
+    },
+    {
+      "class": "C",
+      "statusInRomania": "Activ",
+      "serviceProvided": "Control al traficului aerian (ATC) pentru separarea IFR de IFR si IFR de VFR. Pentru zborurile VFR de VFR se asigura informare de trafic si consiliere la cerere.",
+      "allowedFlights": ["IFR", "VFR"],
+      "vfrPermitted": true,
+      "description": "Spatiu aerian controlat (TMA si CTR ale aerodromurilor civile). Toate zborurile sunt supuse autorizarii ATC.",
+      "speedLimitKnots": 250,
+      "speedLimitAppliesBelow": "FL100 (10000 ft AMSL)",
+      "radioContactRequired": true,
+      "atcClearanceRequired": true,
+      "vmcMinimums": {
+        "flightVisibilityKm": 5,
+        "flightVisibilityAboveFL100Km": 8,
+        "horizontalDistanceToCloudsMeters": 1500,
+        "verticalDistanceToCloudsMeters": 300,
+        "verticalDistanceToCloudsFeet": 1000
+      }
+    },
+    {
+      "class": "G",
+      "statusInRomania": "Activ",
+      "serviceProvided": "Serviciul de informare a zborurilor (FIS) si Serviciul de alarmare (Alerting service). Nu se asigura esalonare ATC.",
+      "allowedFlights": ["IFR", "VFR"],
+      "vfrPermitted": true,
+      "description": "Spatiu aerian necontrolat (de la sol GND pana la baza spatiului controlat C sau FL105). Pilotul la comanda este responsabil de separare si navigatie vizuala.",
+      "speedLimitKnots": 250,
+      "speedLimitAppliesBelow": "FL100 (10000 ft AMSL)",
+      "radioContactRequired": false,
+      "radioContactRecommended": true,
+      "atcClearanceRequired": false,
+      "responsibleUnit": "ACC Bucuresti (Bucuresti Information) si unitatile locale TWR/APP pentru zonele adiacente",
+      "vmcMinimums": {
+        "above3000ftAmmslOr1000ftAgl": {
+          "flightVisibilityKm": 5,
+          "flightVisibilityAboveFL100Km": 8,
+          "horizontalDistanceToCloudsMeters": 1500,
+          "verticalDistanceToCloudsMeters": 300
+        },
+        "atOrBelow3000ftAmslOr900m": {
+          "flightVisibilityKm": 5,
+          "reducedSpeedVisibilityMinKm": 1.5,
+          "clearOfCloud": true,
+          "surfaceInSight": true
+        }
+      }
+    }
+  ],
+  "atsUnits": {
+    "regionalControl": {
+      "acc": {
+        "code": "LRBB-ACC",
+        "name": "ACC Bucuresti (Area Control Center)",
+        "role": "Control regional in regiuni de control si Serviciu de Informare a Zborurilor (FIS)",
+        "ratingsRequired": ["ACS"],
+        "fisOperationalPositions": [
+          {
+            "sector": "FIS Bucuresti Nord",
+            "frequencyMhz": 129.400,
+            "callsign": "BUCURESTI INFORMATION",
+            "airspaceClassServed": "G",
+            "purpose": "Furnizare informatii utile de zbor (meteo, NOTAM, trafic raportat) si primire pozitii VFR"
+          },
+          {
+            "sector": "FIS Bucuresti Sud",
+            "frequencyMhz": 136.575,
+            "callsign": "BUCURESTI INFORMATION",
+            "airspaceClassServed": "G",
+            "purpose": "Furnizare informatii utile de zbor si serviciu de alarmare pentru zboruri VFR"
+          }
+        ]
+      }
+    },
+    "approachUnits": [
+      {
+        "unit": "APP Bucuresti",
+        "primaryAirports": ["LROP", "LRBS"],
+        "ratingsRequired": ["APS", "TCL"],
+        "description": "Unitate dedicata de control al apropierii pentru zona terminala a Capitalei"
+      },
+      {
+        "unit": "APP Arad",
+        "primaryAirports": ["LRAR", "LRTR"],
+        "ratingsRequired": ["APS", "TCL"],
+        "description": "Unitate dedicata de control al apropierii pentru vestul Romaniei"
+      },
+      {
+        "unit": "APP Constanta",
+        "primaryAirports": ["LRCK", "LRTC"],
+        "ratingsRequired": ["APS", "TCL"],
+        "description": "Unitate de control de apropiere pentru zona litorala si Marea Neagra"
+      }
+    ],
+    "aerodromeTowerUnits": [
+      {
+        "code": "LROP",
+        "name": "TWR Otopeni (Henri Coanda)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["AIR", "GMC", "GMS"],
+        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC", "ADI/GMS"],
+        "supportsVfr": true,
+        "vfrRestrictions": "Permis doar cu plan de zbor aprobat si slot ATFM; prioritate trafic comercial IFR",
+        "twrFrequencyMhz": 118.805,
+        "gndFrequencyMhz": 121.855,
+        "atisFrequencyMhz": 118.080,
+        "elevationFeet": 314
+      },
+      {
+        "code": "LRBS",
+        "name": "TWR Baneasa (Aurel Vlaicu)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["AIR", "GMC"],
+        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC"],
+        "supportsVfr": true,
+        "vfrRestrictions": "Hub major pentru aviatia generala, scoli de zbor si operatiuni VFR private",
+        "twrFrequencyMhz": 120.800,
+        "gndFrequencyMhz": 129.950,
+        "atisFrequencyMhz": 126.125,
+        "elevationFeet": 305
+      },
+      {
+        "code": "LRCL",
+        "name": "TWR Cluj-Napoca (Avram Iancu)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["TWR"],
+        "ratingsRequired": ["ADI/TWR"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 118.700,
+        "atisFrequencyMhz": 127.275,
+        "elevationFeet": 1036
+      },
+      {
+        "code": "LRTR",
+        "name": "TWR Timisoara (Traian Vuia)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["AIR", "GMC"],
+        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 120.100,
+        "gndFrequencyMhz": 121.600,
+        "atisFrequencyMhz": 128.625,
+        "elevationFeet": 348
+      },
+      {
+        "code": "LRAR",
+        "name": "TWR Arad",
+        "type": "TWR_ONLY",
+        "atcPositions": ["TWR"],
+        "ratingsRequired": ["ADI/TWR"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 118.000,
+        "elevationFeet": 353
+      },
+      {
+        "code": "LRCK",
+        "name": "TWR Constanta (Mihail Kogalniceanu)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["TWR"],
+        "ratingsRequired": ["ADI/TWR"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 120.450,
+        "elevationFeet": 353
+      },
+      {
+        "code": "LRTM",
+        "name": "TWR Targu Mures (Transilvania)",
+        "type": "TWR_ONLY",
+        "atcPositions": ["TWR"],
+        "ratingsRequired": ["ADI/TWR"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 119.650,
+        "elevationFeet": 965
+      },
+      {
+        "code": "LRSB",
+        "name": "TWR Sibiu",
+        "type": "TWR_ONLY",
+        "atcPositions": ["TWR"],
+        "ratingsRequired": ["ADI/TWR"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 121.300,
+        "elevationFeet": 1496
+      },
+      {
+        "code": "LRCV",
+        "name": "TWR Craiova",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "vfrRestrictions": "Coordoneaza traficul VFR in CTR Craiova Clasa C prin punctele vizuale VFR-N, VFR-S, VFR-W",
+        "twrFrequencyMhz": 124.300,
+        "appFrequencyMhz": 124.300,
+        "atisFrequencyMhz": 126.850,
+        "elevationFeet": 626
+      },
+      {
+        "code": "LRBC",
+        "name": "TWR Bacau (George Enescu)",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 120.150,
+        "elevationFeet": 607
+      },
+      {
+        "code": "LRBM",
+        "name": "TWR Baia Mare (Maramures)",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 118.150,
+        "elevationFeet": 604
+      },
+      {
+        "code": "LRIA",
+        "name": "TWR Iasi",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 119.950,
+        "elevationFeet": 397
+      },
+      {
+        "code": "LROD",
+        "name": "TWR Oradea",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 128.300,
+        "elevationFeet": 465
+      },
+      {
+        "code": "LRSV",
+        "name": "TWR Suceava (Stefan cel Mare)",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 129.950,
+        "elevationFeet": 1375
+      },
+      {
+        "code": "LRSM",
+        "name": "TWR Satu Mare",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 119.750,
+        "elevationFeet": 414
+      },
+      {
+        "code": "LRTC",
+        "name": "TWR Tulcea (Delta Dunarii)",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "twrFrequencyMhz": 119.550,
+        "elevationFeet": 200
+      },
+      {
+        "code": "LRGB",
+        "name": "TWR Brasov (Brasov-Ghimbav)",
+        "type": "TWR_AND_APP_COMBINED",
+        "atcPositions": ["TWR_REMOTE", "APP_PROCEDURAL"],
+        "ratingsRequired": ["ADI/TWR", "APP"],
+        "supportsVfr": true,
+        "vfrRestrictions": "Primul aeroport din Romania cu turn de control la distanta (Remote TWR operat din Centrul ROMATSA Arad)",
+        "twrFrequencyMhz": 128.550,
+        "elevationFeet": 1739
+      }
+    ]
+  },
+  "aircraftDatabase": [
+    {
+      "aircraftName": "172 Skyhawk",
+      "icaoCode": "C172",
+      "manufacturer": "CESSNA",
+      "wakeTurbulenceCategory": "L",
+      "typeCode": "L1P",
+      "approachCategoryCode": "A",
+      "cruisingSpeedKnots": 115,
+      "cruisingLevelOptimal": "FL130",
+      "minimumCleanSpeedKnots": null,
+      "landingDistanceMeters": 160,
+      "usualPassengers": 3,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 1,
+        "engineType": "Piston (P)"
+      },
+      "vfrProfile": {
+        "category": "Light Single Engine Piston",
+        "vfrRole": "Standard VFR General Aviation & Ab-Initio Pilot Training",
+        "standardVfrPatternSpeedKnots": 75,
+        "maxCrosswindLimitKnots": 15,
+        "fuelBurnLitersPerHour": 35
+      }
+    },
+    {
+      "aircraftName": "ICP Savannah S (Ultralight STOL)",
+      "icaoCode": "SAVS",
+      "manufacturer": "ICP",
+      "wakeTurbulenceCategory": "L",
+      "typeCode": "L1P",
+      "approachCategoryCode": "A",
+      "cruisingSpeedKnots": 65,
+      "cruisingLevelOptimal": "FL055",
+      "minimumCleanSpeedKnots": 42,
+      "landingDistanceMeters": 95,
+      "usualPassengers": 1,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 1,
+        "engineType": "Piston (P) - Rotax 912 ULS"
+      },
+      "vfrProfile": {
+        "category": "Ultralight STOL (ULM)",
+        "vfrRole": "Recreational VFR & STOL operations on grass airfields (Podari, Craiova-Sud LRCW)",
+        "standardVfrPatternSpeedKnots": 55,
+        "maxCrosswindLimitKnots": 11,
+        "fuelBurnLitersPerHour": 18
+      }
+    },
+    {
+      "aircraftName": "PZL-104 Wilga 35A (STOL)",
+      "icaoCode": "PZ04",
+      "manufacturer": "PZL-OKĘCIE",
+      "wakeTurbulenceCategory": "L",
+      "typeCode": "L1P",
+      "approachCategoryCode": "A",
+      "cruisingSpeedKnots": 75,
+      "cruisingLevelOptimal": "FL065",
+      "minimumCleanSpeedKnots": 50,
+      "landingDistanceMeters": 125,
+      "usualPassengers": 3,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 1,
+        "engineType": "Piston Radial (P) - AI-14RA"
+      },
+      "vfrProfile": {
+        "category": "Utility STOL / Glider Tow",
+        "vfrRole": "Aeroclub utility, glider towing & parachute drops in Class G/C around Craiova",
+        "standardVfrPatternSpeedKnots": 62,
+        "maxCrosswindLimitKnots": 13,
+        "fuelBurnLitersPerHour": 48
+      }
+    },
+    {
+      "aircraftName": "AICSA PA-44 Seminole",
+      "icaoCode": "PA44",
+      "manufacturer": "PIPER",
+      "wakeTurbulenceCategory": "L",
+      "typeCode": "L2P",
+      "approachCategoryCode": "A",
+      "cruisingSpeedKnots": 160,
+      "cruisingLevelOptimal": "FL180",
+      "minimumCleanSpeedKnots": null,
+      "landingDistanceMeters": 400,
+      "usualPassengers": 3,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Piston (P)"
+      },
+      "vfrProfile": {
+        "category": "Multi Engine Piston",
+        "vfrRole": "Commercial Pilot License (MEP/CPL) cross-country training and private cross-FIR flights",
+        "standardVfrPatternSpeedKnots": 90,
+        "maxCrosswindLimitKnots": 17,
+        "fuelBurnLitersPerHour": 75
+      }
+    },
+    {
+      "aircraftName": "B300 Super King Air 350",
+      "icaoCode": "B350",
+      "manufacturer": "HAWKER BEECHCRAFT",
+      "wakeTurbulenceCategory": "L",
+      "typeCode": "L2T",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 300,
+      "cruisingLevelOptimal": "FL350",
+      "minimumCleanSpeedKnots": 150,
+      "landingDistanceMeters": 820,
+      "usualPassengers": 8,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Twin Turboprop",
+        "vfrRole": "Executive transport, air ambulance & high-speed VFR/Y-FPL operations",
+        "standardVfrPatternSpeedKnots": 140,
+        "maxCrosswindLimitKnots": 25,
+        "fuelBurnLitersPerHour": 300
+      }
+    },
+    {
+      "aircraftName": "560XL Citation Excel",
+      "icaoCode": "C56X",
+      "manufacturer": "CESSNA",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2J",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 430,
+      "cruisingLevelOptimal": "FL450",
+      "minimumCleanSpeedKnots": 180,
+      "landingDistanceMeters": 890,
+      "usualPassengers": 8,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Light/Midsize Business Jet",
+        "vfrRole": "Corporate charter; occasionally operates visual approach under VFR clearances into non-radar airfields",
+        "standardVfrPatternSpeedKnots": 160,
+        "maxCrosswindLimitKnots": 24,
+        "fuelBurnLitersPerHour": 800
+      }
+    },
+    {
+      "aircraftName": "ALENIA ATR-42-500",
+      "icaoCode": "AT45",
+      "manufacturer": "ATR",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2T",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 225,
+      "cruisingLevelOptimal": "FL260",
+      "minimumCleanSpeedKnots": 170,
+      "landingDistanceMeters": 1000,
+      "usualPassengers": 42,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Regional Turboprop",
+        "vfrRole": "Regional carrier (TAROM); executes visual approach in CTR when meteorological conditions permit",
+        "standardVfrPatternSpeedKnots": 140,
+        "maxCrosswindLimitKnots": 30
+      }
+    },
+    {
+      "aircraftName": "ALENIA ATR-72",
+      "icaoCode": "AT72",
+      "manufacturer": "ATR",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2T",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 275,
+      "cruisingLevelOptimal": "FL250",
+      "minimumCleanSpeedKnots": 170,
+      "landingDistanceMeters": 1100,
+      "usualPassengers": 72,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Regional Turboprop",
+        "vfrRole": "Domestic commercial carrier (TAROM); mixes with local VFR traffic in terminal areas",
+        "standardVfrPatternSpeedKnots": 145,
+        "maxCrosswindLimitKnots": 30
+      }
+    },
+    {
+      "aircraftName": "Dash 8 Q400",
+      "icaoCode": "DH8D",
+      "manufacturer": "BOMBARDIER",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2T",
+      "approachCategoryCode": "C",
+      "cruisingSpeedKnots": 360,
+      "cruisingLevelOptimal": "FL250",
+      "minimumCleanSpeedKnots": 180,
+      "landingDistanceMeters": 1100,
+      "usualPassengers": 78,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Regional High-Speed Turboprop",
+        "vfrRole": "Commercial airline; wake turbulence buffer required when following light VFR traffic",
+        "standardVfrPatternSpeedKnots": 160,
+        "maxCrosswindLimitKnots": 32
+      }
+    },
+    {
+      "aircraftName": "2000 (SAAB)",
+      "icaoCode": "SB20",
+      "manufacturer": "SAAB",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2T",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 360,
+      "cruisingLevelOptimal": "FL310",
+      "minimumCleanSpeedKnots": 160,
+      "landingDistanceMeters": 1300,
+      "usualPassengers": 50,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Fast Regional Turboprop",
+        "vfrRole": "Regional charter & passenger transport",
+        "standardVfrPatternSpeedKnots": 150,
+        "maxCrosswindLimitKnots": 30
+      }
+    },
+    {
+      "aircraftName": "FOKKER 50,Maritime Enforcer",
+      "icaoCode": "F50",
+      "manufacturer": "FOKKER",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2T",
+      "approachCategoryCode": "B",
+      "cruisingSpeedKnots": 240,
+      "cruisingLevelOptimal": "FL250",
+      "minimumCleanSpeedKnots": 170,
+      "landingDistanceMeters": 1100,
+      "usualPassengers": 50,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Maritime Surveillance / Utility Turboprop",
+        "vfrRole": "Coastal and low-level observation flights in Black Sea area",
+        "standardVfrPatternSpeedKnots": 135,
+        "maxCrosswindLimitKnots": 28
+      }
+    },
+    {
+      "aircraftName": "EMB-145",
+      "icaoCode": "E145",
+      "manufacturer": "EMBRAER",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2J",
+      "approachCategoryCode": "C",
+      "cruisingSpeedKnots": 440,
+      "cruisingLevelOptimal": "FL370",
+      "minimumCleanSpeedKnots": 180,
+      "landingDistanceMeters": 1350,
+      "usualPassengers": 45,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Regional Jet",
+        "vfrRole": "Commercial operations",
+        "standardVfrPatternSpeedKnots": 160,
+        "maxCrosswindLimitKnots": 30
+      }
+    },
+    {
+      "aircraftName": "A320",
+      "icaoCode": "A320",
+      "manufacturer": "AIRBUS",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2J",
+      "approachCategoryCode": "C",
+      "cruisingSpeedKnots": 450,
+      "cruisingLevelOptimal": "FL410",
+      "minimumCleanSpeedKnots": 210,
+      "landingDistanceMeters": 1440,
+      "usualPassengers": 150,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Commercial Narrowbody",
+        "vfrRole": "Commercial mainline (Wizz Air, Tarom); creates medium wake vortex affecting VFR arrivals (minimum 3 NM or 2 min separation)",
+        "standardVfrPatternSpeedKnots": 170,
+        "maxCrosswindLimitKnots": 38
+      }
+    },
+    {
+      "aircraftName": "737-800",
+      "icaoCode": "B738",
+      "manufacturer": "BOEING",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L2J",
+      "approachCategoryCode": "D",
+      "cruisingSpeedKnots": 460,
+      "cruisingLevelOptimal": "FL410",
+      "minimumCleanSpeedKnots": 210,
+      "landingDistanceMeters": 1600,
+      "usualPassengers": 162,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 2,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Commercial Narrowbody",
+        "vfrRole": "Commercial mainline (Ryanair, Tarom); requires wake turbulence precaution for trailing light VFR traffic",
+        "standardVfrPatternSpeedKnots": 170,
+        "maxCrosswindLimitKnots": 33
+      }
+    },
+    {
+      "aircraftName": "A380-800",
+      "icaoCode": "A388",
+      "manufacturer": "AIRBUS",
+      "wakeTurbulenceCategory": "H",
+      "typeCode": "L4J",
+      "approachCategoryCode": "D",
+      "cruisingSpeedKnots": 520,
+      "cruisingLevelOptimal": "FL430",
+      "minimumCleanSpeedKnots": 230,
+      "landingDistanceMeters": 2010,
+      "usualPassengers": 555,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 4,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Heavy Super Widebody",
+        "vfrRole": "Overflight in Bucharest FIR (Clasa A); severe wake turbulence hazard for any underlying VFR traffic crossing TMA boundaries",
+        "standardVfrPatternSpeedKnots": 180,
+        "maxCrosswindLimitKnots": 35
+      }
+    },
+    {
+      "aircraftName": "F-16 Fighting Falcon",
+      "icaoCode": "F16",
+      "manufacturer": "LOCKHEED",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L1J",
+      "approachCategoryCode": "D",
+      "cruisingSpeedKnots": 480,
+      "cruisingLevelOptimal": "FL500",
+      "minimumCleanSpeedKnots": null,
+      "landingDistanceMeters": 800,
+      "usualPassengers": 1,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 1,
+        "engineType": "Jet (J)"
+      },
+      "vfrProfile": {
+        "category": "Military Supersonic Fighter",
+        "vfrRole": "Operational Air Traffic (OAT) & quick reaction alert in Romanian airspace; operates in TSA/TRA reserved zones (e.g. Fetesti, Campia Turzii)",
+        "standardVfrPatternSpeedKnots": 200,
+        "maxCrosswindLimitKnots": 25
+      }
+    },
+    {
+      "aircraftName": "C-130J Hercules",
+      "icaoCode": "C30J",
+      "manufacturer": "LOCKHEED MARTIN",
+      "wakeTurbulenceCategory": "M",
+      "typeCode": "L4T",
+      "approachCategoryCode": "C",
+      "cruisingSpeedKnots": 330,
+      "cruisingLevelOptimal": "FL330",
+      "minimumCleanSpeedKnots": null,
+      "landingDistanceMeters": 430,
+      "usualPassengers": 92,
+      "typeCodeInterpretation": {
+        "aircraftType": "Landplane (L)",
+        "engineCount": 4,
+        "engineType": "Turboprop (T)"
+      },
+      "vfrProfile": {
+        "category": "Tactical Military Transport",
+        "vfrRole": "Military transport, paratrooper drops and tactical low-level VFR navigation flights",
+        "standardVfrPatternSpeedKnots": 140,
+        "maxCrosswindLimitKnots": 30
+      }
+    }
+  ],
+  "vfrVisualReportingPoints": [
+    {
+      "aerodromeIcao": "LRCV",
+      "aerodromeName": "Craiova Airport",
+      "airspaceClass": "C",
+      "controllingUnit": "TWR Craiova (124.300 MHz)",
+      "points": [
+        {
+          "code": "VFR-N",
+          "name": "Mischii / Training North Entry",
+          "latitude": 44.6479,
+          "longitude": 23.8886,
+          "elevationFeet": 580,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 2000,
+          "holdingPattern": "Standard right-hand 2 min racetrack over point",
+          "description": "Punct vizual de intrare/iesire la nord de pista Craiova 08/26 (anterior 09/27)"
+        },
+        {
+          "code": "VFR-S",
+          "name": "Podari / Training South Entry",
+          "latitude": 43.9882,
+          "longitude": 23.8886,
+          "elevationFeet": 310,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 1500,
+          "holdingPattern": "Standard left-hand orbit, south of Jiu river",
+          "description": "Punct vizual de raportare la sudul orasului Craiova"
+        },
+        {
+          "code": "VFR-W",
+          "name": "Breasta / Training West Entry",
+          "latitude": 44.2254,
+          "longitude": 23.5868,
+          "elevationFeet": 340,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 1500,
+          "holdingPattern": "Visual 360 over valley before entering CTR",
+          "description": "Punct de intrare VFR dinspre vest / Drobeta"
+        }
+      ]
+    },
+    {
+      "aerodromeIcao": "LRBS",
+      "aerodromeName": "Bucuresti Baneasa",
+      "airspaceClass": "C",
+      "controllingUnit": "TWR Baneasa (120.800 MHz)",
+      "points": [
+        {
+          "code": "TANG",
+          "name": "Tanganu",
+          "latitude": 44.4167,
+          "longitude": 26.3167,
+          "elevationFeet": 210,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 1000,
+          "description": "Punct vizual estic de intrare in CTR Baneasa"
+        },
+        {
+          "code": "BUF",
+          "name": "Buftea",
+          "latitude": 44.5667,
+          "longitude": 25.9500,
+          "elevationFeet": 360,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 1500,
+          "description": "Punct vizual nord-vest de intrare / iesire catre Clasa G"
+        },
+        {
+          "code": "CHIA",
+          "name": "Chiajna",
+          "latitude": 44.4600,
+          "longitude": 25.9800,
+          "elevationFeet": 295,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 1000,
+          "description": "Punct vizual vestic, reper lacul Morii / soseaua de centura"
+        }
+      ]
+    },
+    {
+      "aerodromeIcao": "LRGB",
+      "aerodromeName": "Brasov-Ghimbav",
+      "airspaceClass": "C",
+      "controllingUnit": "TWR Brasov (Remote Arad - 128.550 MHz)",
+      "points": [
+        {
+          "code": "VFR-R1",
+          "name": "Codlea Vest",
+          "latitude": 45.6950,
+          "longitude": 25.4350,
+          "elevationFeet": 1820,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 3500,
+          "description": "Punct de raportare intrare depresiunea Brasov"
+        },
+        {
+          "code": "VFR-R2",
+          "name": "Prejmer Est",
+          "latitude": 45.7200,
+          "longitude": 25.7700,
+          "elevationFeet": 1710,
+          "mandatoryReporting": true,
+          "recommendedAltitudeFeet": 3500,
+          "description": "Punct de raportare estic spre pasul Oituz"
+        }
+      ]
+    }
+  ],
+  "airspaceManagementASM": {
+    "description": "Managementul spatiului aerian (ASM nivelul 3 - tactic) administrat de ROMATSA in colaborare cu Ministerul Apararii Nationale",
+    "activeAirspaceReservations": [
+      {
+        "designator": "LRTSA 01",
+        "type": "TSA (Temporary Segregated Area)",
+        "lowerLimit": "GND",
+        "upperLimit": "FL150",
+        "activity": "Zboruri militare de antrenament",
+        "schedule": "Luni - Vineri 08:00 - 14:00 UTC",
+        "vfrRestriction": "Zborurile VFR civile sunt strict interzise pe timpul activarii; rerutare prin spatiul Clasa G la sud"
+      },
+      {
+        "designator": "LRTRA 14",
+        "type": "TRA (Temporary Reserved Area)",
+        "lowerLimit": "1000 ft AGL",
+        "upperLimit": "FL095",
+        "activity": "Lansari parasutisti (Aerodrom Clinceni / Sirna)",
+        "schedule": "Sambata - Duminica SR - SS",
+        "vfrRestriction": "Zborurile VFR de tranzit trebuie sa pastreze ascultarea pe frecventa FIS Bucuresti 129.400 MHz si sa mentina minim 3 NM distanta laterala"
+      },
+      {
+        "designator": "LRP 01",
+        "type": "PROHIBITED (Zona Interzisa)",
+        "lowerLimit": "GND",
+        "upperLimit": "FL250",
+        "location": "Bucuresti Centru (Palatul Parlamentului)",
+        "vfrRestriction": "Survolul total interzis tuturor aeronavelor civile VFR si IFR fara autorizare guvernamentala speciala"
+      }
+    ]
+  },
+  "atcLicensingAndQualifications": {
+    "source": "ROMATSA / AACR Manual de Selectie si Pregatire CTA",
+    "qualifications": [
+      { "code": "ADV", "name": "Control de aerodrom, la vedere (Aerodrome Control Visual)", "description": "Competenta ATC la un aerodrom fara proceduri publicate de apropiere instrumentala" },
+      { "code": "ADI", "name": "Control de aerodrom, instrumental (Aerodrome Control Instrument)", "description": "Competenta ATC la aerodrom cu proceduri instrumentale publicate" },
+      { "code": "APP", "name": "Control de apropiere, procedural (Approach Control Procedural)", "description": "Control de apropiere fara utilizarea radarului/ADS" },
+      { "code": "APS", "name": "Control de apropiere, supraveghere (Approach Control Surveillance)", "description": "Control de apropiere cu utilizarea sistemelor radar sau ADS" },
+      { "code": "ACP", "name": "Control regional, procedural (Area Control Procedural)", "description": "Control de ruta fara utilizarea echipamentelor de supraveghere" },
+      { "code": "ACS", "name": "Control regional, supraveghere (Area Control Surveillance)", "description": "Control de ruta cu utilizare radar/ADS (ex: ACC Bucuresti)" }
+    ],
+    "endorsements": [
+      { "code": "TWR", "parentQualification": "ADI", "description": "Control aerodrom furnizat dintr-o singura pozitie operationala combinata" },
+      { "code": "GMC", "parentQualification": "ADI", "description": "Controlul miscarii la sol (Ground Movement Control)" },
+      { "code": "GMS", "parentQualification": "ADI", "description": "Controlul miscarii la sol cu echipamente de supraveghere radar ASMCGS (Otopeni)" },
+      { "code": "AIR", "parentQualification": "ADI", "description": "Controlul zborului (Air Control) - traficul din aerodrom aflat in zbor" },
+      { "code": "RAD", "parentQualification": "ADI", "description": "Control radar de aerodrom" },
+      { "code": "TCL", "parentQualification": "APS/ACS", "description": "Control terminal in zona terminala (TMA)" },
+      { "code": "PAR", "parentQualification": "APS", "description": "Radar de apropiere de precizie" },
+      { "code": "SRA", "parentQualification": "APS", "description": "Apropiere supravegheata radar" },
+      { "code": "OJTI", "parentQualification": "ALL", "description": "On-the-Job Training Instructor - autorizare de instruire practica in trafic real" }
+    ],
+    "languageProficiencyRequirement": "Autorizare lingvistica obligatorie atat pentru limba romana, cat si pentru limba engleza (minim Nivel 4 ICAO operational)"
+  },
+  "aeronauticalInformationAndMeteorology": {
+    "aisNotams": [
+      {
+        "id": "A1042/26",
+        "fir": "LRBB",
+        "issuedUtc": "2026-10-31T06:00:00Z",
+        "validUntilUtc": "2026-10-31T18:00:00Z",
+        "subject": "VFR FLIGHTS OVERFLOW NOTICE",
+        "text": "CRW CTR VFR INBOUND FLIGHTS ADVISE TWR CRAIOVA 124.300 MHZ AT LEAST 5 NM BEFORE VFR REPORTING POINTS VFR-N, VFR-S, VFR-W DUE TO INTENSE FLIGHT TRAINING AND LOCAL IFR RUNWAY PRACTICE."
+      },
+      {
+        "id": "B0418/26",
+        "fir": "LRBB",
+        "issuedUtc": "2026-10-31T07:30:00Z",
+        "validUntilUtc": "2026-10-31T16:00:00Z",
+        "subject": "PARACHUTE JUMPING EXERCISE",
+        "text": "PJC EXER RADIUS 3NM CENTERED AROUND CLINCENI AIRFIELD (442130N 0255550E) GND TO 10000FT AMSL. VFR TRAFFIC IN UNCONTROLLED AIRSPACE CLASS G EXERCISE CAUTION. FREQ 129.400 MHZ MONITORING REQ."
+      }
+    ],
+    "metarStations": [
+      {
+        "stationIcao": "LRCV",
+        "stationName": "Craiova Airport MET Office",
+        "observationUtc": "2026-10-31T14:00:00Z",
+        "rawMetar": "LRCV 311400Z 08012KT 9999 FEW030 SCT050 16/07 Q1018 NOSIG",
+        "parsed": {
+          "windDirectionDegrees": 80,
+          "windSpeedKnots": 12,
+          "visibilityMeters": 10000,
+          "clouds": [
+            { "coverage": "FEW", "baseFeetAgl": 3000 },
+            { "coverage": "SCT", "baseFeetAgl": 5000 }
+          ],
+          "temperatureCelsius": 16,
+          "dewPointCelsius": 7,
+          "qnhHpa": 1018,
+          "flightCategory": "VFR",
+          "vmcValidForVfr": true
+        }
+      },
+      {
+        "stationIcao": "LRBS",
+        "stationName": "Bucuresti Baneasa MET Office",
+        "observationUtc": "2026-10-31T14:00:00Z",
+        "rawMetar": "LRBS 311400Z 10008KT 9999 CAVOK 18/09 Q1019 NOSIG",
+        "parsed": {
+          "windDirectionDegrees": 100,
+          "windSpeedKnots": 8,
+          "visibilityMeters": 10000,
+          "cavok": true,
+          "temperatureCelsius": 18,
+          "dewPointCelsius": 9,
+          "qnhHpa": 1019,
+          "flightCategory": "VFR",
+          "vmcValidForVfr": true
+        }
+      }
+    ]
+  },
+  "mockLiveVfrFlights": [
+    {
+      "flightId": "VFR-RO-20261031-01",
+      "callsign": "YR-TNA",
+      "aircraftIcao": "C172",
+      "aircraftModel": "Cessna 172 Skyhawk",
+      "category": "Light",
+      "wakeTurbulence": "L",
+      "flightRules": "VFR",
+      "transponderSquawk": "7000",
+      "flightPlan": {
+        "departureAerodrome": "LRBS",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LRSB",
+        "cruisingAltitudeFeet": 4500,
+        "requestedRoute": "LRBS BUF PITESTI SLATINA VFR-N LRCV",
+        "estimatedFlightTimeMinutes": 75,
+        "personsOnBoard": 2,
+        "enduranceMinutes": 240
+      },
+      "liveTelemetry": {
+        "latitude": 44.4820,
+        "longitude": 24.1850,
+        "altitudeFeetAmsl": 4500,
+        "groundSpeedKnots": 112,
+        "trueTrackDegrees": 255,
+        "verticalSpeedFeetPerMinute": 0,
+        "currentAirspaceClass": "G",
+        "currentAtsFrequency": 136.575,
+        "communicatingUnit": "ACC Bucuresti (Bucuresti Information Sud)",
+        "nextReportingPoint": "VFR-N",
+        "estimatedTimeToPointMinutes": 9.5,
+        "status": "EN_ROUTE_CONTACTING_APP"
+      },
+      "advisory": {
+        "status": "NORMAL",
+        "instructions": "Contact TWR Craiova on 124.300 MHz passing 15 NM east of field. Prepare for right-hand downwind runway 08 via VFR-N."
+      }
+    },
+    {
+      "flightId": "VFR-RO-20261031-02",
+      "callsign": "YR-MDV",
+      "aircraftIcao": "PA44",
+      "aircraftModel": "Piper PA-44 Seminole",
+      "category": "Light",
+      "wakeTurbulence": "L",
+      "flightRules": "VFR",
+      "transponderSquawk": "4215",
+      "flightPlan": {
+        "departureAerodrome": "LRCV",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LRTM",
+        "cruisingAltitudeFeet": 2000,
+        "requestedRoute": "LRCV LOCAL TRAINING SECTOR NORTH",
+        "estimatedFlightTimeMinutes": 60,
+        "personsOnBoard": 2,
+        "enduranceMinutes": 180
+      },
+      "liveTelemetry": {
+        "latitude": 44.6479,
+        "longitude": 23.8886,
+        "altitudeFeetAmsl": 2000,
+        "groundSpeedKnots": 135,
+        "trueTrackDegrees": 180,
+        "verticalSpeedFeetPerMinute": -400,
+        "currentAirspaceClass": "C",
+        "currentAtsFrequency": 124.300,
+        "communicatingUnit": "TWR Craiova",
+        "nextReportingPoint": "VFR-N",
+        "estimatedTimeToPointMinutes": 0.0,
+        "status": "ENTERING_CTR_REPORTING"
+      },
+      "advisory": {
+        "status": "CLEARANCE_DELIVERED",
+        "instructions": "YR-MDV, roger overhead VFR-N, descend 1500 ft QNH 1018, join right base runway 08, report final. Number 1 for landing."
+      }
+    },
+    {
+      "flightId": "VFR-RO-20261031-03",
+      "callsign": "HA-TDO",
+      "aircraftIcao": "B350",
+      "aircraftModel": "Hawker Beechcraft Super King Air 350",
+      "category": "Light",
+      "wakeTurbulence": "L",
+      "flightRules": "VFR",
+      "transponderSquawk": "4220",
+      "flightPlan": {
+        "departureAerodrome": "LRTR",
+        "destinationAerodrome": "LRCV",
+        "alternateAerodrome": "LRBS",
+        "cruisingAltitudeFeet": 8500,
+        "requestedRoute": "LRTR DEVA TG_JIU VFR-W LRCV",
+        "estimatedFlightTimeMinutes": 45,
+        "personsOnBoard": 5,
+        "enduranceMinutes": 210
+      },
+      "liveTelemetry": {
+        "latitude": 44.2800,
+        "longitude": 23.4000,
+        "altitudeFeetAmsl": 3500,
+        "groundSpeedKnots": 240,
+        "trueTrackDegrees": 110,
+        "verticalSpeedFeetPerMinute": -1200,
+        "currentAirspaceClass": "C",
+        "currentAtsFrequency": 124.300,
+        "communicatingUnit": "TWR Craiova",
+        "nextReportingPoint": "VFR-W",
+        "estimatedTimeToPointMinutes": 3.8,
+        "status": "DESCENDING_TO_CTR"
+      },
+      "advisory": {
+        "status": "TRAFFIC_ALERT",
+        "instructions": "HA-TDO, caution wake turbulence ahead from departing A320. Reduce speed to 160 kt, maintain 2500 ft until VFR-W."
+      }
+    },
+    {
+      "flightId": "VFR-RO-20261031-04",
+      "callsign": "YR-SKY",
+      "aircraftIcao": "C172",
+      "aircraftModel": "Cessna 172 Skyhawk",
+      "category": "Light",
+      "wakeTurbulence": "L",
+      "flightRules": "VFR",
+      "transponderSquawk": "7000",
+      "flightPlan": {
+        "departureAerodrome": "LRBS",
+        "destinationAerodrome": "LRGB",
+        "alternateAerodrome": "LRSB",
+        "cruisingAltitudeFeet": 5500,
+        "requestedRoute": "LRBS CHIA PLOIESTI SINAIA PREDEAL VFR-R1 LRGB",
+        "estimatedFlightTimeMinutes": 55,
+        "personsOnBoard": 3,
+        "enduranceMinutes": 220
+      },
+      "liveTelemetry": {
+        "latitude": 45.4200,
+        "longitude": 25.5300,
+        "altitudeFeetAmsl": 5500,
+        "groundSpeedKnots": 108,
+        "trueTrackDegrees": 340,
+        "verticalSpeedFeetPerMinute": 0,
+        "currentAirspaceClass": "G",
+        "currentAtsFrequency": 129.400,
+        "communicatingUnit": "ACC Bucuresti (Bucuresti Information Nord)",
+        "nextReportingPoint": "VFR-R1",
+        "estimatedTimeToPointMinutes": 14.0,
+        "status": "EN_ROUTE_VALEA_PRAHOVEI"
+      },
+      "advisory": {
+        "status": "NORMAL",
+        "instructions": "Monitor Brasov Tower 128.550 MHz entering Prahova Pass. Squawk 7000."
+      }
+    }
+  ],
+  "regionalVfrDiversionAerodromes": [
+    {
+      "code": "LRCW",
+      "legacyAlias": "LRBV",
+      "name": "Aerodromul Craiova-Sud (Balta Verde)",
+      "airspaceClass": "G (sub CTR Craiova Class C)",
+      "latitude": 44.286389,
+      "longitude": 23.791111,
+      "elevationFeet": 450,
+      "distanceFromLrcvKm": 11.8,
+      "bearingFromLrcvDegrees": 245,
+      "runways": [
+        { "designator": "13", "headingDegrees": 130, "lengthMeters": 600, "widthMeters": 30, "surface": "Grass (Inierbata)" },
+        { "designator": "31", "headingDegrees": 310, "lengthMeters": 600, "widthMeters": 30, "surface": "Grass (Inierbata)" }
+      ],
+      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
+      "radioFrequencyMhz": 123.450,
+      "operationalNotes": "Aerodrom certificat conform AIP AD 2.32 LRCW. Ideal pentru devierea VFR la vant de NV/SE cand pista 08/26 de la LRCV are vant lateral sever."
+    },
+    {
+      "code": "PODARI",
+      "name": "Aerodrom Podari (ULM Field)",
+      "airspaceClass": "G",
+      "latitude": 44.2258,
+      "longitude": 23.7602,
+      "elevationFeet": 310,
+      "distanceFromLrcvKm": 14.5,
+      "bearingFromLrcvDegrees": 225,
+      "runways": [
+        { "designator": "02", "headingDegrees": 20, "lengthMeters": 550, "widthMeters": 25, "surface": "Grass (Inierbata)" },
+        { "designator": "20", "headingDegrees": 200, "lengthMeters": 550, "widthMeters": 25, "surface": "Grass (Inierbata)" }
+      ],
+      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
+      "radioFrequencyMhz": 123.500,
+      "operationalNotes": "Teren de zbor ULM/Savannah orientat NNE-SSW (020/200). Aproape perfect aliniat pe vanturile sudice (180-210 deg) care blocheaza pista 08/26 de la LRCV."
+    },
+    {
+      "code": "SLATINA",
+      "name": "Aerodrom Slatina (Ganeasa)",
+      "airspaceClass": "G",
+      "latitude": 44.4240,
+      "longitude": 24.4420,
+      "elevationFeet": 520,
+      "distanceFromLrcvKm": 46.0,
+      "bearingFromLrcvDegrees": 75,
+      "runways": [
+        { "designator": "08", "headingDegrees": 80, "lengthMeters": 700, "widthMeters": 30, "surface": "Grass (Inierbata)" },
+        { "designator": "26", "headingDegrees": 260, "lengthMeters": 700, "widthMeters": 30, "surface": "Grass (Inierbata)" }
+      ],
+      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
+      "radioFrequencyMhz": 123.450,
+      "operationalNotes": "Aerodrom de rezerva pe ruta de est catre Pitesti / Baneasa."
+    }
+  ]
+}

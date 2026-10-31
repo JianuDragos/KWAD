@@ -1,7 +1,18 @@
+using Aeris.PlanningEngine.Models;
+
 namespace Aeris.PlanningEngine.Services;
 
+/// <summary>
+/// Calculează componentele de vânt lateral (crosswind) și de față/spate (headwind/tailwind)
+/// utilizând trigonometria unghiulară și constantele verificate din <see cref="RunwayConfiguration"/>.
+/// </summary>
 public class CrosswindCalculator
 {
+    /// <summary>
+    /// Calculează componentele de vânt lateral și de față/spate față de un cap de pistă dat.
+    /// Notă referință: Dacă windDirectionDegrees provine din METAR (True North), runwayHeadingDegrees trebuie să fie True Bearing (ex: 88.93°).
+    /// Dacă provine din turnul de control/ATIS (Magnetic), runwayHeadingDegrees trebuie să fie Magnetic Heading (ex: 83.93° / 084°).
+    /// </summary>
     public static (double CrosswindKnots, double HeadwindKnots) Calculate(double windDirectionDegrees, double windSpeedKnots, double runwayHeadingDegrees)
     {
         double angleDiffDegrees = (windDirectionDegrees - runwayHeadingDegrees) % 360;
@@ -17,53 +28,33 @@ public class CrosswindCalculator
     }
 
     /// <summary>
-    /// Determină pista activă (09 sau 27) la Craiova (LRCV) în funcție de vântul de față maxim.
-    /// Pista 09 are cap magnetic 092°, pista 27 are cap magnetic 272°.
+    /// Determină pista activă (08 sau 26) la Craiova (LRCV) în funcție de vântul de față maxim.
+    /// Pista 08 are orientare adevărată 88.93° (magnetic 084°), pista 26 are 268.95° (magnetic 264°).
     /// </summary>
-    public static (string ActiveRunway, double RunwayHeading, double CrosswindKnots, double HeadwindKnots) DetermineActiveRunwayCraiova(double windDirectionDegrees, double windSpeedKnots)
+    public static (string ActiveRunway, double RunwayHeading, double CrosswindKnots, double HeadwindKnots) DetermineActiveRunwayCraiova(
+        double windDirectionDegrees, double windSpeedKnots, bool isWindDirectionTrueNorth = true)
     {
-        var (cross09, head09) = Calculate(windDirectionDegrees, windSpeedKnots, 92.0);
-        var (cross27, head27) = Calculate(windDirectionDegrees, windSpeedKnots, 272.0);
+        double heading08 = RunwayConfiguration.GetHeading(RunwayConfiguration.Runway08, trueNorth: isWindDirectionTrueNorth);
+        double heading26 = RunwayConfiguration.GetHeading(RunwayConfiguration.Runway26, trueNorth: isWindDirectionTrueNorth);
 
-        if (head27 > head09)
+        var (cross08, head08) = Calculate(windDirectionDegrees, windSpeedKnots, heading08);
+        var (cross26, head26) = Calculate(windDirectionDegrees, windSpeedKnots, heading26);
+
+        if (head26 > head08)
         {
-            return ("27", 272.0, cross27, head27);
+            return (RunwayConfiguration.Runway26, heading26, cross26, head26);
         }
 
-        return ("09", 92.0, cross09, head09);
+        return (RunwayConfiguration.Runway08, heading08, cross08, head08);
     }
 
     /// <summary>
     /// Returnează identificatorul pistei opuse (sens invers / reciprocal).
     /// </summary>
-    public static string GetReciprocalRunway(string runwayId)
-    {
-        return runwayId switch
-        {
-            "09" => "27",
-            "27" => "09",
-            "13" => "31",
-            "31" => "13",
-            "02" => "20",
-            "20" => "02",
-            _ => runwayId
-        };
-    }
+    public static string GetReciprocalRunway(string runwayId) => RunwayConfiguration.GetReciprocal(runwayId);
 
     /// <summary>
-    /// Returnează capul magnetic pentru pistele din zona Craiova și aerodromurile locale.
+    /// Returnează capul pentru pistele din zona Craiova și aerodromurile locale.
     /// </summary>
-    public static double GetRunwayHeading(string runwayId)
-    {
-        return runwayId switch
-        {
-            "09" => 92.0,
-            "27" => 272.0,
-            "13" => 130.0,
-            "31" => 310.0,
-            "02" => 20.0,
-            "20" => 200.0,
-            _ => 92.0
-        };
-    }
+    public static double GetRunwayHeading(string runwayId, bool trueNorth = true) => RunwayConfiguration.GetHeading(runwayId, trueNorth);
 }

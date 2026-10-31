@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "properties": { "kind": "point", "code": "VFR-S", "name": "Training south entry (synthetic)", "radiusMeters": 926 }, "geometry": { "type": "Point", "coordinates": [23.8886, 43.9882] } },
+    { "type": "Feature", "properties": { "kind": "point", "code": "VFR-N", "name": "Training north entry (synthetic)", "radiusMeters": 926 }, "geometry": { "type": "Point", "coordinates": [23.8886, 44.6479] } },
+    { "type": "Feature", "properties": { "kind": "point", "code": "VFR-W", "name": "Training west entry (synthetic)", "radiusMeters": 926 }, "geometry": { "type": "Point", "coordinates": [23.5868, 44.2254] } }
+  ]
+}

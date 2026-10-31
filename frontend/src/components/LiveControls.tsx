@@ -10,6 +10,7 @@ export function LiveControls() {
   const speed = useSpeed();
   const updatedAtMs = useLive((s) => s.updatedAtMs);
   const error = useLive((s) => s.positionsError);
+  const vmcStatus = useLive((s) => s.vfrTracking?.vmc.status ?? null);
   const runway = metar ? runwayForWind(metar.windDirectionDegrees, metar.windSpeedKnots) : null;
   const xw = metar && runway && metar.windDirectionDegrees != null ? windComponents(metar.windDirectionDegrees, metar.windGustKnots ?? metar.windSpeedKnots, runway).crosswind : null;
   return (
@@ -29,6 +30,7 @@ export function LiveControls() {
           {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`}>lateral {speed.label(xw)}</span>}
         </div>
       )}
+      {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title="Validare VMC după vizibilitate ≥ 5 km și plafon ≥ 1500 ft">{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}
       <div className="spacer" />
       <div className="pills" aria-live="polite">
         {error && <span className="pill pill--err">Fără date noi</span>}

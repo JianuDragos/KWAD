@@ -1,5 +1,4 @@
-// Validarea răspunsurilor backendului la graniță. Contractul e încă în discuție: dacă un câmp se
-// schimbă, aflăm aici, cu numele câmpului, nu printr-o eroare JS undeva în hartă.
+// Validarea răspunsurilor backendului la graniță.
 // Fiecare schemă e legată de tipul din backend.ts, deci compilatorul semnalează nepotrivirile.
 import { z } from 'zod';
 import type {
@@ -8,10 +7,20 @@ import type {
   CraiovaAircraft,
   CraiovaSimulationResult,
   EvaluationVariant,
+  FlightMissionPhase,
+  FutureHorizonSnapshot,
+  FuturePredictionSummary,
+  HoldingRacetrackConfig,
   LiveTrafficResponse,
   OrbitPatternAdvice,
   PlanningResponse,
+  PredictionStepSnapshot,
+  SafetyAssessmentResult,
   ScheduleSlot,
+  SeparationConflict,
+  TakeoffToLandingAnalysis,
+  TwoStepsAheadPrediction,
+  VfrRedirectionAnalysis,
   WeatherCondition,
 } from './backend';
 
@@ -80,6 +89,28 @@ const alternateSchema: z.ZodType<AlternateAerodrome> = z.object({
   calculatedHeadwindKnots: z.number(),
   estimatedFlightMinutes: z.number(),
   suitabilityReason: z.string(),
+  safetyScore: z.number().optional(),
+  runwayLengthMeters: z.number().optional(),
+  surfaceType: z.string().optional(),
+  landingDistanceRequiredMeters: z.number().optional(),
+  landingSafetyMarginMeters: z.number().optional(),
+  windCorrectedHeadingDegrees: z.number().optional(),
+  groundSpeedToAlternateKnots: z.number().optional(),
+  remainingFuelAtTouchdownMinutes: z.number().optional(),
+  isRecommendedBestSpot: z.boolean().optional(),
+});
+
+const racetrackSchema: z.ZodType<HoldingRacetrackConfig> = z.object({
+  fixId: z.string(),
+  fixLatitude: z.number(),
+  fixLongitude: z.number(),
+  inboundHeadingDegrees: z.number(),
+  turnDirection: z.string().optional(),
+  legDurationSeconds: z.number().optional(),
+  speedKnots: z.number().optional(),
+  altitudeFeet: z.number().optional(),
+  entryTimeSeconds: z.number().optional(),
+  durationSeconds: z.number().optional(),
 });
 
 const orbitSchema: z.ZodType<OrbitPatternAdvice> = z.object({
@@ -88,6 +119,101 @@ const orbitSchema: z.ZodType<OrbitPatternAdvice> = z.object({
   holdingDurationMinutes: z.number(),
   remainingFuelMarginMinutes: z.number(),
   safetyInstructions: z.string(),
+  racetrack: racetrackSchema.nullable().optional(),
+});
+
+const missionPhaseSchema: z.ZodType<FlightMissionPhase> = z.object({
+  phaseOrder: z.number(),
+  phaseCode: z.string(),
+  phaseName: z.string(),
+  startAltitudeFeet: z.number(),
+  endAltitudeFeet: z.number(),
+  trueAirspeedKnots: z.number(),
+  groundSpeedKnots: z.number(),
+  distanceNm: z.number(),
+  durationMinutes: z.number(),
+  verticalRateFpm: z.number(),
+  fuelBurnedMinutesEquivalent: z.number(),
+  keyMathNote: z.string(),
+});
+
+const takeoffToLandingSchema: z.ZodType<TakeoffToLandingAnalysis> = z.object({
+  departureAerodromeIcao: z.string(),
+  departureAerodromeName: z.string(),
+  totalRouteDistanceNm: z.number(),
+  cruiseAltitudeFeet: z.number(),
+  cruiseTasKnots: z.number(),
+  windDirectionAtAltitudeDegrees: z.number(),
+  windSpeedAtAltitudeKnots: z.number(),
+  windCorrectionAngleCrabDegrees: z.number(),
+  headingToFlyDegrees: z.number(),
+  groundSpeedApproachKnots: z.number(),
+  topOfDescentDistanceNm: z.number(),
+  optimalGlidepathDegrees: z.number(),
+  requiredRateOfDescentFpm: z.number(),
+  stabilizationGateAltitudeFeetAmsl: z.number(),
+  specificTotalEnergyFeet: z.number(),
+  approachSpeedVappKnots: z.number(),
+  thresholdSpeedVrefKnots: z.number(),
+  touchdownGroundSpeedKnots: z.number(),
+  landingDistanceRequiredMeters: z.number(),
+  landingDistanceAvailableMeters: z.number(),
+  runwaySafetyMarginMeters: z.number(),
+  runwayUsedPercent: z.number(),
+  predictedRunwayOccupancySeconds: z.number(),
+  phases: z.array(missionPhaseSchema),
+});
+
+const stepSnapshotSchema: z.ZodType<PredictionStepSnapshot> = z.object({
+  stepIndex: z.number(),
+  stepLabel: z.string(),
+  timeSeconds: z.number(),
+  formattedTime: z.string(),
+  phaseName: z.string(),
+  fixOrLocation: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  distanceToThresholdNm: z.number(),
+  altitudeFeet: z.number(),
+  trueAirspeedKnots: z.number(),
+  groundSpeedKnots: z.number(),
+  trackDegrees: z.number(),
+  headingDegrees: z.number(),
+  crabAngleDegrees: z.number(),
+  verticalSpeedFpm: z.number(),
+  expectedCrosswindKnots: z.number(),
+  expectedHeadwindKnots: z.number(),
+  remainingFuelMinutes: z.number(),
+  controllerAction: z.string(),
+});
+
+const twoStepsAheadSchema: z.ZodType<TwoStepsAheadPrediction> = z.object({
+  currentState: stepSnapshotSchema,
+  stepOneAhead: stepSnapshotSchema,
+  stepTwoAhead: stepSnapshotSchema,
+  predictiveSummary: z.string(),
+});
+
+const vfrRedirectionSchema: z.ZodType<VfrRedirectionAnalysis> = z.object({
+  canLandAtPrimaryRunway: z.boolean(),
+  canLandAtReciprocalRunway: z.boolean(),
+  recommendedDecision: z.string(),
+  decisionConfidenceScore: z.number(),
+  pointOfNoReturnMinutes: z.number(),
+  fuelBurnCruiseLitersPerHour: z.number(),
+  fuelBurnHoldLitersPerHour: z.number(),
+  estimatedWaitTimeAtLrcvMinutes: z.number(),
+  willWeatherImproveWithinPnr: z.boolean(),
+  predictedCrosswindAfterHoldKnots: z.number(),
+  bestAlternateCode: z.string(),
+  bestAlternateName: z.string(),
+  bestAlternateRunway: z.string(),
+  bestAlternateScore: z.number(),
+  redirectionHeadingToFlyDegrees: z.number(),
+  redirectionGroundSpeedKnots: z.number(),
+  redirectionEtaMinutes: z.number(),
+  fuelRemainingAtAlternateMinutes: z.number(),
+  mathematicalJustification: z.string(),
 });
 
 const advisorySchema: z.ZodType<AircraftAdvisory> = z.object({
@@ -97,13 +223,97 @@ const advisorySchema: z.ZodType<AircraftAdvisory> = z.object({
   category,
   flightRules,
   hasInstrumentAvionics: z.boolean(),
+  assignedRunway: z.string().optional(),
   currentCrosswindKnots: z.number(),
+  currentHeadwindKnots: z.number().optional(),
   maxCrosswindLimitKnots: z.number(),
+  isOppositeDirectionLanding: z.boolean().optional(),
+  oppositeDirectionAdvice: z.string().nullable().optional(),
   advisoryStatus,
   advisoryReason: z.string(),
   orbitAdvice: orbitSchema.nullable(),
   recommendedAlternates: z.array(alternateSchema).nullable(),
   assignedLandingSlot: scheduleSlotSchema.nullable(),
+  takeoffToLanding: takeoffToLandingSchema.nullable().optional(),
+  twoStepsAhead: twoStepsAheadSchema.nullable().optional(),
+  vfrRedirection: vfrRedirectionSchema.nullable().optional(),
+});
+
+const futureHorizonSchema: z.ZodType<FutureHorizonSnapshot> = z.object({
+  horizonMinutes: z.number(),
+  horizonSeconds: z.number(),
+  formattedTime: z.string(),
+  predictedWindDirectionDegrees: z.number(),
+  predictedWindSpeedKnots: z.number(),
+  predictedWindGustKnots: z.number(),
+  predictedVisibilityMeters: z.number(),
+  recommendedRunway: z.string(),
+  predictedCrosswindKnots: z.number(),
+  predictedHeadwindKnots: z.number(),
+  isVfrLegalAndSafe: z.boolean(),
+  activeAirborneCount: z.number(),
+  holdingCount: z.number(),
+  cumulativeLandedCount: z.number(),
+  hazardAlert: z.string().nullable().optional(),
+});
+
+const futurePredictionSchema: z.ZodType<FuturePredictionSummary> = z.object({
+  pressureHpa: z.number(),
+  outsideAirTemperatureCelsius: z.number(),
+  isaTemperatureDeviationCelsius: z.number(),
+  pressureAltitudeFeet: z.number(),
+  densityAltitudeFeet: z.number(),
+  airDensityRatioSigma: z.number(),
+  windShearExponentAlpha: z.number(),
+  windAt2000FtDegrees: z.number(),
+  windAt2000FtKnots: z.number(),
+  windAt5000FtDegrees: z.number(),
+  windAt5000FtKnots: z.number(),
+  trendSummary: z.string(),
+  optimalVfrLandingWindow: z.string(),
+  predictedRunwayChangeAtMinute: z.number().nullable().optional(),
+  horizons: z.array(futureHorizonSchema),
+});
+
+const separationConflictSchema: z.ZodType<SeparationConflict> = z.object({
+  type: z.enum([
+    'LossOfSeparation_IFR_IFR',
+    'LossOfSeparation_IFR_VFR',
+    'LossOfSeparation_VFR_VFR',
+    'RunwayOccupancyViolation',
+    'WakeTurbulenceViolation',
+    'HoldingPatternConflict',
+    'MissedApproachConflict',
+    'StrictHorizontalOverlap',
+  ]),
+  aircraft1Id: z.string(),
+  aircraft2Id: z.string(),
+  conflictTimeSeconds: z.number(),
+  formattedTime: z.string(),
+  horizontalDistanceNm: z.number(),
+  verticalDistanceFt: z.number(),
+  requiredHorizontalNm: z.number(),
+  requiredVerticalFt: z.number(),
+  severity: z.string(),
+  description: z.string(),
+  aircraft1Lat: z.number(),
+  aircraft1Lon: z.number(),
+  aircraft1AltFt: z.number(),
+  aircraft2Lat: z.number(),
+  aircraft2Lon: z.number(),
+  aircraft2AltFt: z.number(),
+  replanningRecommendation: z.string(),
+});
+
+const safetyAssessmentSchema: z.ZodType<SafetyAssessmentResult> = z.object({
+  status: z.enum(['Safe', 'Unsafe', 'Incomplete']),
+  isSafe: z.boolean(),
+  summary: z.string(),
+  conflicts: z.array(separationConflictSchema),
+  totalEvaluatedPairs: z.number(),
+  totalTrajectoryPoints: z.number(),
+  evaluatedAtUtc: z.string(),
+  replanningSuggestions: z.array(z.string()),
 });
 
 export const simulationResultSchema: z.ZodType<CraiovaSimulationResult> = z.object({
@@ -133,6 +343,8 @@ export const simulationResultSchema: z.ZodType<CraiovaSimulationResult> = z.obje
   }),
   dataSource: z.string(),
   generatedAtUtc: z.string(),
+  safetyAssessment: safetyAssessmentSchema.nullable().optional(),
+  futurePrediction: futurePredictionSchema.nullable().optional(),
 });
 
 export const liveTrafficSchema: z.ZodType<LiveTrafficResponse> = z.object({

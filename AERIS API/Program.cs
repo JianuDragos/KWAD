@@ -1,4 +1,5 @@
 using Aeris.PlanningEngine.Services;
+using Aeris.PlanningEngine.Services.TrajectorySeparation;
 using Aeris.LocalAI;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -23,14 +24,34 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// ── Servicii existente (legacy – neatinse) ────────────────────────────────────
+// ── Servicii existente & Trajectory Separation Engine ─────────────────────────
 builder.Services.AddScoped<IPlanningService, PlanningService>();
+builder.Services.AddSingleton<TrajectoryPredictor>();
+builder.Services.AddScoped<ITrajectorySeparationEngine, TrajectorySeparationEngine>();
+builder.Services.AddScoped<SafePlanningCoordinator>();
 builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
 // ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
-builder.Services.AddHttpClient<IMetarService, MetarService>();
-builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyLiveService>();
+builder.Services.AddHttpClient("aviation-weather", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AERIS-Craiova-ATM/1.0 (weather monitoring)");
+});
+builder.Services.AddSingleton<IResilientWeatherService, ResilientWeatherService>();
+builder.Services.AddScoped<IMetarService, AviationWeatherService>();
+builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyFetcher>();
+builder.Services.AddSingleton<VmcChecker>();
+builder.Services.AddSingleton<VfrGeofenceEngine>();
+builder.Services.AddSingleton<IVfrGeofenceService>(sp => sp.GetRequiredService<VfrGeofenceEngine>());
+builder.Services.Configure<OpenAipOptions>(builder.Configuration.GetSection("OpenAIP"));
+builder.Services.AddHttpClient<OpenAipService>();
+builder.Services.AddSingleton<IOpenAipService>(sp => sp.GetRequiredService<OpenAipService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<OpenAipService>());
+builder.Services.Configure<OgnAprsOptions>(builder.Configuration.GetSection("OGN"));
+builder.Services.AddHostedService<OgnAprsListener>();
+builder.Services.Configure<Sbs1Options>(builder.Configuration.GetSection("SBS1"));
+builder.Services.AddHostedService<Sbs1Listener>();
 
 // ── Local AI grounded explainer (inferență separată, doar loopback) ──────────
 builder.Services.AddHttpClient<GroundedExplainer>(client =>

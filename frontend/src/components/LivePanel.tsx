@@ -12,6 +12,8 @@ export function LivePanel() {
   const metar = useLive((s) => s.metar);
   const positionsError = useLive((s) => s.positionsError);
   const metarError = useLive((s) => s.metarError);
+  const vfrTracking = useLive((s) => s.vfrTracking);
+  const vfrTrackingError = useLive((s) => s.vfrTrackingError);
   const selectedIcao = useLive((s) => s.selectedIcao);
   const airborne = (positions?.flights ?? [])
     .filter((f) => !f.onGround && f.latitude != null)
@@ -26,6 +28,8 @@ export function LivePanel() {
       </div>
 
       {metar ? <MetarBlock metar={metar} /> : metarError ? <p className="notice notice--err">METAR: {metarError}</p> : null}
+      {vfrTracking && <VmcBadge status={vfrTracking.vmc.status} />}
+      {vfrTrackingError && <p className="notice notice--warn">Tracking VFR: {vfrTrackingError}</p>}
 
       {!positions && !positionsError && <p className="muted">Se încarcă pozițiile…</p>}
       {positions && airborne.length === 0 && (
@@ -37,11 +41,17 @@ export function LivePanel() {
             <LiveStrip flight={f} expanded={f.icao24 === selectedIcao} />
           </li>
         ))}
+      {(vfrTracking?.vfrFlights ?? []).map((flight) => <p className="notice" key={`vfr-${flight.flightId}`}>{flight.callsign}: {flight.pointCode}, {flight.distanceToPointMeters.toFixed(0)} m, ETA prin punct {flight.etaViaPointMinutes.toFixed(1)} min — {flight.status}</p>)}
       </ol>
       {positions && <p className="muted small">Sursa: {positions.source}. Actualizare la 15 s.</p>}
       <AskAi />
     </aside>
   );
+}
+
+function VmcBadge({ status }: { status: string }) {
+  const label = status === 'VMC' ? 'VMC' : status === 'MVFR' ? 'Marginal VFR' : 'IMC · VFR suspendat';
+  return <div className={`vmc-badge vmc-badge--${status.toLowerCase()}`} role="status">{label}</div>;
 }
 
 function MetarBlock({ metar }: { metar: Metar }) {
@@ -118,6 +128,8 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
             <dd className="num">{flight.verticalRateMs != null ? `${Math.round(flight.verticalRateMs * 196.85)} ft/min` : '—'}</dd>
             <dt>Squawk</dt>
             <dd className="num">{flight.squawk ?? '—'}</dd>
+            <dt>Reguli</dt>
+            <dd>{flight.flightRules}</dd>
             <dt>Cod ICAO</dt>
             <dd className="num">{flight.icao24.toUpperCase()}</dd>
           </dl>

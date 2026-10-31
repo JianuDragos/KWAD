@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Aeris.PlanningEngine.Models;
 using Aeris.PlanningEngine.Services;
@@ -15,29 +16,37 @@ public class CraiovaController : ControllerBase
     private readonly ICraiovaAdvisoryEngine _advisoryEngine;
     private readonly IMetarService _metarService;
     private readonly GroundedExplainer _groundedExplainer;
+    private readonly IVfrGeofenceService _vfrGeofenceService;
+    private readonly IOpenAipService _openAipService;
+    private readonly IResilientWeatherService _weatherService;
+    private readonly IWebHostEnvironment _env;
 
     public CraiovaController(
         IOpenSkyService openSkyService,
         IOpenSkyLiveService openSkyLiveService,
         ICraiovaAdvisoryEngine advisoryEngine,
         IMetarService metarService,
-        GroundedExplainer groundedExplainer)
+        GroundedExplainer groundedExplainer,
+        IVfrGeofenceService vfrGeofenceService,
+        IOpenAipService openAipService,
+        IResilientWeatherService weatherService,
+        IWebHostEnvironment env)
     {
         _openSkyService = openSkyService;
         _openSkyLiveService = openSkyLiveService;
         _advisoryEngine = advisoryEngine;
         _metarService = metarService;
         _groundedExplainer = groundedExplainer;
+        _vfrGeofenceService = vfrGeofenceService;
+        _openAipService = openAipService;
+        _weatherService = weatherService;
+        _env = env;
     }
 
     /// <summary>
     /// Execută simularea de aterizare pe Aeroportul Craiova (LRCV), colectând date OpenSky și evaluând aeronavele mari (IFR) și mici (Savannah, Wilga, etc.).
     /// În caz de vânt lateral critic, calculează sfaturi de orbită paralelă cu pista sau deviere către Balta Verde / Podari.
     /// </summary>
-    /// <param name="windSpeed">Viteza vântului în noduri (implicit 22 kts).</param>
-    /// <param name="windDirection">Direcția vântului în grade (implicit 180° - vânt perpendicular pe pista 09/27).</param>
-    /// <param name="windGust">Rafale de vânt în noduri (implicit 26 kts).</param>
-    /// <param name="forceSimulated">Dacă este true, folosește setul simulat demonstrativ fără a interoga OpenSky Network.</param>
     [HttpGet("simulation")]
     public async Task<IActionResult> RunSimulation(
         [FromQuery] double windSpeed = 22,
@@ -71,7 +80,7 @@ public class CraiovaController : ControllerBase
     }
 
     /// <summary>
-    /// Returnează lista aerodromurilor alternative din jurul Craiovei (Balta Verde, Podari) și calculează compatibilitatea lor cu vântul specificat.
+    /// Returnează lista aerodromurilor alternative din jurul Craiovei (Balta Verde, Podari, Slatina) și calculează compatibilitatea lor matematică.
     /// </summary>
     [HttpGet("alternates")]
     public IActionResult GetAlternates(
@@ -85,8 +94,62 @@ public class CraiovaController : ControllerBase
     }
 
     /// <summary>
+    /// Returnează baza de date mock ROMATSA pentru operațiuni VFR (romatsa-vfr-mock-db.json).
+    /// </summary>
+    [HttpGet("romatsa/vfr")]
+    public IActionResult GetRomatsaVfrDatabase()
+    {
+        var path = Path.Combine(_env.ContentRootPath, "data", "romatsa-vfr-mock-db.json");
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { error = "Baza de date ROMATSA VFR nu a fost găsită." });
+        var json = System.IO.File.ReadAllText(path);
+        return Content(json, "application/json");
+    }
+
+    /// <summary>
+    /// Returnează baza de date mock ROMATSA pentru operațiuni IFR (romatsa-ifr-mock-db.json).
+    /// </summary>
+    [HttpGet("romatsa/ifr")]
+    public IActionResult GetRomatsaIfrDatabase()
+    {
+        var path = Path.Combine(_env.ContentRootPath, "data", "romatsa-ifr-mock-db.json");
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { error = "Baza de date ROMATSA IFR nu a fost găsită." });
+        var json = System.IO.File.ReadAllText(path);
+        return Content(json, "application/json");
+    }
+
+    /// <summary>
+    /// Returnează un sumar unificat al bazelor de date ROMATSA (IFR + VFR) pentru Aeroportul Craiova (LRCV) și FIR București (LRBB).
+    /// </summary>
+    [HttpGet("romatsa/summary")]
+    public IActionResult GetRomatsaSummary()
+    {
+        var vfrPath = Path.Combine(_env.ContentRootPath, "data", "romatsa-vfr-mock-db.json");
+        var ifrPath = Path.Combine(_env.ContentRootPath, "data", "romatsa-ifr-mock-db.json");
+
+        using var vfrDoc = System.IO.File.Exists(vfrPath) ? JsonDocument.Parse(System.IO.File.ReadAllText(vfrPath)) : null;
+        using var ifrDoc = System.IO.File.Exists(ifrPath) ? JsonDocument.Parse(System.IO.File.ReadAllText(ifrPath)) : null;
+
+        int vfrAircraftTypes = vfrDoc?.RootElement.TryGetProperty("aircraftDatabase", out var vfrAc) == true ? vfrAc.GetArrayLength() : 0;
+        int vfrLiveFlights = vfrDoc?.RootElement.TryGetProperty("mockLiveVfrFlights", out var vfrFl) == true ? vfrFl.GetArrayLength() : 0;
+        int ifrAircraftTypes = ifrDoc?.RootElement.TryGetProperty("ifrAircraftPerformanceDatabase", out var ifrAc) == true ? ifrAc.GetArrayLength() : 0;
+        int ifrLiveFlights = ifrDoc?.RootElement.TryGetProperty("mockLiveIfrFlights", out var ifrFl) == true ? ifrFl.GetArrayLength() : 0;
+
+        return Ok(new
+        {
+            provider = "ROMATSA R.A. (FIR București LRBB — Craiova LRCV)",
+            airacCycle = "2026-10",
+            databases = new
+            {
+                vfr = new { file = "romatsa-vfr-mock-db.json", available = vfrDoc != null, aircraftProfilesCount = vfrAircraftTypes, mockFlightsCount = vfrLiveFlights },
+                ifr = new { file = "romatsa-ifr-mock-db.json", available = ifrDoc != null, aircraftProfilesCount = ifrAircraftTypes, mockFlightsCount = ifrLiveFlights }
+            }
+        });
+    }
+
+    /// <summary>
     /// Colectează traficul aerian în timp real din spațiul aerian Craiova prin OpenSky Network.
-    /// Utilizat de motorul de simulare și advisory engine (legacy support păstrat).
     /// </summary>
     [HttpGet("live-traffic")]
     public async Task<IActionResult> GetLiveTraffic([FromQuery] bool forceSimulated = false)
@@ -95,22 +158,6 @@ public class CraiovaController : ControllerBase
         return Ok(new { source, count = traffic.Count, traffic });
     }
 
-    /// <summary>
-    /// Returnează pozițiile în timp real (lat/lon/altitudine/track/viteză) ale tuturor
-    /// aeronavelor detectate de OpenSky Network în sectorul Craiova.
-    /// Destinat frontend-ului (afișare pe hartă) și modulului AI.
-    /// Complet independent de motorul de simulare – nu afectează funcționalitatea existentă.
-    /// </summary>
-    /// <remarks>
-    /// Câmpurile cheie per aeronavă:
-    /// - icao24, callsign, originCountry
-    /// - latitude, longitude, baroAltitudeMeters, baroAltitudeFeet, flightLevelApprox
-    /// - velocityKnots, trueTrackDegrees, verticalRateMs, verticalTrend
-    /// - onGround, squawk, distanceFromLrcvKm, bearingFromLrcvDegrees
-    /// 
-    /// Nota: OpenSky Network poate fi indisponibil sau rate-limited.
-    /// În acest caz răspunsul conține source cu explicația și flights=[].
-    /// </remarks>
     [HttpGet("live-positions")]
     [ProducesResponseType(typeof(object), 200)]
     public async Task<IActionResult> GetLivePositions()
@@ -119,9 +166,66 @@ public class CraiovaController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("vfr/reporting-points")]
+    public IActionResult GetVfrReportingPoints() => Ok(new { source = _openAipService.DataSource, points = _vfrGeofenceService.ReportingPoints, airspaces = _openAipService.Airspaces });
+
+    [HttpGet("vfr/tracks")]
+    public IActionResult GetVfrTracks() => Ok(new { tracks = _vfrGeofenceService.Tracks, sources = new { openSky = "OpenSky REST (OAuth2 credentials optional)", ogn = "OGN APRS-IS TCP (configurable)", sbs1 = "Local SBS-1 (configurable)" } });
+
+    [HttpPost("vfr/tracks/{trackId}/correlate")]
+    public IActionResult CorrelateVfrTrack(string trackId, [FromBody] VfrCorrelationRequest request) =>
+        _vfrGeofenceService.TryCorrelate(trackId, request.FlightPlanId, request.Callsign) ? NoContent() : NotFound();
+
+    [HttpGet("vfr/flight-plans")]
+    public IActionResult GetVfrFlightPlans() => Ok(_vfrGeofenceService.FlightPlans);
+
+    [HttpPost("vfr/flight-plans")]
+    public IActionResult RegisterVfrFlightPlan([FromBody] VfrFlightPlan flightPlan)
+    {
+        _vfrGeofenceService.RegisterFlightPlan(flightPlan);
+        return Accepted(new { flightPlan.FlightPlanId, flightPlan.Callsign });
+    }
+
+    [HttpPost("vfr/reporting-points/refresh")]
+    public async Task<IActionResult> RefreshOpenAip(CancellationToken cancellationToken)
+    {
+        await _openAipService.RefreshAsync(cancellationToken);
+        return Ok(new { source = _openAipService.DataSource, points = _vfrGeofenceService.ReportingPoints.Count, airspaces = _openAipService.Airspaces.Count });
+    }
+
+    [HttpGet("vfr/status")]
+    [ProducesResponseType(typeof(VmcStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetVfrStatus()
+    {
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        return Ok(VmcChecker.ToResponse(weather));
+    }
+
+    [HttpGet("vfr/status/detail")]
+    public async Task<IActionResult> GetVfrStatusDetail()
+    {
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        return Ok(new { vmc = VmcChecker.ToStatus(weather), runwayWindComponents = VmcChecker.GetRunwayComponents(weather), rawMetar = weather.RawMetar, sourceProvider = weather.SourceProvider, isStale = weather.IsStale });
+    }
+
+    [HttpGet("vfr/tracking")]
+    public async Task<IActionResult> GetVfrTracking([FromQuery] string runway = "08")
+    {
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        var positions = await _openSkyLiveService.GetLivePositionsAsync();
+        var states = _vfrGeofenceService.Evaluate(positions, weather, RunwayConfiguration.Normalize(runway));
+        var trackingFlights = states.ToDictionary(s => s.FlightId, StringComparer.OrdinalIgnoreCase);
+        var enrichedFlights = positions.Flights.Select(f => trackingFlights.TryGetValue(f.Icao24, out var state)
+            ? f with { VfrEtaMinutes = state.EtaViaPointMinutes, VfrEntryPointCode = state.PointCode }
+            : f);
+        return Ok(new { queryTimeUtc = DateTime.UtcNow, source = positions.Source, totalCount = positions.TotalCount, airborneCount = positions.AirborneCount, boundingBoxLamin = positions.BoundingBoxLamin, boundingBoxLamax = positions.BoundingBoxLamax, boundingBoxLomin = positions.BoundingBoxLomin, boundingBoxLomax = positions.BoundingBoxLomax, flights = enrichedFlights, vmc = VmcChecker.ToResponse(weather), points = _vfrGeofenceService.ReportingPoints, vfrFlights = states });
+    }
+
     /// <summary>
-    /// Explică în română întrebarea ATC folosind un snapshot nou al simulării și METAR-ul decodat.
-    /// Răspunsul este selectat doar dintre enunțuri aprobate de backend; nu reprezintă autorizare operațională.
+    /// Explică în limba română calculele matematice ale simulării (Predicția Viitorului, 2 Pași Înainte,
+    /// profilul Takeoff-to-Landing, Orbită vs. Redirecționare VFR și separarea 4D) folosind modelul AI local (4B)
+    /// sau sinteza deterministă bazată pe enunțuri verificate de backend.
     /// </summary>
     [HttpPost("explain")]
     [ProducesResponseType(typeof(Explanation), StatusCodes.Status200OK)]
@@ -129,17 +233,32 @@ public class CraiovaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Explain([FromBody] CraiovaExplainRequest request, CancellationToken cancellationToken)
     {
-        var metar = await _metarService.GetDecodedMetarAsync();
-        if (metar is null)
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "METAR LRCV indisponibil; explicația nu poate fi generată fără context meteo curent." });
+        WeatherCondition weather;
+        List<CraiovaAircraft> traffic;
+        string source;
+        Aeris.PlanningEngine.Models.MetarDecoded? metar = null;
 
-        var weather = new WeatherCondition(
-            WindDirectionDegrees: metar.WindDirectionDegrees ?? 0,
-            WindSpeedKnots: metar.WindSpeedKnots,
-            WindGustKnots: metar.WindGustKnots ?? metar.WindSpeedKnots,
-            VisibilityMeters: metar.VisibilityMeters);
-        var (traffic, source) = await _openSkyService.GetCraiovaTrafficAsync(forceSimulatedTraffic: false);
+        if (request.Weather is not null)
+        {
+            weather = request.Weather;
+            traffic = request.Aircrafts is { Count: > 0 } ? request.Aircrafts : OpenSkyService.GetRealisticCraiovaTraffic();
+            source = "Simulare Matematică Demo LRCV";
+        }
+        else
+        {
+            metar = await _metarService.GetDecodedMetarAsync();
+            if (metar is null)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { error = "METAR LRCV indisponibil; explicația nu poate fi generată fără context meteo curent." });
+
+            weather = new WeatherCondition(
+                WindDirectionDegrees: metar.WindDirectionDegrees ?? 0,
+                WindSpeedKnots: metar.WindSpeedKnots,
+                WindGustKnots: metar.WindGustKnots ?? metar.WindSpeedKnots,
+                VisibilityMeters: metar.VisibilityMeters);
+            (traffic, source) = await _openSkyService.GetCraiovaTrafficAsync(forceSimulatedTraffic: false);
+        }
+
         var simulation = _advisoryEngine.EvaluateSimulation(traffic, weather, source);
         var revision = checked((int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         var statements = BuildApprovedStatements(simulation, metar, revision);
@@ -149,24 +268,110 @@ public class CraiovaController : ControllerBase
     }
 
     private static ApprovedStatement[] BuildApprovedStatements(
-        CraiovaSimulationResult simulation, Aeris.PlanningEngine.Models.MetarDecoded metar, int revision)
+        CraiovaSimulationResult simulation, Aeris.PlanningEngine.Models.MetarDecoded? metar, int revision)
     {
-        var source = $"SIM-{revision}";
-        var weatherSource = string.IsNullOrWhiteSpace(metar.RawMetar) ? $"METAR-{revision}" : metar.RawMetar;
+        var source = $"MATH-SIM-{revision}";
+        var weatherSource = metar is not null
+            ? (string.IsNullOrWhiteSpace(metar.RawMetar) ? $"{metar.SourceProvider}-{revision}" : metar.RawMetar)
+            : $"SIM-WX-{simulation.Weather.WindDirectionDegrees:000}/{simulation.Weather.WindSpeedKnots:00}G{simulation.Weather.WindGustKnots:00}KT";
+
+        string weatherText = metar is not null
+            ? (string.IsNullOrWhiteSpace(metar.RawMetar)
+                ? $"Observație meteo ({metar.SourceProvider}): {metar.ControllerSummary} Categorie: {metar.FlightCategory}."
+                : $"METAR LRCV: {metar.ControllerSummary} Categorie: {metar.FlightCategory}.")
+            : $"Condiții meteo simulate LRCV: vânt din {simulation.Weather.WindDirectionDegrees:000}° cu {simulation.Weather.WindSpeedKnots:0.#} kt (rafale {simulation.Weather.WindGustKnots:0.#} kt). Pe pista activă {simulation.ActiveRunway}: vânt lateral {simulation.ActiveRunwayCrosswindKnots:0.#} kt, vânt de față {simulation.ActiveRunwayHeadwindKnots:+0.#;-0.#;0} kt.";
+
         var statements = new List<ApprovedStatement>
         {
-            new("decision", $"Snapshot simulare LRCV: pista activă {simulation.ActiveRunway}; {simulation.Stats.TotalInbounds} aeronave evaluate, {simulation.Stats.ClearedToLandCount} cu apropiere recomandată, {simulation.Stats.HoldingInOrbitCount} în așteptare și {simulation.Stats.DivertAdvisedCount} cu deviere recomandată.", source, Required: true),
-            new("weather", Clip($"METAR LRCV: {metar.ControllerSummary} Categorie: {metar.FlightCategory}.", 800), weatherSource),
-            new("limits", "Acesta este un rezultat de simulare și suport decizional. Nu este o autorizare ATC și nu înlocuiește procedurile, verificările sau judecata controlorului.", $"RULES-{revision}", Required: true)
+            new("decision", $"Decizie Motor Matematic LRCV: pista activă RWY {simulation.ActiveRunway} (vânt lateral {simulation.ActiveRunwayCrosswindKnots:0.#} kt, vânt de față {simulation.ActiveRunwayHeadwindKnots:+0.#;-0.#;0} kt); din {simulation.Stats.TotalInbounds} aeronave evaluate, {simulation.Stats.ClearedToLandCount} sunt aprobate la aterizare, {simulation.Stats.HoldingInOrbitCount} în orbită de așteptare și {simulation.Stats.DivertAdvisedCount} redirecționate către aerodromuri alternative.", source, Required: true),
+            new("weather", Clip(weatherText, 800), weatherSource)
         };
 
-        foreach (var advisory in simulation.Advisories.Take(27))
+        if (simulation.FuturePrediction is { } fp)
+        {
+            statements.Add(new ApprovedStatement(
+                "future_prediction",
+                Clip($"Predicția Viitorului (Nowcasting 4D T+0..T+45m): {fp.TrendSummary} Fereastra optimă VFR pe LRCV: {fp.OptimalVfrLandingWindow}.", 800),
+                $"FORECAST-4D-{revision}"));
+        }
+
+        // Rezumat Doi Pași Înainte (Two Steps Ahead)
+        var stepTexts = simulation.Advisories
+            .Where(a => a.TwoStepsAhead != null)
+            .Select(a => $"{a.Callsign}: {a.TwoStepsAhead!.PredictiveSummary}")
+            .ToList();
+        if (stepTexts.Count > 0)
+        {
+            statements.Add(new ApprovedStatement(
+                "two_steps_ahead",
+                Clip($"Analiză Anticipativă (2 Pași Înaintea Avionului): {string.Join(" | ", stepTexts)}", 800),
+                $"PRED-2STEPS-{revision}"));
+        }
+
+        // Rezumat De-la-Decolare-la-Aterizare (Takeoff-to-Landing)
+        var ttlTexts = simulation.Advisories
+            .Where(a => a.TakeoffToLanding != null)
+            .Select(a =>
+            {
+                var t = a.TakeoffToLanding!;
+                return $"{a.Callsign} ({t.DepartureAerodromeIcao}->LRCV {t.TotalRouteDistanceNm:0}NM): TOD la {t.TopOfDescentDistanceNm:0.0}NM, glisadă 3° ROD -{t.RequiredRateOfDescentFpm:0}fpm, crab {t.WindCorrectionAngleCrabDegrees:+0.0;-0.0;0}°, LDR {t.LandingDistanceRequiredMeters:0}m/{t.LandingDistanceAvailableMeters:0}m ({t.RunwayUsedPercent:0.0}%), ROT {t.PredictedRunwayOccupancySeconds:0}s";
+            })
+            .ToList();
+        if (ttlTexts.Count > 0)
+        {
+            statements.Add(new ApprovedStatement(
+                "takeoff_to_landing",
+                Clip($"Calcul Cinematic De-la-Decolare-la-Aterizare (Takeoff-to-Landing): {string.Join("; ", ttlTexts)}.", 800),
+                $"KINEMATICS-TTL-{revision}"));
+        }
+
+        // Rezumat Orbită vs. Redirecționare VFR
+        var vfrRedirTexts = simulation.Advisories
+            .Where(a => a.VfrRedirection != null)
+            .Select(a =>
+            {
+                var vr = a.VfrRedirection!;
+                return $"{a.Callsign} ({a.ModelName}): {vr.RecommendedDecision} (PNR={vr.PointOfNoReturnMinutes:0.0} min, cea mai bună pistă apropiată: {vr.BestAlternateName} RWY {vr.BestAlternateRunway} scor {vr.BestAlternateScore:0.0}/100, cap {vr.RedirectionHeadingToFlyDegrees:000}°, ETE {vr.RedirectionEtaMinutes:0.0} min)";
+            })
+            .ToList();
+        if (vfrRedirTexts.Count > 0)
+        {
+            statements.Add(new ApprovedStatement(
+                "vfr_redirection",
+                Clip($"Calcul Decizional VFR (Orbită vs. Redirecționare Piste Apropiate): {string.Join(" | ", vfrRedirTexts)}.", 800),
+                $"VFR-DIVERT-CALC-{revision}"));
+        }
+
+        // Rezumat Separare 4D & Turbulență de Siaj
+        if (simulation.SafetyAssessment is { } sa)
+        {
+            statements.Add(new ApprovedStatement(
+                "separation_4d",
+                Clip($"Verificare Separare 4D & Siaj: Status {sa.Status} ({sa.Summary}). Perechi evaluate: {sa.TotalEvaluatedPairs}, puncte 4D: {sa.TotalTrajectoryPoints}, conflicte: {sa.Conflicts.Count}.", 800),
+                $"SEP-4D-{revision}"));
+        }
+
+        foreach (var advisory in simulation.Advisories.Take(22))
         {
             var id = "flight_" + new string(advisory.AircraftId.Where(char.IsLetterOrDigit).Take(48).ToArray());
             if (id == "flight_") id += statements.Count;
+
+            string extraMath = "";
+            if (advisory.TakeoffToLanding is { } t)
+            {
+                extraMath += $" [TOD {t.TopOfDescentDistanceNm:0.0}NM, cap {t.HeadingToFlyDegrees:000}° crab {t.WindCorrectionAngleCrabDegrees:+0.0;-0.0;0}°, LDR {t.LandingDistanceRequiredMeters:0}m, ROT {t.PredictedRunwayOccupancySeconds:0}s].";
+            }
+            if (advisory.VfrRedirection is { } vr)
+            {
+                extraMath += $" [PNR {vr.PointOfNoReturnMinutes:0.0}m; Alternativă #1: {vr.BestAlternateName} RWY {vr.BestAlternateRunway}, scor {vr.BestAlternateScore:0.0}/100, cap {vr.RedirectionHeadingToFlyDegrees:000}°].";
+            }
+
             statements.Add(new ApprovedStatement(id,
-                Clip($"{advisory.Callsign} ({advisory.ModelName}): stare {advisory.AdvisoryStatus}, pista {advisory.AssignedRunway}, vânt lateral {advisory.CurrentCrosswindKnots:0.#} kt (limită {advisory.MaxCrosswindLimitKnots:0.#} kt). {advisory.AdvisoryReason}", 800), source));
+                Clip($"{advisory.Callsign} ({advisory.ModelName}): stare {advisory.AdvisoryStatus}, pista {advisory.AssignedRunway}, vânt lateral {advisory.CurrentCrosswindKnots:0.#} kt (limită {advisory.MaxCrosswindLimitKnots:0.#} kt). {advisory.AdvisoryReason}{extraMath}", 800), source));
         }
+
+        statements.Add(new("limits", "Acesta este un rezultat de simulare matematică și suport decizional (interpretat în limbaj natural din calculele deterministe ale motorului AERIS). Nu este o autorizare ATC.", $"RULES-{revision}", Required: true));
+
         return statements.ToArray();
     }
 
@@ -177,9 +382,13 @@ public class CraiovaController : ControllerBase
 public sealed record CraiovaExplainRequest(
     [param: System.ComponentModel.DataAnnotations.Required]
     [param: System.ComponentModel.DataAnnotations.StringLength(1200, MinimumLength = 1)]
-    string Question);
+    string Question,
+    WeatherCondition? Weather = null,
+    List<CraiovaAircraft>? Aircrafts = null);
 
 public record CraiovaCustomEvaluationDto(
     WeatherCondition? Weather,
     List<CraiovaAircraft>? Aircrafts
 );
+
+public sealed record VfrCorrelationRequest(string FlightPlanId, string Callsign);
