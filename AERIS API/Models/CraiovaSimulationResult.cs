@@ -7,7 +7,7 @@ public record CraiovaAirportInfo(
     double Latitude = 44.3181,
     double Longitude = 23.8886,
     double ElevationFeet = 626,
-    string Runways = "09/27 (2500m x 45m, Asfalt)"
+    string Runways = "08/26 (2500m x 45m, Asfalt)"
 );
 
 public record CraiovaSimulationResult(
