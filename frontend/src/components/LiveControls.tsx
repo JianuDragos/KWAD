@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { CRITICAL_CROSSWIND_KT, runwayForWind, windComponents } from '../sim/live';
 import { useLive } from '../state/live';
+import { useSpeed } from '../state/units';
 import { WindArrow } from './WindArrow';
 
 /** Bara de sus pe pagina Live: ora reală, pista și vântul din METAR, vechimea datelor. */
 export function LiveControls() {
   const metar = useLive((s) => s.metar);
+  const speed = useSpeed();
   const updatedAtMs = useLive((s) => s.updatedAtMs);
   const error = useLive((s) => s.positionsError);
   const vmcStatus = useLive((s) => s.vfrTracking?.vmc.status ?? null);
@@ -21,11 +23,11 @@ export function LiveControls() {
           </span>
           {metar.windDirectionDegrees != null && <WindArrow direction={metar.windDirectionDegrees} />}
           <span className="atis__wind">
-            {metar.isWindVariable || metar.windDirectionDegrees == null ? 'VRB' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`} {metar.windSpeedKnots}
-            {metar.windGustKnots ? `G${metar.windGustKnots}` : ''} kt
+            {metar.isWindVariable || metar.windDirectionDegrees == null ? 'VRB' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`} {speed.value(metar.windSpeedKnots)}
+            {metar.windGustKnots ? `G${speed.value(metar.windGustKnots)}` : ''} {speed.unit}
           </span>
           <span className="atis__xw">QNH {metar.qnhHpa}</span>
-          {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`}>lateral {xw} kt</span>}
+          {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`}>lateral {speed.label(xw)}</span>}
         </div>
       )}
       {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title="Validare VMC după vizibilitate ≥ 5 km și plafon ≥ 1500 ft">{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}

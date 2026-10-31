@@ -16,7 +16,9 @@ public sealed record VmcStatusResponse(
     string RawMetar,
     string Source = "aviationweather.gov",
     bool IsStale = false,
-    string SourceProvider = "NOAA AviationWeather.gov");
+    string SourceProvider = "NOAA AviationWeather.gov",
+    double? CrosswindRunway08Knots = null,
+    double? CrosswindRunway26Knots = null);
 
 public sealed record VfrTrackingState(
     string FlightId,

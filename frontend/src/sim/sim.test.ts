@@ -5,7 +5,7 @@ import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
 import { bearingDeg, destination, distanceNm } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
-import { altitudeBand } from './units';
+import { altitudeBand, speedLabel } from './units';
 import { appendOrbit } from './synthetic';
 import { buildTraffic } from './traffic';
 
@@ -50,9 +50,9 @@ describe('geometria AIP', () => {
     expect(publishedAltitudeFt('@2500ft -185kt')).toBe(2500);
     expect(publishedAltitudeFt(undefined)).toBeNull();
   });
-  it('tranziția TITEK → RWY 27 are lungimile din AIP', () => {
-    const r = arrivalRoute('27', 'TITEK');
-    expect(r.map((p) => p.id)).toEqual(['TITEK', 'CV520', 'CV514', 'OZZET', 'CV508', 'THR27']);
+  it('tranziția TITEK → RWY 26 are lungimile din AIP', () => {
+    const r = arrivalRoute('26', 'TITEK');
+    expect(r.map((p) => p.id)).toEqual(['TITEK', 'CV520', 'CV514', 'OZZET', 'CV508', 'THR26']);
     const legs = r.slice(1).map((p, i) => Number(distanceNm(r[i], p).toFixed(1)));
     expect(legs).toEqual([15.5, 10.9, 6.0, 6.0, 5.7]);
   });
@@ -128,7 +128,7 @@ describe('mock = backendul KWAD', () => {
   it('vânt lateral critic: avioanele mici nu sunt aprobate', () => {
     const critical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
     const res = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), critical, 'test');
-    expect(res.activeRunway).toBe('09');
+    expect(res.activeRunway).toBe('26');
     expect(res.stats.clearedToLandCount).toBe(2);
     expect(res.stats.holdingInOrbitCount).toBe(3);
   });
@@ -188,10 +188,10 @@ describe('buildTraffic', () => {
     expect(m.endSeconds).toBeGreaterThan(m.startSeconds);
   });
 
-  it('harta folosește pista dată de backend (09/27)', () => {
+  it('harta folosește pista dată de backend (08/26)', () => {
     const west = mock.evaluateSimulation(aircrafts, WEATHER_PRESETS.find((p) => p.id === 'west')!.weather, 'test');
-    expect(west.activeRunway).toBe('27');
-    expect(buildTraffic(aircrafts, west).runway).toBe('27');
+    expect(west.activeRunway).toBe('26');
+    expect(buildTraffic(aircrafts, west).runway).toBe('26');
   });
 });
 
@@ -220,5 +220,14 @@ describe('altitudeBand', () => {
     expect(altitudeBand(ft(24000))).toBe('alt-3');
     expect(altitudeBand(ft(36000))).toBe('alt-4');
     expect(altitudeBand(null)).toBe('alt-unknown');
+  });
+});
+
+describe('speedLabel', () => {
+  it('afișează în unitatea aleasă, rotunjit la întreg', () => {
+    expect(speedLabel(10, 'kmh')).toBe('19 km/h'); // 18,52
+    expect(speedLabel(450, 'kmh')).toBe('833 km/h'); // 833,4
+    expect(speedLabel(450.4, 'kt')).toBe('450 kt');
+    expect(speedLabel(0, 'kmh')).toBe('0 km/h');
   });
 });

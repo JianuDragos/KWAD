@@ -1,7 +1,7 @@
 {
   "_meta": {
     "airportIcao": "LRCV",
-    "source": "AIP Romania, AIRAC 2026-10-01: AD 2 LRCV (text), AD 2.9-71 RNP RWY 26, AD 2.9-72 RNP RWY 08",
+    "source": "AIP Romania, AIRAC 2026-10-01 / 2026-10-29: AD 2 LRCV (text), AD 2.9-71 RNP RWY 26, AD 2.9-72 RNP RWY 08",
     "sourceUrls": [
       "https://aisro.ro/aip/2026-10-01/DOCS/AIP/AD/AD2/AD_2_9_LRCV/LR_AD_2_LRCV_en.pdf",
       "https://aisro.ro/aip/2026-10-01/DOCS/AIP/AD/AD2/AD_2_9_LRCV/LR_AD_2_LRCV_9-71_en.pdf",
@@ -19,14 +19,14 @@
   },
   "runways": [
     {
-      "designator": "09",
+      "designator": "08",
       "trueBearingDeg": 88.93,
       "lengthM": 2500,
       "widthM": 45,
       "threshold": { "latitudeDeg": 44.317936, "longitudeDeg": 23.872867, "elevationFt": 628 }
     },
     {
-      "designator": "27",
+      "designator": "26",
       "trueBearingDeg": 268.95,
       "lengthM": 2500,
       "widthM": 45,
@@ -52,41 +52,41 @@
     { "id": "TITEK", "role": "IAF", "latitudeDeg": 44.493278, "longitudeDeg": 23.573861 },
     { "id": "PEMOK", "role": "IAF", "latitudeDeg": 44.364694, "longitudeDeg": 24.348472 },
     { "id": "PANZU", "role": "IAF", "latitudeDeg": 44.036667, "longitudeDeg": 24.136944 },
-    { "id": "OZZET", "role": "IF RWY27", "latitudeDeg": 44.321611, "longitudeDeg": 24.176917 },
-    { "id": "CV508", "role": "FAF RWY27", "latitudeDeg": 44.320028, "longitudeDeg": 24.037639 },
-    { "id": "SDF", "role": "SDF RWY27", "latitudeDeg": 44.318944, "longitudeDeg": 23.950611 },
+    { "id": "OZZET", "role": "IF RWY26", "latitudeDeg": 44.321611, "longitudeDeg": 24.176917 },
+    { "id": "CV508", "role": "FAF RWY26", "latitudeDeg": 44.320028, "longitudeDeg": 24.037639 },
+    { "id": "SDF", "role": "SDF RWY26", "latitudeDeg": 44.318944, "longitudeDeg": 23.950611 },
     { "id": "CV514", "role": "WP", "latitudeDeg": 44.421611, "longitudeDeg": 24.174806 },
     { "id": "CV516", "role": "WP", "latitudeDeg": 44.221639, "longitudeDeg": 24.179 },
-    { "id": "CV518", "role": "MA RWY27", "latitudeDeg": 44.31575, "longitudeDeg": 23.718528 },
+    { "id": "CV518", "role": "MA RWY26", "latitudeDeg": 44.31575, "longitudeDeg": 23.718528 },
     { "id": "CV520", "role": "WP", "latitudeDeg": 44.418583, "longitudeDeg": 23.920222 },
-    { "id": "NECCO", "role": "IF RWY09", "latitudeDeg": 44.314306, "longitudeDeg": 23.623944 },
-    { "id": "CV408", "role": "FAF RWY09", "latitudeDeg": 44.316083, "longitudeDeg": 23.74 },
+    { "id": "NECCO", "role": "IF RWY08", "latitudeDeg": 44.314306, "longitudeDeg": 23.623944 },
+    { "id": "CV408", "role": "FAF RWY08", "latitudeDeg": 44.316083, "longitudeDeg": 23.74 },
     { "id": "CV412", "role": "WP", "latitudeDeg": 44.414278, "longitudeDeg": 23.620917 },
     { "id": "CV414", "role": "WP", "latitudeDeg": 44.214333, "longitudeDeg": 23.627 },
-    { "id": "CV420", "role": "MA RWY09", "latitudeDeg": 44.320278, "longitudeDeg": 24.058556 }
+    { "id": "CV420", "role": "MA RWY08", "latitudeDeg": 44.320278, "longitudeDeg": 24.058556 }
   ],
   "approaches": [
     {
-      "id": "RNP27",
-      "runway": "27",
+      "id": "RNP26",
+      "runway": "26",
       "transitions": [
         { "from": "PEMOK", "legs": ["PEMOK", "OZZET"], "constraints": { "PEMOK": "+FL050 -250kt", "OZZET": "+2500ft -230kt" } },
         { "from": "PANZU", "legs": ["PANZU", "CV516", "OZZET"], "constraints": { "PANZU": "+FL060 -250kt", "CV516": "+2500ft", "OZZET": "+2500ft -230kt" } },
         { "from": "TITEK", "legs": ["TITEK", "CV520", "CV514", "OZZET"], "constraints": { "TITEK": "+FL060 -250kt", "CV520": "+4000ft -230kt", "CV514": "+4000ft", "OZZET": "+2500ft -230kt" } }
       ],
-      "final": { "legs": ["OZZET", "CV508", "THR27"], "constraints": { "CV508": "@2500ft -185kt", "THR27": "@669ft" }, "glidepathDeg": 3.0 },
-      "missedApproach": ["THR27", "CV518", "CV520", "CV514", "OZZET"]
+      "final": { "legs": ["OZZET", "CV508", "THR26"], "constraints": { "CV508": "@2500ft -185kt", "THR26": "@669ft" }, "glidepathDeg": 3.0 },
+      "missedApproach": ["THR26", "CV518", "CV520", "CV514", "OZZET"]
     },
     {
-      "id": "RNP09",
-      "runway": "09",
+      "id": "RNP08",
+      "runway": "08",
       "transitions": [
         { "from": "PEMOK", "legs": ["PEMOK", "CV514", "CV520", "CV412", "NECCO"], "constraints": { "PEMOK": "+FL050 -250kt", "CV514": "+4000ft", "CV520": "+4000ft -230kt", "CV412": "+4000ft -230kt", "NECCO": "+2500ft" } },
         { "from": "PANZU", "legs": ["PANZU", "CV414", "NECCO"], "constraints": { "PANZU": "+FL060", "CV414": "+2500ft -250kt", "NECCO": "+2500ft -230kt" } },
         { "from": "TITEK", "legs": ["TITEK", "CV412", "NECCO"], "constraints": { "TITEK": "+FL060 -250kt", "CV412": "+4000ft -230kt", "NECCO": "+2500ft" } }
       ],
-      "final": { "legs": ["NECCO", "CV408", "THR09"], "constraints": { "CV408": "@2500ft -185kt", "THR09": "@678ft" }, "glidepathDeg": 3.0 },
-      "missedApproach": ["THR09", "CV420", "CV520", "CV412", "NECCO"]
+      "final": { "legs": ["NECCO", "CV408", "THR08"], "constraints": { "CV408": "@2500ft -185kt", "THR08": "@678ft" }, "glidepathDeg": 3.0 },
+      "missedApproach": ["THR08", "CV420", "CV520", "CV412", "NECCO"]
     }
   ]
 }

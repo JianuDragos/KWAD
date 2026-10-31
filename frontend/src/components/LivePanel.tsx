@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import type { LiveFlight, Metar } from '../contracts/live';
 import { airlineFor, trendArrow } from '../sim/live';
 import { M_PER_NM, altitudeLabel } from '../sim/units';
+import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { AskAi } from './AskAi';
 
@@ -54,6 +55,7 @@ function VmcBadge({ status }: { status: string }) {
 }
 
 function MetarBlock({ metar }: { metar: Metar }) {
+  const speed = useSpeed();
   const wind = metar.isWindVariable || metar.windDirectionDegrees == null ? 'variabil' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`;
   return (
     <section className="metar" aria-label="METAR Craiova">
@@ -61,7 +63,7 @@ function MetarBlock({ metar }: { metar: Metar }) {
       <dl className="kv">
         <dt>Vânt</dt>
         <dd className="num">
-          {wind} {metar.windSpeedKnots} kt{metar.windGustKnots ? `, rafale ${metar.windGustKnots} kt` : ''}
+          {wind} {speed.label(metar.windSpeedKnots)}{metar.windGustKnots ? `, rafale ${speed.label(metar.windGustKnots)}` : ''}
         </dd>
         <dt>Vizibilitate</dt>
         <dd className="num">{metar.visibilityMeters >= 9999 ? '10 km sau mai mult' : `${metar.visibilityMeters} m`}</dd>
@@ -91,6 +93,7 @@ function MetarBlock({ metar }: { metar: Metar }) {
 function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean }) {
   const select = useLive((s) => s.select);
   const ref = useRef<HTMLButtonElement>(null);
+  const speed = useSpeed();
   const bodyId = `live-${flight.icao24}`;
   useEffect(() => {
     if (expanded) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -118,7 +121,7 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
             <dt>Înmatriculare</dt>
             <dd>{flight.originCountry ?? '—'}</dd>
             <dt>Viteză sol</dt>
-            <dd className="num">{flight.velocityKnots != null ? `${Math.round(flight.velocityKnots)} kt` : '—'}</dd>
+            <dd className="num">{flight.velocityKnots != null ? speed.label(flight.velocityKnots) : '—'}</dd>
             <dt>Direcție</dt>
             <dd className="num">{flight.trueTrackDegrees != null ? `${String(Math.round(flight.trueTrackDegrees)).padStart(3, '0')}°` : '—'}</dd>
             <dt>Rată verticală</dt>

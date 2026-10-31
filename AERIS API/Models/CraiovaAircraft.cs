@@ -28,11 +28,20 @@ public record AlternateAerodrome(
     double CalculatedCrosswindKnots,
     double CalculatedHeadwindKnots,
     double EstimatedFlightMinutes,
-    string SuitabilityReason
+    string SuitabilityReason,
+    double SafetyScore = 0,
+    double RunwayLengthMeters = 600,
+    string SurfaceType = "Iarbă",
+    double LandingDistanceRequiredMeters = 150,
+    double LandingSafetyMarginMeters = 450,
+    double WindCorrectedHeadingDegrees = 0,
+    double GroundSpeedToAlternateKnots = 70,
+    double RemainingFuelAtTouchdownMinutes = 60,
+    bool IsRecommendedBestSpot = false
 );
 
 public record OrbitPatternAdvice(
-    string PatternName,             // ex: "Orbită paralelă cu axul pistei 09/27 (Zona Cârcea - Pielești)"
+    string PatternName,             // ex: "Orbită paralelă cu axul pistei 08/26 (Zona Cârcea - Pielești)"
     double RecommendedAltitudeFeet, // ex: 1500 ft QNH
     double HoldingDurationMinutes,  // Timp estimat de așteptare în orbită
     double RemainingFuelMarginMinutes,
@@ -47,7 +56,7 @@ public record AircraftAdvisory(
     AircraftCategory Category,
     FlightRules FlightRules,
     bool HasInstrumentAvionics,
-    string AssignedRunway,                   // Pista de aterizare alocată (ex: "09" sau "27")
+    string AssignedRunway,                   // Pista de aterizare alocată (ex: "08" sau "26", acceptă și aliasuri)
     double CurrentCrosswindKnots,
     double CurrentHeadwindKnots,
     double MaxCrosswindLimitKnots,
@@ -57,5 +66,8 @@ public record AircraftAdvisory(
     string AdvisoryReason,
     OrbitPatternAdvice? OrbitAdvice = null,
     List<AlternateAerodrome>? RecommendedAlternates = null,
-    ScheduleSlot? AssignedLandingSlot = null
+    ScheduleSlot? AssignedLandingSlot = null,
+    TakeoffToLandingAnalysis? TakeoffToLanding = null,
+    TwoStepsAheadPrediction? TwoStepsAhead = null,
+    VfrRedirectionAnalysis? VfrRedirection = null
 );

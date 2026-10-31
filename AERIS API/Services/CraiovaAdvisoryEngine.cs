@@ -21,7 +21,7 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
         string dataSource = "OpenSky Live / Craiova Simulation",
         bool useTrajectoryEngine = true)
     {
-        // 1. Calcul componente vânt pe pista de referință Craiova (09/27)
+        // 1. Calcul componente vânt pe pista de referință Craiova (08/26)
         double effectiveWindSpeed = Math.Max(weather.WindSpeedKnots, weather.WindGustKnots);
         string activeRwyId;
         double activeRwyHeading;
@@ -30,7 +30,7 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
 
         if (!string.IsNullOrWhiteSpace(weather.ForceRunwayInUse))
         {
-            activeRwyId = weather.ForceRunwayInUse;
+            activeRwyId = RunwayConfiguration.Normalize(weather.ForceRunwayInUse);
             activeRwyHeading = CrosswindCalculator.GetRunwayHeading(activeRwyId);
             (crosswindCraiova, headwindCraiova) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWindSpeed, activeRwyHeading);
         }
@@ -95,60 +95,66 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                 }
                 else
                 {
-                        double ifrHoldAlt = useTrajectoryEngine ? 4000.0 + (ifrHoldingCount * 1000.0) : 4000.0;
-                        string ifrFix = activeRwyId == "27" ? "OZZET" : "NECCO";
-                        var ifrFixWp = AipAirwayData.Waypoints[ifrFix];
-                        ifrHoldingCount++;
+                    double ifrHoldAlt = useTrajectoryEngine ? 4000.0 + (ifrHoldingCount * 1000.0) : 4000.0;
+                    string ifrFix = RunwayConfiguration.Normalize(activeRwyId) == RunwayConfiguration.Runway26 ? "OZZET" : "NECCO";
+                    var ifrFixWp = AipAirwayData.Waypoints[ifrFix];
+                    ifrHoldingCount++;
 
-                        var ifrRacetrack = useTrajectoryEngine ? new HoldingRacetrackConfig(
-                            FixId: ifrFix,
-                            FixLatitude: ifrFixWp.Latitude,
-                            FixLongitude: ifrFixWp.Longitude,
-                            InboundHeadingDegrees: activeRwyHeading,
-                            TurnDirection: "Right",
-                            LegDurationSeconds: 60.0,
-                            SpeedKnots: ac.SpeedKnots > 0 ? ac.SpeedKnots : 180.0,
-                            AltitudeFeet: ifrHoldAlt,
-                            EntryTimeSeconds: ac.EtaSeconds,
-                            DurationSeconds: 15 * 60
-                        ) : null;
+                    var ifrRacetrack = useTrajectoryEngine ? new HoldingRacetrackConfig(
+                        FixId: ifrFix,
+                        FixLatitude: ifrFixWp.Latitude,
+                        FixLongitude: ifrFixWp.Longitude,
+                        InboundHeadingDegrees: activeRwyHeading,
+                        TurnDirection: "Right",
+                        LegDurationSeconds: 60.0,
+                        SpeedKnots: ac.SpeedKnots > 0 ? ac.SpeedKnots : 210.0,
+                        AltitudeFeet: ifrHoldAlt,
+                        EntryTimeSeconds: ac.EtaSeconds,
+                        DurationSeconds: 15 * 60
+                    ) : null;
 
-                        advisories.Add(new AircraftAdvisory(
-                            AircraftId: ac.Id,
-                            Callsign: ac.Callsign,
-                            ModelName: ac.ModelName,
-                            Category: ac.Category,
-                            FlightRules: ac.FlightRules,
-                            HasInstrumentAvionics: ac.HasInstrumentAvionics,
-                            AssignedRunway: activeRwyId,
-                            CurrentCrosswindKnots: crosswindCraiova,
-                            CurrentHeadwindKnots: headwindCraiova,
-                            MaxCrosswindLimitKnots: ac.MaxCrosswindKnots,
-                            IsOppositeDirectionLanding: false,
-                            OppositeDirectionAdvice: null,
-                            AdvisoryStatus: AdvisoryStatus.HoldInOrbitRecommended,
-                            AdvisoryReason: isTailwindSevere
-                                ? $"Vânt de spate excesiv ({Math.Abs(headwindCraiova)} kts > 10 kts). Se recomandă holding IFR sau schimbarea pistei în uz."
-                                : $"Vânt lateral sever ({crosswindCraiova} kts > {ac.MaxCrosswindKnots} kts). Holding IFR standard.",
-                            OrbitAdvice: new OrbitPatternAdvice(
-                                PatternName: useTrajectoryEngine
-                                    ? $"Standard IFR Racetrack Holding Craiova ({ifrFix} la {ifrHoldAlt:F0} ft)"
-                                    : "Standard IFR Holding Craiova (VOR/DME CRA)",
-                                RecommendedAltitudeFeet: ifrHoldAlt,
-                                HoldingDurationMinutes: 15,
-                                RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 20,
-                                SafetyInstructions: useTrajectoryEngine
-                                    ? $"Așteptare în circuit hipodrom ICAO la {ifrFix}, nivel {ifrHoldAlt:F0} ft QNH (separare verticală 1.000 ft)."
-                                    : "Așteptare în holding standard până la stabilizarea condițiilor de vânt.",
-                                Racetrack: ifrRacetrack
-                            )
-                        ));
+                    advisories.Add(new AircraftAdvisory(
+                        AircraftId: ac.Id,
+                        Callsign: ac.Callsign,
+                        ModelName: ac.ModelName,
+                        Category: ac.Category,
+                        FlightRules: ac.FlightRules,
+                        HasInstrumentAvionics: ac.HasInstrumentAvionics,
+                        AssignedRunway: activeRwyId,
+                        CurrentCrosswindKnots: crosswindCraiova,
+                        CurrentHeadwindKnots: headwindCraiova,
+                        MaxCrosswindLimitKnots: ac.MaxCrosswindKnots,
+                        IsOppositeDirectionLanding: false,
+                        OppositeDirectionAdvice: null,
+                        AdvisoryStatus: AdvisoryStatus.HoldInOrbitRecommended,
+                        AdvisoryReason: isTailwindSevere
+                            ? $"Vânt de spate excesiv ({Math.Abs(headwindCraiova)} kts > 10 kts). Se recomandă holding IFR sau schimbarea pistei în uz."
+                            : $"Vânt lateral sever ({crosswindCraiova} kts > {ac.MaxCrosswindKnots} kts). Holding IFR standard.",
+                        OrbitAdvice: new OrbitPatternAdvice(
+                            PatternName: useTrajectoryEngine
+                                ? $"Hipodrom IFR {ifrFix} ({ifrHoldAlt:F0} ft QNH)"
+                                : "Standard IFR Holding Craiova (VOR/DME CRA)",
+                            RecommendedAltitudeFeet: ifrHoldAlt,
+                            HoldingDurationMinutes: 15,
+                            RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 20,
+                            SafetyInstructions: useTrajectoryEngine
+                                ? $"Mențineți hipodromul publicat la {ifrFix}, nivelul {ifrHoldAlt:F0} ft (eșalonat vertical la 1.000 ft) până la stabilizarea condițiilor de vânt."
+                                : "Așteptare în holding standard până la stabilizarea condițiilor de vânt.",
+                            Racetrack: ifrRacetrack
+                        )
+                    ));
                 }
             }
             else
             {
                 // Aeronave mici de agrement (ICP Savannah, PZL-104 Wilga, Cessna 172)
-                var alternates = GetAlternateAerodromes(weather, ac.SpeedKnots);
+                double baseLdr = ac.Id == "YR-SAV" ? 95.0 : (ac.Id == "YR-WILG" ? 125.0 : 160.0);
+                var alternates = FlightPhysicsAndPredictionEngine.EvaluateAlternatesWithMath(
+                    weather,
+                    ac.SpeedKnots,
+                    ac.MaxCrosswindKnots,
+                    ac.RemainingFuelMinutes,
+                    baseLdr);
 
                 // REGULA VÂNTULUI DE SPATE PENTRU AERONAVELE VFR:
                 // Dacă pe pista curentă există vânt de spate (headwind < 0), se execută manevra în sens invers (reciprocal runway)
@@ -174,6 +180,16 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                 }
 
                 bool isCrosswindExceeded = vfrCrosswind > ac.MaxCrosswindKnots;
+                var vfrRedirection = FlightPhysicsAndPredictionEngine.BuildVfrRedirectionAnalysis(
+                    ac,
+                    activeRwyId,
+                    vfrRunway,
+                    vfrCrosswind,
+                    vfrHeadwind,
+                    isOppositeLanding,
+                    hasCommercialTrafficOnPrimary,
+                    weather,
+                    alternates);
 
                 if (isCrosswindExceeded)
                 {
@@ -205,7 +221,7 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                         HoldingDurationMinutes: 12,
                         RemainingFuelMarginMinutes: ac.RemainingFuelMinutes - 15,
                         SafetyInstructions: useTrajectoryEngine
-                            ? $"Mențineți circuit hipodrom VFR la {vfrHoldAlt:F0} ft QNH (separare verticală 1.000 ft), în afara zonei de turbulență de siaj. Cedați prioritatea traficului comercial."
+                            ? $"Mențineți circuit hipodrom VFR la {vfrHoldAlt:F0} ft QNH (separare verticală 1.000 ft, PNR={vfrRedirection.PointOfNoReturnMinutes:F0} min), în afara zonei de turbulență de siaj. Alternativa optimă: {vfrRedirection.BestAlternateName} (pista {vfrRedirection.BestAlternateRunway}, cap {vfrRedirection.RedirectionHeadingToFlyDegrees:F0}°)."
                             : "Mențineți zbor vizual (VFR) la 1500 ft QNH paralel cu axul pistei, în afara zonei de turbulență de siaj. Cedați prioritatea traficului comercial.",
                         Racetrack: vfrRacetrack
                     );
@@ -213,8 +229,8 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                     string reason = $"Vântul lateral ({vfrCrosswind} kts) depășește limita maximă admisă pentru {ac.ModelName} ({ac.MaxCrosswindKnots} kts). " +
                                     (oppositeAdvice != null ? $"[{oppositeAdvice}] " : "") +
                                     (canHoldInOrbit
-                                        ? "Se recomandă orbită de așteptare sau deviere la Balta Verde / Podari unde vântul este mult mai favorabil."
-                                        : "Rezervele de combustibil impun devierea imediată către Podari sau Balta Verde.");
+                                        ? $"Se recomandă orbită de așteptare (PNR {vfrRedirection.PointOfNoReturnMinutes:F0} min) sau redirecționare către {vfrRedirection.BestAlternateName} (pista {vfrRedirection.BestAlternateRunway}, cap {vfrRedirection.RedirectionHeadingToFlyDegrees:F0}°, scor {vfrRedirection.BestAlternateScore:F1}/100)."
+                                        : $"Rezervele de combustibil impun devierea imediată către {vfrRedirection.BestAlternateName} (pista {vfrRedirection.BestAlternateRunway}, cap {vfrRedirection.RedirectionHeadingToFlyDegrees:F0}°).");
 
                     advisories.Add(new AircraftAdvisory(
                         AircraftId: ac.Id,
@@ -232,7 +248,8 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                         AdvisoryStatus: status,
                         AdvisoryReason: reason,
                         OrbitAdvice: orbitAdvice,
-                        RecommendedAlternates: alternates
+                        RecommendedAlternates: alternates,
+                        VfrRedirection: vfrRedirection
                     ));
                 }
                 else
@@ -286,7 +303,8 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                             AdvisoryStatus: AdvisoryStatus.HoldInOrbitRecommended,
                             AdvisoryReason: $"Manevră în sens invers aprobată pe Pista {vfrRunway} (vânt de față +{vfrHeadwind} kts), dar se recomandă orbită scurtă de așteptare pentru a permite aeronavei comerciale din sens opus ({activeRwyId}) să elibereze pista.",
                             OrbitAdvice: orbitAdvice,
-                            RecommendedAlternates: alternates
+                            RecommendedAlternates: alternates,
+                            VfrRedirection: vfrRedirection
                         ));
                     }
                     else
@@ -311,7 +329,8 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
                             OppositeDirectionAdvice: oppositeAdvice,
                             AdvisoryStatus: AdvisoryStatus.ClearedForApproach,
                             AdvisoryReason: reasonDesc,
-                            RecommendedAlternates: alternates
+                            RecommendedAlternates: alternates,
+                            VfrRedirection: vfrRedirection
                         ));
 
                         clearedForLandingInputs.Add(new AircraftInput(
@@ -382,7 +401,47 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
             }
         }
 
-        // 4. Statistici sumare
+        // Validăm și aeronavele aflate în holding ca să raportăm eventuale conflicte în circuitele de așteptare
+        var holdingInputs = advisories
+            .Where(a => a.AdvisoryStatus == AdvisoryStatus.HoldInOrbitRecommended && a.OrbitAdvice?.Racetrack != null)
+            .Select(a => (aircrafts.First(ac => ac.Id == a.AircraftId), a.OrbitAdvice!.Racetrack!))
+            .ToList();
+
+        if (holdingInputs.Count > 0)
+        {
+            var predictor = new TrajectoryPredictor();
+            var holdingTrajs = holdingInputs.Select(h => predictor.PredictHoldingTrajectory(h.Item1, h.Item2)).ToList();
+            if (safetyAssessment == null)
+            {
+                safetyAssessment = _separationEngine.ValidateSeparation(holdingTrajs);
+            }
+        }
+
+        // 4. Atașăm analiza completă Takeoff-to-Landing și Predicția cu 2 Pași Înainte (Two Steps Ahead) pentru fiecare aeronavă
+        for (int i = 0; i < advisories.Count; i++)
+        {
+            var adv = advisories[i];
+            var ac = aircrafts.First(a => a.Id == adv.AircraftId);
+            double landingTimeSec = adv.AssignedLandingSlot?.CalculatedTimeSeconds ?? ac.EtaSeconds;
+
+            var ttl = FlightPhysicsAndPredictionEngine.BuildTakeoffToLanding(ac, adv.AssignedRunway, weather, landingTimeSec);
+            var twoSteps = FlightPhysicsAndPredictionEngine.BuildTwoStepsAhead(ac, adv, weather, ttl);
+
+            advisories[i] = adv with
+            {
+                TakeoffToLanding = ttl,
+                TwoStepsAhead = twoSteps
+            };
+        }
+
+        // 5. Predicția globală a viitorului (T+0 .. T+45m)
+        var futurePrediction = FlightPhysicsAndPredictionEngine.BuildFuturePrediction(
+            weather,
+            aircrafts,
+            advisories,
+            activeRwyId);
+
+        // 6. Statistici sumare
         var stats = new SimulationTrafficStats(
             TotalInbounds: aircrafts.Count,
             CommercialAirlinersCount: aircrafts.Count(a => a.Category == AircraftCategory.CommercialJet || a.Category == AircraftCategory.RegionalTurboprop),
@@ -404,79 +463,13 @@ public class CraiovaAdvisoryEngine : ICraiovaAdvisoryEngine
             Stats: stats,
             DataSource: dataSource,
             GeneratedAtUtc: DateTime.UtcNow,
-            SafetyAssessment: safetyAssessment
+            SafetyAssessment: safetyAssessment,
+            FuturePrediction: futurePrediction
         );
     }
 
     public List<AlternateAerodrome> GetAlternateAerodromes(WeatherCondition weather, double aircraftCruiseSpeedKnots = 70)
     {
-        double speed = (aircraftCruiseSpeedKnots <= 0) ? 70 : aircraftCruiseSpeedKnots;
-        double effectiveWind = Math.Max(weather.WindSpeedKnots, weather.WindGustKnots);
-        var alternates = new List<AlternateAerodrome>();
-
-        // 1. Aerodromul Balta Verde Craiova
-        var (crossBV13, headBV13) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 130.0);
-        var (crossBV31, headBV31) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 310.0);
-        string bestRwyBV = (headBV31 > headBV13) ? "31 (310°)" : "13 (130°)";
-        double bestCrossBV = (headBV31 > headBV13) ? crossBV31 : crossBV13;
-        double bestHeadBV = (headBV31 > headBV13) ? headBV31 : headBV13;
-        double timeBV = Math.Round((11.8 / (speed * 1.852)) * 60, 1);
-
-        alternates.Add(new AlternateAerodrome(
-            Name: "Aerodromul Balta Verde Craiova",
-            Code: "LRBV",
-            DistanceKm: 11.8,
-            BearingDegrees: 245,
-            RunwayHeadingDegrees: (headBV31 > headBV13) ? 310 : 130,
-            BestRunway: bestRwyBV,
-            CalculatedCrosswindKnots: bestCrossBV,
-            CalculatedHeadwindKnots: bestHeadBV,
-            EstimatedFlightMinutes: timeBV,
-            SuitabilityReason: $"Pistă înierbată 600m. La vânt din {weather.WindDirectionDegrees}°, vântul de față pe pista {bestRwyBV} este de {bestHeadBV} kts, iar cel lateral este de {bestCrossBV} kts."
-        ));
-
-        // 2. Aerodrom Podari
-        var (crossPod02, headPod02) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 20.0);
-        var (crossPod20, headPod20) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 200.0);
-        string bestRwyPod = (headPod20 > headPod02) ? "20 (200°)" : "02 (020°)";
-        double bestCrossPod = (headPod20 > headPod02) ? crossPod20 : crossPod02;
-        double bestHeadPod = (headPod20 > headPod02) ? headPod20 : headPod02;
-        double timePod = Math.Round((14.5 / (speed * 1.852)) * 60, 1);
-
-        alternates.Add(new AlternateAerodrome(
-            Name: "Aerodrom Podari (ULM Field)",
-            Code: "PODARI",
-            DistanceKm: 14.5,
-            BearingDegrees: 225,
-            RunwayHeadingDegrees: (headPod20 > headPod02) ? 200 : 20,
-            BestRunway: bestRwyPod,
-            CalculatedCrosswindKnots: bestCrossPod,
-            CalculatedHeadwindKnots: bestHeadPod,
-            EstimatedFlightMinutes: timePod,
-            SuitabilityReason: $"Teren dedicat ULM/Savannah. Pista {bestRwyPod} oferă vânt de față de +{bestHeadPod} kts și vânt lateral minim de {bestCrossPod} kts."
-        ));
-
-        // 3. Aerodrom Slatina (Găneasa)
-        var (crossSlat08, headSlat08) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 80.0);
-        var (crossSlat26, headSlat26) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, 260.0);
-        string bestRwySlat = (headSlat26 > headSlat08) ? "26 (260°)" : "08 (080°)";
-        double bestCrossSlat = (headSlat26 > headSlat08) ? crossSlat26 : crossSlat08;
-        double bestHeadSlat = (headSlat26 > headSlat08) ? headSlat26 : headSlat08;
-        double timeSlat = Math.Round((46.0 / (speed * 1.852)) * 60, 1);
-
-        alternates.Add(new AlternateAerodrome(
-            Name: "Aerodrom Slatina",
-            Code: "SLATINA",
-            DistanceKm: 46.0,
-            BearingDegrees: 75,
-            RunwayHeadingDegrees: (headSlat26 > headSlat08) ? 260 : 80,
-            BestRunway: bestRwySlat,
-            CalculatedCrosswindKnots: bestCrossSlat,
-            CalculatedHeadwindKnots: bestHeadSlat,
-            EstimatedFlightMinutes: timeSlat,
-            SuitabilityReason: $"Aerodrom de rezervă estic la {timeSlat} minute zbor."
-        ));
-
-        return alternates;
+        return FlightPhysicsAndPredictionEngine.EvaluateAlternatesWithMath(weather, aircraftCruiseSpeedKnots);
     }
 }

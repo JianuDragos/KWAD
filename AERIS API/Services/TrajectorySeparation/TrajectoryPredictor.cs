@@ -21,8 +21,8 @@ public class TrajectoryPredictor
         string? preferredIaf = null,
         double samplingIntervalSeconds = 2.0)
     {
-        string rwy = runwayId == "27" ? "27" : "09";
-        var thr = rwy == "27" ? AipAirwayData.Thr27 : AipAirwayData.Thr09;
+        string rwy = RunwayConfiguration.Normalize(runwayId);
+        var thr = rwy == RunwayConfiguration.Runway26 ? AipAirwayData.Thr26 : AipAirwayData.Thr08;
 
         List<AipAirwayData.WaypointInfo> routeFixes;
 
@@ -165,7 +165,7 @@ public class TrajectoryPredictor
         double initiationTimeSeconds,
         double samplingIntervalSeconds = 2.0)
     {
-        string rwy = runwayId == "27" ? "27" : "09";
+        string rwy = RunwayConfiguration.Normalize(runwayId);
         var maFixes = AipAirwayData.GetMissedApproachFixes(rwy);
         double speed = aircraft.SpeedKnots > 0 ? aircraft.SpeedKnots : 180.0;
         double currentTime = initiationTimeSeconds;
@@ -225,8 +225,8 @@ public class TrajectoryPredictor
 
     private static List<AipAirwayData.WaypointInfo> GetVfrArrivalFixes(string runwayId, string aircraftId)
     {
-        string rwy = runwayId == "27" ? "27" : "09";
-        var thr = rwy == "27" ? AipAirwayData.Thr27 : AipAirwayData.Thr09;
+        string rwy = RunwayConfiguration.Normalize(runwayId);
+        var thr = rwy == RunwayConfiguration.Runway26 ? AipAirwayData.Thr26 : AipAirwayData.Thr08;
 
         // Selectăm punct de intrare VFR în funcție de hash-ul aeronavei (distribuție realistă între VFR-S, VFR-N, VFR-W)
         int hash = Math.Abs(aircraftId.GetHashCode());

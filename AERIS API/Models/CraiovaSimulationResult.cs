@@ -24,7 +24,8 @@ public record CraiovaSimulationResult(
     SimulationTrafficStats Stats,
     string DataSource,
     DateTime GeneratedAtUtc,
-    SafetyAssessmentResult? SafetyAssessment = null
+    SafetyAssessmentResult? SafetyAssessment = null,
+    FuturePredictionSummary? FuturePrediction = null
 );
 
 public record SimulationTrafficStats(

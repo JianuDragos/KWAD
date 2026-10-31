@@ -20,7 +20,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_1_TwoIfr_SamePositionAndAltitude_IsUnsafe()
     {
-        // Două zboruri IFR la aceeași poziție (PEMOK) și aceeași altitudine (5000 ft)
         var s1 = new Aircraft3DState(
             AircraftId: "IFR1",
             Callsign: "WZZ3751",
@@ -57,7 +56,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_2_TwoIfr_HorizontallyClose_VerticallySeparated_StandardModeSafe()
     {
-        // Două zboruri IFR la distanță orizontală de ~1 NM (< 5 NM), dar separate vertical la 1.000 ft (5000 ft vs 6000 ft)
         var (lat2, lon2) = GeoMath.Destination(44.364694, 24.348472, 90, 1.0);
 
         var s1 = new Aircraft3DState("IFR1", "WZZ3751", FlightRules.IFR, AircraftCategory.CommercialJet, 44.364694, 24.348472, 5000, 210, 260, 100);
@@ -66,7 +64,6 @@ public class TrajectorySeparationTests
         var settings = new SeparationSettings(StrictMode: false);
         var result = _engine.ValidateDirectStates(new List<Aircraft3DState> { s1, s2 }, settings);
 
-        // În modul standard EASA, separarea verticală de 1.000 ft este conformă
         Assert.True(result.IsSafe);
         Assert.Equal(SafetyStatus.Safe, result.Status);
         Assert.Empty(result.Conflicts);
@@ -75,7 +72,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_3_TwoIfr_HorizontallyClose_VerticallySeparated_StrictModeUnsafe()
     {
-        // Aceleași două zboruri, dar cu StrictMode = true: respinge suprapunerea orizontală chiar dacă altitudinile diferă!
         var (lat2, lon2) = GeoMath.Destination(44.364694, 24.348472, 90, 1.0);
 
         var s1 = new Aircraft3DState("IFR1", "WZZ3751", FlightRules.IFR, AircraftCategory.CommercialJet, 44.364694, 24.348472, 5000, 210, 260, 100);
@@ -92,7 +88,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_4_TwoVfr_CloseInClassC_BreachesVfrThreshold()
     {
-        // Două zboruri VFR în CTR Craiova la distanță de 0.8 NM (< 1.5 NM prag AERIS) și diferență 200 ft (< 500 ft)
         var (lat2, lon2) = GeoMath.Destination(44.25, 23.85, 45, 0.8);
 
         var v1 = new Aircraft3DState("VFR1", "YR-SAV", FlightRules.VFR, AircraftCategory.UltralightAndGlider, 44.25, 23.85, 1500, 80, 80, 50);
@@ -107,12 +102,10 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_5_RunwayOccupancyViolation_WhenConsecutiveLandingsTooClose()
     {
-        // Două avioane cu aterizări programate la doar 30 de secunde diferență
-        // Prima aeronavă este CommercialJet (ocupare 60s + 15s marjă = 75s necesar)
         var landings = new List<(string AircraftId, AircraftCategory Category, FlightRules Rules, double LandingTimeSeconds)>
         {
             ("AC1", AircraftCategory.CommercialJet, FlightRules.IFR, 100.0),
-            ("AC2", AircraftCategory.CommercialJet, FlightRules.IFR, 130.0) // 30s < 75s
+            ("AC2", AircraftCategory.CommercialJet, FlightRules.IFR, 130.0)
         };
 
         var conflicts = _engine.CheckRunwaySafety(landings, new SeparationSettings());
@@ -124,13 +117,10 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_6_WakeTurbulence_LightBehindMedium_Requires3Minutes()
     {
-        // Lider: CommercialJet (Medium) la T=100s
-        // Urmăritor: Ultralight / Savannah (Light) la T=220s (interval = 120s)
-        // Regula EASA / ICAO: minim 180s (3 minute) pentru LIGHT după MEDIUM
         var landings = new List<(string AircraftId, AircraftCategory Category, FlightRules Rules, double LandingTimeSeconds)>
         {
             ("WZZ3751", AircraftCategory.CommercialJet, FlightRules.IFR, 100.0),
-            ("YR-SAV",  AircraftCategory.UltralightAndGlider, FlightRules.VFR, 220.0) // 120s < 180s
+            ("YR-SAV",  AircraftCategory.UltralightAndGlider, FlightRules.VFR, 220.0)
         };
 
         var conflicts = _engine.CheckRunwaySafety(landings, new SeparationSettings());
@@ -138,11 +128,10 @@ public class TrajectorySeparationTests
         Assert.NotEmpty(conflicts);
         Assert.Contains(conflicts, c => c.Type == SeparationConflictType.WakeTurbulenceViolation);
 
-        // Dacă intervalul este mărit la 280s (180s diferență)
         var safeLandings = new List<(string AircraftId, AircraftCategory Category, FlightRules Rules, double LandingTimeSeconds)>
         {
             ("WZZ3751", AircraftCategory.CommercialJet, FlightRules.IFR, 100.0),
-            ("YR-SAV",  AircraftCategory.UltralightAndGlider, FlightRules.VFR, 280.0) // 180s diferență exactă
+            ("YR-SAV",  AircraftCategory.UltralightAndGlider, FlightRules.VFR, 280.0)
         };
 
         var safeConflicts = _engine.CheckRunwaySafety(safeLandings, new SeparationSettings());
@@ -152,7 +141,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_7_HoldingPattern_Racetrack_SameAltitude_IsUnsafe()
     {
-        // Două aeronave în circuitul de așteptare hipodrom la fixul OZZET, ambele la 4.000 ft
         var ac1 = new CraiovaAircraft("IFR1", "WZZ3751", "A320", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 100, 0, 500);
         var ac2 = new CraiovaAircraft("IFR2", "ROT641", "B737", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 150, 0, 500);
 
@@ -172,7 +160,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_8_HoldingPattern_Racetrack_StackedAltitudes_StandardModeSafe_StrictModeUnsafe()
     {
-        // Două aeronave la OZZET, dar cu niveluri eșalonate conform procedurii: 4.000 ft și 5.000 ft (separare 1.000 ft)
         var ac1 = new CraiovaAircraft("IFR1", "WZZ3751", "A320", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 100, 0, 500);
         var ac2 = new CraiovaAircraft("IFR2", "ROT641", "B737", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 100, 0, 500);
 
@@ -183,11 +170,9 @@ public class TrajectorySeparationTests
         var traj1 = _predictor.PredictHoldingTrajectory(ac1, holdCfg1);
         var traj2 = _predictor.PredictHoldingTrajectory(ac2, holdCfg2);
 
-        // În mod standard (separare 3D): SAFE deoarece au 1.000 ft vertical
         var standardResult = _engine.ValidateSeparation(new List<AircraftTrajectory> { traj1, traj2 }, new SeparationSettings(StrictMode: false));
         Assert.True(standardResult.IsSafe);
 
-        // În Strict Mode: UNSAFE deoarece proiecția orizontală este identică!
         var strictResult = _engine.ValidateSeparation(new List<AircraftTrajectory> { traj1, traj2 }, new SeparationSettings(StrictMode: true));
         Assert.False(strictResult.IsSafe);
         Assert.Contains(strictResult.Conflicts, c => c.Type == SeparationConflictType.HoldingPatternConflict || c.Type == SeparationConflictType.StrictHorizontalOverlap);
@@ -196,12 +181,9 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_9_MissedApproachConflict_DetectedWhenCrossingActiveApproach()
     {
-        // O aeronavă care execută ratarea aterizării pe pista 27 (urcă spre CV518 și CV520)
-        // în timp ce o altă aeronavă traversează ruta la același timp și altitudine
         var acMissed = new CraiovaAircraft("MA1", "WZZ100", "A320", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 0, 0, 300, SpeedKnots: 180);
-        var trajMissed = _predictor.PredictMissedApproachTrajectory(acMissed, "27", initiationTimeSeconds: 50.0);
+        var trajMissed = _predictor.PredictMissedApproachTrajectory(acMissed, "26", initiationTimeSeconds: 50.0);
 
-        // Aeronavă pe traiectorie convergentă exact la momentul de trecere
         var targetPoint = trajMissed.Points[trajMissed.Points.Count / 2];
         var conflictingPoints = new List<TrajectoryPoint>
         {
@@ -230,9 +212,6 @@ public class TrajectorySeparationTests
     [Fact]
     public void Test_11_SafePlanningCoordinator_AutoReplanning_ResolvesWakeConflict()
     {
-        // Testăm fluxul complet de planificare cu replanificare automată:
-        // Două aeronave: W4-3751 (A320 - Medium) și YR-SAV (Savannah - Light)
-        // Initial rules: MinimumGapSeconds = 120 (insuficient pentru Light după Medium: necesită 180s)
         var planningService = new PlanningService();
         var coordinator = new SafePlanningCoordinator(planningService, _engine);
 
@@ -243,9 +222,8 @@ public class TrajectorySeparationTests
         };
 
         var initialRules = new ScenarioRules(MinimumGapSeconds: 120, AllowVfr: true);
-        var response = coordinator.PlanAndValidate(aircrafts, initialRules, runwayId: "09");
+        var response = coordinator.PlanAndValidate(aircrafts, initialRules, runwayId: "08");
 
-        // Coordonatorul trebuie să fi detectat conflictul inițial și să fi replanificat cu MinimumGapSeconds mărit
         Assert.True(response.ReplanningTriggered);
         Assert.True(response.SafetyAssessment.IsSafe);
         Assert.NotNull(response.SelectedVariant);
@@ -253,8 +231,78 @@ public class TrajectorySeparationTests
         var wzzSlot = response.SelectedVariant.Schedule.First(s => s.AircraftId == "W4-3751");
         var savSlot = response.SelectedVariant.Schedule.First(s => s.AircraftId == "YR-SAV");
 
-        // Intervalul final de aterizare trebuie să fie de cel puțin 180 secunde (3 minute de siaj)
         double gap = savSlot.CalculatedTimeSeconds - wzzSlot.CalculatedTimeSeconds;
         Assert.True(gap >= 180.0, $"Gap-ul calculat ({gap}s) trebuie să fie cel puțin 180s");
+    }
+
+    [Fact]
+    public void Test_12_FuturePrediction_Generates45MinuteHorizonsAndEkmanWindProfile()
+    {
+        var planningService = new PlanningService();
+        var advisoryEngine = new CraiovaAdvisoryEngine(planningService, _engine);
+        var weather = new WeatherCondition(WindDirectionDegrees: 180, WindSpeedKnots: 22, WindGustKnots: 26, VisibilityMeters: 9999);
+        var traffic = OpenSkyService.GetRealisticCraiovaTraffic();
+
+        var result = advisoryEngine.EvaluateSimulation(traffic, weather);
+
+        Assert.NotNull(result.FuturePrediction);
+        Assert.Equal(7, result.FuturePrediction!.Horizons.Count);
+        Assert.True(result.FuturePrediction.WindAt5000FtKnots > result.FuturePrediction.WindAt2000FtKnots);
+        Assert.True(result.FuturePrediction.DensityAltitudeFeet > 400);
+        Assert.False(string.IsNullOrWhiteSpace(result.FuturePrediction.TrendSummary));
+    }
+
+    [Fact]
+    public void Test_13_TakeoffToLanding_Calculates6PhaseKinematicsWindTriangleAndLdr()
+    {
+        var ac = new CraiovaAircraft("W4-3751", "WZZ3751", "Airbus A320-232", AircraftCategory.CommercialJet, FlightRules.IFR, true, 33, 0, 0, 240, SpeedKnots: 145, RemainingFuelMinutes: 110);
+        var weather = new WeatherCondition(WindDirectionDegrees: 260, WindSpeedKnots: 15, WindGustKnots: 18, VisibilityMeters: 9999);
+
+        var ttl = FlightPhysicsAndPredictionEngine.BuildTakeoffToLanding(ac, "26", weather, 0);
+
+        Assert.Equal("EGGW", ttl.DepartureAerodromeIcao);
+        Assert.Equal(6, ttl.Phases.Count);
+        Assert.True(ttl.TopOfDescentDistanceNm > 90.0);
+        Assert.True(ttl.RequiredRateOfDescentFpm > 500.0);
+        Assert.True(ttl.LandingDistanceRequiredMeters > 800.0 && ttl.LandingDistanceRequiredMeters < 2200.0);
+        Assert.True(ttl.RunwaySafetyMarginMeters > 300.0);
+    }
+
+    [Fact]
+    public void Test_14_TwoStepsAhead_PredictsCurrentStepOneAndStepTwoAccurately()
+    {
+        var planningService = new PlanningService();
+        var advisoryEngine = new CraiovaAdvisoryEngine(planningService, _engine);
+        var weather = new WeatherCondition(WindDirectionDegrees: 90, WindSpeedKnots: 6, WindGustKnots: 8, VisibilityMeters: 9999);
+        var traffic = OpenSkyService.GetRealisticCraiovaTraffic();
+
+        var result = advisoryEngine.EvaluateSimulation(traffic, weather);
+
+        foreach (var adv in result.Advisories)
+        {
+            Assert.NotNull(adv.TwoStepsAhead);
+            Assert.Equal(0, adv.TwoStepsAhead!.CurrentState.StepIndex);
+            Assert.Equal(1, adv.TwoStepsAhead.StepOneAhead.StepIndex);
+            Assert.Equal(2, adv.TwoStepsAhead.StepTwoAhead.StepIndex);
+            Assert.True(adv.TwoStepsAhead.StepOneAhead.TimeSeconds > adv.TwoStepsAhead.CurrentState.TimeSeconds);
+            Assert.True(adv.TwoStepsAhead.StepTwoAhead.TimeSeconds >= adv.TwoStepsAhead.StepOneAhead.TimeSeconds);
+        }
+    }
+
+    [Fact]
+    public void Test_15_VfrRedirection_OrbitVsDivertCalculusAndBestAlternateRunwaySelection()
+    {
+        var weatherSouth = new WeatherCondition(WindDirectionDegrees: 180, WindSpeedKnots: 22, WindGustKnots: 26, VisibilityMeters: 9999);
+        var alternates = FlightPhysicsAndPredictionEngine.EvaluateAlternatesWithMath(weatherSouth, 65, 11, 30, 95);
+
+        var best = alternates.First(a => a.IsRecommendedBestSpot);
+        Assert.Equal("PODARI", best.Code);
+        Assert.True(best.SafetyScore > 75.0);
+
+        var lowFuelSav = new CraiovaAircraft("YR-SAV", "YR-5123", "ICP Savannah S", AircraftCategory.UltralightAndGlider, FlightRules.VFR, false, 11, 120, 60, 420, SpeedKnots: 65, RemainingFuelMinutes: 30);
+        var redir = FlightPhysicsAndPredictionEngine.BuildVfrRedirectionAnalysis(lowFuelSav, "26", "26", 26.0, 0.4, false, true, weatherSouth, alternates);
+
+        Assert.Equal("REDIRECT_TO_ALTERNATE", redir.RecommendedDecision);
+        Assert.Equal("PODARI", redir.BestAlternateCode);
     }
 }

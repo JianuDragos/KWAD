@@ -11,7 +11,7 @@ namespace Aeris.PlanningEngine.Services;
 public static class MetarParser
 {
     // Coordonate LRCV pentru calculul vectorilor vânt pe pistă
-    private const double LrcvRunwayHeadingDeg = 92.0; // Pista 09 → heading 092°
+    private const double LrcvRunwayHeadingDeg = RunwayConfiguration.Runway08TrueBearingDeg; // Pista 08 → true bearing 88.93° conform AIP AIRAC
 
     /// <summary>
     /// Decodează un <see cref="MetarRaw"/> în <see cref="MetarDecoded"/>.
@@ -320,11 +320,11 @@ public static class MetarParser
         else if (windDir.HasValue)
             sb.Append($"Vânt {windDir.Value}° / {windSpd} kts{(windGust.HasValue ? $" (rafale {windGust.Value} kts)" : "")}. ");
 
-        // Vânt lateral față de pista 09/27
+        // Vânt lateral față de pista 08/26
         if (!isVariable && windDir.HasValue && windSpd > 0)
         {
             double xw = Math.Abs(windSpd * Math.Sin((windDir.Value - LrcvRunwayHeadingDeg) * Math.PI / 180));
-            sb.Append($"Vânt lateral pista 09: {xw:0.#} kts. ");
+            sb.Append($"Vânt lateral pista 08: {xw:0.#} kts. ");
         }
 
         int ceilingFt = clouds.Where(c => c.IsCeiling).Select(c => c.BaseFeet).DefaultIfEmpty(0).Min();
@@ -363,7 +363,7 @@ public static class MetarParser
             Ora observație: {obsUtc:yyyy-MM-dd HH:mm}Z ({obsLocal})
             ---
             VÂNT: {(isVariable ? $"variabil {windSpd} kts" : $"{windDir}° / {windSpd} kts")}{(windGust.HasValue ? $", rafale {windGust} kts" : "")}
-            Vânt lateral față de pista 09/27: {xw:0.#} kts
+            Vânt lateral față de pista 08/26: {xw:0.#} kts
             VIZIBILITATE: {visMeters} m
             PLAFON: {(ceilingFt > 0 ? $"{ceilingFt} ft" : "Nelimitat")}
             NORI: {string.Join(", ", clouds.Select(c => $"{c.Code} {c.BaseFeet}ft"))}

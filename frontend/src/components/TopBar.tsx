@@ -1,4 +1,6 @@
+import { SPEED_UNIT_LABEL } from '../sim/units';
 import { setMode, type Mode } from '../state/mode';
+import { useUnits } from '../state/units';
 import { DemoControls } from './DemoControls';
 import { LiveControls } from './LiveControls';
 
@@ -19,6 +21,21 @@ export function TopBar({ mode }: { mode: Mode }) {
         </button>
       </div>
       {mode === 'demo' ? <DemoControls /> : <LiveControls />}
+      <SpeedUnitSwitch />
     </header>
+  );
+}
+
+function SpeedUnitSwitch() {
+  const unit = useUnits((s) => s.speed);
+  const setSpeed = useUnits((s) => s.setSpeed);
+  return (
+    <div className="seg" role="group" aria-label="Unitatea vitezei">
+      {(['kmh', 'kt'] as const).map((u) => (
+        <button key={u} className={`seg__btn ${unit === u ? 'is-on' : ''}`} onClick={() => setSpeed(u)} aria-pressed={unit === u}>
+          {SPEED_UNIT_LABEL[u]}
+        </button>
+      ))}
+    </div>
   );
 }
