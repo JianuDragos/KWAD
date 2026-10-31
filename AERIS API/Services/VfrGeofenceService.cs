@@ -62,13 +62,24 @@ public class VfrGeofenceEngine : IVfrGeofenceService
     {
         var vmc = VmcChecker.IsVmcValid(metar);
         var vmcStatus = VmcChecker.GetStatus(metar);
-        var vfrStatus = vmcStatus switch
-        {
-            "UNKNOWN" => "VFR SUSPENDED — WEATHER UNVERIFIED",
-            "IMC" => "VFR SUSPENDED — IMC",
-            _ => vmcStatus
-        };
-        var threshold = Destination(AirportLat, AirportLon, runway == "27" ? 88.93 : 268.93, 2500);
+        var vfrStatus = metar.IsStale
+            ? "VFR SUSPENDED — WEATHER UNVERIFIED (STALE)"
+            : vmcStatus switch
+            {
+                "UNKNOWN" => "VFR SUSPENDED — WEATHER UNVERIFIED",
+                "IMC" => "VFR SUSPENDED — IMC",
+                _ => vmcStatus
+            };
+
+        var normRunway = RunwayConfiguration.Normalize(runway);
+        var thresholdLat = normRunway == RunwayConfiguration.Runway26
+            ? RunwayConfiguration.Threshold26Latitude
+            : RunwayConfiguration.Threshold08Latitude;
+        var thresholdLon = normRunway == RunwayConfiguration.Runway26
+            ? RunwayConfiguration.Threshold26Longitude
+            : RunwayConfiguration.Threshold08Longitude;
+        var threshold = (Lat: thresholdLat, Lon: thresholdLon);
+
         var states = new List<VfrTrackingState>();
         var currentKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

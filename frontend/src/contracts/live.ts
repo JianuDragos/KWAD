@@ -37,7 +37,7 @@ export type LivePositions = z.infer<typeof livePositionsSchema>;
 export const vfrPointSchema = z.object({ code: z.string(), lat: z.number(), long: z.number(), radiusMeters: z.number() });
 export const vmcStatusSchema = z.object({
   status: z.enum(['VMC', 'MVFR', 'IMC', 'UNKNOWN']), isVmcValid: z.boolean(), visibilityMeters: z.number(), ceilingFeet: z.number().nullable(),
-  windDirectionDegrees: z.number(), windSpeedKnots: z.number(), crosswindRunway09Knots: z.number(), crosswindRunway27Knots: z.number(), rawMetar: z.string(),
+  windDirectionDegrees: z.number(), windSpeedKnots: z.number(), crosswindRunway08Knots: z.number().optional(), crosswindRunway26Knots: z.number().optional(), crosswindRunway09Knots: z.number().optional(), crosswindRunway27Knots: z.number().optional(), rawMetar: z.string(),
   source: z.string().optional(), sourceProvider: z.string().optional(), isStale: z.boolean().optional(),
 });
 export const vfrTrackingSchema = z.object({

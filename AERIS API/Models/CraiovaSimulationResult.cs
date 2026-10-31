@@ -1,3 +1,5 @@
+using Aeris.PlanningEngine.Models.TrajectorySeparation;
+
 namespace Aeris.PlanningEngine.Models;
 
 public record CraiovaAirportInfo(
@@ -21,7 +23,9 @@ public record CraiovaSimulationResult(
     PlanningResponse? ClearedLandingSequences,
     SimulationTrafficStats Stats,
     string DataSource,
-    DateTime GeneratedAtUtc
+    DateTime GeneratedAtUtc,
+    SafetyAssessmentResult? SafetyAssessment = null,
+    FuturePredictionSummary? FuturePrediction = null
 );
 
 public record SimulationTrafficStats(

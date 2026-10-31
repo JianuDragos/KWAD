@@ -51,7 +51,7 @@ export const useLive = create<LiveState>()((set, get) => {
       set({ metarError: message(e) });
     }
     try {
-      const runway = get().metar?.windDirectionDegrees != null && get().metar!.windDirectionDegrees! >= 180 ? '27' : '09';
+      const runway = get().metar?.windDirectionDegrees != null && get().metar!.windDirectionDegrees! >= 180 ? '26' : '08';
       const vfrTracking = await fetchVfrTracking(runway);
       set({ vfrTracking, positions: vfrTracking, vfrTrackingError: null, updatedAtMs: Date.now() });
     } catch (e) {

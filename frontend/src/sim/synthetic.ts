@@ -54,6 +54,98 @@ export function appendOrbit(
   return out;
 }
 
+/**
+ * Circuit standard de așteptare de tip hipodrom (ICAO Racetrack Holding Pattern).
+ * Înlocuiește cercurile arbitrare prin traseu realist: Fix -> Viraj 180° -> Outbound -> Viraj 180° -> Inbound spre Fix.
+ */
+export function appendRacetrack(
+  track: TrackPoint[],
+  fix: LatLon,
+  inboundBearingDeg: number,
+  turnDirection: 'Right' | 'Left',
+  altitudeFt: number,
+  speedKt: number,
+  untilSeconds: number,
+  legDurationSeconds: number = 60,
+): TrackPoint[] {
+  const out = [...track];
+  const last = out[out.length - 1];
+  let t = last.timeSeconds;
+
+  // Segment de zbor de la poziția curentă până la Holding Fix
+  const distToFix = distanceNm({ lat: last.latitudeDeg, lon: last.longitudeDeg }, fix);
+  if (distToFix > 0.1) {
+    t += (distToFix / speedKt) * 3600;
+    out.push(point(t, fix, altitudeFt));
+  }
+
+  const isRight = turnDirection !== 'Left';
+  const speedNmPerSec = speedKt / 3600;
+  // Raza virajului de rată 1: R = V / (60 * pi)
+  const turnRadiusNm = Math.max(0.4, speedKt / (60 * Math.PI));
+  const outboundLegDist = speedNmPerSec * legDurationSeconds;
+  const inboundCourse = (inboundBearingDeg % 360 + 360) % 360;
+  const outboundCourse = (inboundCourse + 180) % 360;
+
+  const turn1CenterBearing = isRight ? (inboundCourse + 90) % 360 : (inboundCourse - 90 + 360) % 360;
+  const turn1Center = destination(fix, turn1CenterBearing, turnRadiusNm);
+
+  const turnSideBearing = turn1CenterBearing;
+  const outboundStart = destination(fix, turnSideBearing, 2 * turnRadiusNm);
+  const outboundEnd = destination(outboundStart, outboundCourse, outboundLegDist);
+
+  const turn2CenterBearing = isRight ? (outboundCourse + 90) % 360 : (outboundCourse - 90 + 360) % 360;
+  const turn2Center = destination(outboundEnd, turn2CenterBearing, turnRadiusNm);
+
+  const inboundStart = destination(fix, outboundCourse, outboundLegDist);
+
+  const turnSteps = 8;
+  const turnDurationSeconds = 60;
+  const stepTurnSec = turnDurationSeconds / turnSteps;
+
+  while (t < untilSeconds) {
+    // 1. Viraj 1 (180° de la inboundCourse la outboundCourse)
+    for (let s = 1; s <= turnSteps; s++) {
+      const frac = s / turnSteps;
+      const sweep = frac * 180;
+      const currentBearing = isRight
+        ? (turn1CenterBearing + 180 + sweep) % 360
+        : (turn1CenterBearing + 180 - sweep + 360) % 360;
+      t += stepTurnSec;
+      out.push(point(t, destination(turn1Center, currentBearing, turnRadiusNm), altitudeFt));
+    }
+
+    // 2. Ramură Outbound (drept înainte pe capul outboundCourse)
+    const legSteps = 4;
+    const stepLegSec = legDurationSeconds / legSteps;
+    for (let s = 1; s <= legSteps; s++) {
+      const frac = s / legSteps;
+      t += stepLegSec;
+      out.push(point(t, destination(outboundStart, outboundCourse, frac * outboundLegDist), altitudeFt));
+    }
+
+    // 3. Viraj 2 (180° de la outboundCourse înapoi la inboundCourse)
+    for (let s = 1; s <= turnSteps; s++) {
+      const frac = s / turnSteps;
+      const sweep = frac * 180;
+      const currentBearing = isRight
+        ? (turn2CenterBearing + 180 + sweep) % 360
+        : (turn2CenterBearing + 180 - sweep + 360) % 360;
+      t += stepTurnSec;
+      out.push(point(t, destination(turn2Center, currentBearing, turnRadiusNm), altitudeFt));
+    }
+
+    // 4. Ramură Inbound (drept înainte spre Fix)
+    for (let s = 1; s <= legSteps; s++) {
+      const frac = s / legSteps;
+      t += stepLegSec;
+      out.push(point(t, destination(inboundStart, inboundCourse, frac * outboundLegDist), altitudeFt));
+    }
+  }
+
+  return out;
+}
+
 /** Punct „înainte de IAF”, pe prelungirea primului segment, ca avionul să fie vizibil înainte de intrare. */
 export function inboundExtension(first: LatLon, second: LatLon, distNm: number): LatLon {
   return destination(first, (bearingDeg(first, second) + 180) % 360, distNm);

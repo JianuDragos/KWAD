@@ -174,11 +174,11 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
         <Polyline key={r.iaf} positions={r.points} pathOptions={{ className: 'route' }} interactive={false} />
       ))}
       <Polyline positions={RUNWAY_LINE} pathOptions={{ className: 'runway' }} interactive={false} />
-      {(['09', '27'] as RunwayId[]).map((r) => {
+      {(['08', '26'] as RunwayId[]).map((r) => {
         const t = threshold(r);
         return (
           <CircleMarker key={r} center={[t.lat, t.lon]} radius={2} pathOptions={{ className: r === runway ? 'thr thr--active' : 'thr' }} interactive={false}>
-            <Tooltip permanent direction={r === '09' ? 'left' : 'right'} className="lbl lbl--rwy" offset={[r === '09' ? -4 : 4, 0]}>
+            <Tooltip permanent direction={r === '08' ? 'left' : 'right'} className="lbl lbl--rwy" offset={[r === '08' ? -4 : 4, 0]}>
               {r}
             </Tooltip>
           </CircleMarker>

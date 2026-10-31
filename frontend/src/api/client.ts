@@ -1,9 +1,11 @@
 import type {
+  CraiovaAircraft,
   CraiovaCustomEvaluationRequest,
   CraiovaSimulationResult,
   EvaluationRequest,
   LiveTrafficResponse,
   PlanningResponse,
+  WeatherCondition,
 } from '../contracts/backend';
 import type { z } from 'zod';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from '../contracts/schemas';
@@ -123,11 +125,26 @@ export function fetchMetar(signal?: AbortSignal): Promise<Metar> {
   return request(path, metarSchema, { signal });
 }
 
-/** Întrebare pentru modelul AI local; răspunsul e format doar din enunțuri aprobate de backend. */
-export function explain(question: string, signal?: AbortSignal): Promise<Explanation> {
+export interface ExplainContext {
+  weather?: WeatherCondition;
+  aircrafts?: CraiovaAircraft[];
+  evaluationResult?: CraiovaSimulationResult;
+}
+
+/** Întrebare pentru modelul AI local (4B); răspunsul traduce calculele matematice aprobate de backend în limbaj natural. */
+export function explain(question: string, signal?: AbortSignal, context?: ExplainContext): Promise<Explanation> {
   const path = '/api/craiova/explain';
-  if (API_MOCK) return mockDelay(() => parseResponse(path, explanationSchema, mockLive.explanation()), signal, 1200);
-  return request(path, explanationSchema, { method: 'POST', body: JSON.stringify({ question }), signal });
+  if (API_MOCK) {
+    return mockDelay(
+      () => parseResponse(path, explanationSchema, mockLive.explanation(question, context?.evaluationResult)),
+      signal,
+      700,
+    );
+  }
+  const payload: Record<string, unknown> = { question };
+  if (context?.weather) payload.weather = context.weather;
+  if (context?.aircrafts) payload.aircrafts = context.aircrafts;
+  return request(path, explanationSchema, { method: 'POST', body: JSON.stringify(payload), signal });
 }
 
 export function fetchVfrTracking(runway: string, signal?: AbortSignal): Promise<VfrTracking> {

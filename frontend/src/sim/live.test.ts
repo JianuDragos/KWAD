@@ -46,13 +46,13 @@ describe('extrapolate', () => {
 
 describe('vânt și pistă', () => {
   it('alege pista cu vânt de față', () => {
-    expect(runwayForWind(240, 9)).toBe('27');
-    expect(runwayForWind(90, 6)).toBe('09');
-    expect(runwayForWind(null, 3)).toBe('27');
-    expect(runwayForWind(90, 0)).toBe('27');
+    expect(runwayForWind(240, 9)).toBe('26');
+    expect(runwayForWind(90, 6)).toBe('08');
+    expect(runwayForWind(null, 3)).toBe('26');
+    expect(runwayForWind(90, 0)).toBe('26');
   });
   it('vânt perpendicular pe pistă: totul e lateral', () => {
-    expect(windComponents(179, 20, '27')).toEqual({ crosswind: 20, headwind: 0 });
+    expect(windComponents(179, 20, '26')).toEqual({ crosswind: 20, headwind: 0 });
   });
   it('săgeata de tendință ignoră variațiile sub 1 m/s', () => {
     expect([trendArrow(5), trendArrow(-5), trendArrow(0.5), trendArrow(null)]).toEqual(['↑', '↓', '', '']);

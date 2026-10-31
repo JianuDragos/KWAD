@@ -1,4 +1,5 @@
 using Aeris.PlanningEngine.Services;
+using Aeris.PlanningEngine.Services.TrajectorySeparation;
 using Aeris.LocalAI;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -23,8 +24,11 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// ── Servicii existente (legacy – neatinse) ────────────────────────────────────
+// ── Servicii existente & Trajectory Separation Engine ─────────────────────────
 builder.Services.AddScoped<IPlanningService, PlanningService>();
+builder.Services.AddSingleton<TrajectoryPredictor>();
+builder.Services.AddScoped<ITrajectorySeparationEngine, TrajectorySeparationEngine>();
+builder.Services.AddScoped<SafePlanningCoordinator>();
 builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
