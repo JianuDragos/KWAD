@@ -52,9 +52,12 @@ export interface TrafficModel {
 }
 
 const ROLLOUT_NM = 0.7;
+/** Fereastra ceasului când scenariul nu are niciun avion. */
+const EMPTY_WINDOW_SECONDS = 600;
 
 export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimulationResult): TrafficModel {
   const runway = aipRunwayFromBackend(result.activeRunway);
+  if (aircrafts.length === 0) return { runway, flights: [], startSeconds: 0, endSeconds: EMPTY_WINDOW_SECONDS };
   const advisories = new Map(result.advisories.map((a) => [a.aircraftId, a]));
 
   const anchors = aircrafts.flatMap((a) => {

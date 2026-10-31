@@ -32,6 +32,8 @@ export default function App() {
       if (target.closest('select, input, textarea')) return;
       const s = useApp.getState();
       if (e.code === 'Space') {
+        // Pe un buton focusat, Space trebuie să apese butonul, nu să pornească redarea.
+        if (target.closest('button, a[href], [role="button"]')) return;
         e.preventDefault();
         if (s.evaluation) s.togglePlay();
       } else if (e.key === 'Escape') s.select(null);

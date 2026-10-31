@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { arrivalRoute, publishedAltitudeFt, threshold } from '../data/geo';
+import { ARP, LRCW, arrivalRoute, publishedAltitudeFt, threshold } from '../data/geo';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
 import * as mock from '../api/mockBackend';
-import { distanceNm } from './geomath';
+import type { AircraftInput, WeatherCondition } from '../contracts/backend';
+import { bearingDeg, destination, distanceNm } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
+import { appendOrbit } from './synthetic';
 import { buildTraffic } from './traffic';
 
 const P = (t: number, lat: number, lon: number, alt = 0, source: TrackPoint['source'] = 'synthetic'): TrackPoint => ({
@@ -84,6 +86,44 @@ describe('mock = backendul KWAD', () => {
     expect(withSlot).toEqual(['W4-3751', 'W4-3762', 'YR-SAV']);
   });
 
+  const ifr = (id: string, eta: number, lo: number, hi: number, frozen: number | null = null): AircraftInput => ({
+    id,
+    flightRules: 'IFR',
+    etaSeconds: eta,
+    earliestSeconds: lo,
+    latestSeconds: hi,
+    frozenTimeSeconds: frozen,
+  });
+
+  it('timp blocat în fereastră și la distanță suficientă: rămâne exact', () => {
+    const res = mock.evaluatePlanning([ifr('A', 0, 0, 300), ifr('B', 100, 100, 600, 400)], { minimumGapSeconds: 120 });
+    expect(res.validVariants[0].schedule.map((s) => s.calculatedTimeSeconds)).toEqual([0, 400]);
+  });
+
+  it('timp blocat prea aproape de precedentul: varianta e respinsă cu motiv', () => {
+    const res = mock.evaluatePlanning([ifr('A', 0, 0, 300), ifr('B', 100, 100, 600, 119)], { minimumGapSeconds: 120 });
+    expect(res.validVariants).toHaveLength(0);
+    expect(res.rejectedVariants[0].rejectionReason).toBe('Aeronava B încalcă intervalul minim de 120s față de 0s.');
+  });
+
+  it('timp blocat exact la intervalul minim: acceptat', () => {
+    const res = mock.evaluatePlanning([ifr('A', 0, 0, 300), ifr('B', 100, 100, 600, 120)], { minimumGapSeconds: 120 });
+    expect(res.validVariants).toHaveLength(1);
+  });
+
+  it('validatorul respinge datele greșite înainte de calcul (400 în backend)', () => {
+    expect(() => mock.evaluatePlanning([ifr('A', 0, 0, 300, 500)], { minimumGapSeconds: 120 })).toThrow('Timpul blocat (500s) pentru A este în afara ferestrei permise.');
+    expect(() => mock.evaluatePlanning([ifr('A', 0, 400, 300)], { minimumGapSeconds: 120 })).toThrow(mock.MockBadRequest);
+    expect(() => mock.evaluatePlanning([ifr('A', 0, 0, 300), ifr('A', 0, 0, 300)], { minimumGapSeconds: 120 })).toThrow('duplicate');
+    expect(() => mock.evaluatePlanning([], { minimumGapSeconds: 120 })).toThrow('goală');
+  });
+
+  it('VFR neeligibil: zero variante valide, motiv explicit', () => {
+    const res = mock.evaluatePlanning([ifr('A', 0, 0, 300), { ...ifr('V', 60, 0, 300), flightRules: 'VFR' }], { minimumGapSeconds: 120, allowVfr: false });
+    expect(res.validVariants).toHaveLength(0);
+    expect(res.rejectedVariants[0].rejectionReason).toBe('Zborurile VFR sunt neeligibile în scenariu.');
+  });
+
   it('vânt lateral critic: avioanele mici nu sunt aprobate', () => {
     const critical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
     const res = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), critical, 'test');
@@ -118,9 +158,53 @@ describe('buildTraffic', () => {
     expect(buildTraffic(aircrafts, res)).toEqual(buildTraffic(aircrafts, res));
   });
 
+  const lowFuelSavannah = aircrafts.map((a) => (a.id === 'YR-SAV' ? { ...a, remainingFuelMinutes: 30 } : a));
+
+  it('combustibil puțin + vânt lateral: deviere spre alternativa cu cel mai mic vânt lateral', () => {
+    const critical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
+    const res = mock.evaluateSimulation(lowFuelSavannah, critical, 'test');
+    const f = buildTraffic(lowFuelSavannah, res).flights.find((x) => x.id === 'YR-SAV')!;
+    expect(f.kind).toBe('divert');
+    expect(f.alternate?.code).toBe('PODARI');
+    const end = f.track[f.track.length - 1];
+    expect(distanceNm({ lat: end.latitudeDeg, lon: end.longitudeDeg }, destination(ARP, 225, 14.5 / 1.852))).toBeLessThan(0.01);
+  });
+
+  it('„Balta Verde / LRBV” din backend se desenează la coordonatele AIP ale LRCW', () => {
+    // Vânt din 310°: pista 13/31 a terenului are vânt lateral 0, deci e alternativa aleasă.
+    const nw: WeatherCondition = { windDirectionDegrees: 310, windSpeedKnots: 26, windGustKnots: 26, visibilityMeters: 9999 };
+    const res = mock.evaluateSimulation(lowFuelSavannah, nw, 'test');
+    const f = buildTraffic(lowFuelSavannah, res).flights.find((x) => x.id === 'YR-SAV')!;
+    expect(f.alternate?.code).toBe('LRBV');
+    expect(f.alternate?.point).toEqual(LRCW);
+  });
+
+  it('scenariu fără avioane: fereastră de ceas validă, nu Infinity', () => {
+    const res = mock.evaluateSimulation([], WEATHER_PRESETS[0].weather, 'test');
+    const m = buildTraffic([], res);
+    expect(m.flights).toEqual([]);
+    expect(Number.isFinite(m.startSeconds) && Number.isFinite(m.endSeconds)).toBe(true);
+    expect(m.endSeconds).toBeGreaterThan(m.startSeconds);
+  });
+
   it('pista din backend 09/27 devine 08/26 pe hartă', () => {
     const west = mock.evaluateSimulation(aircrafts, WEATHER_PRESETS.find((p) => p.id === 'west')!.weather, 'test');
     expect(west.activeRunway).toBe('27');
     expect(buildTraffic(aircrafts, west).runway).toBe('26');
+  });
+});
+
+describe('appendOrbit', () => {
+  it('se rotește în sensul acelor de ceasornic (direcția crește) și ține raza', () => {
+    const center = { lat: 44.3, lon: 23.9 };
+    const north = destination(center, 0, 3);
+    const start: TrackPoint[] = [P(0, north.lat, north.lon)];
+    const orbit = appendOrbit(start, center, 1.2, 1500, 90, 600);
+    const bearings = orbit.slice(1, 4).map((p) => bearingDeg(center, { lat: p.latitudeDeg, lon: p.longitudeDeg }));
+    expect(bearings[0]).toBeCloseTo(0, 1);
+    expect(bearings[1]).toBeCloseTo(22.5, 1);
+    expect(bearings[2]).toBeCloseTo(45, 1);
+    for (const p of orbit.slice(1)) expect(distanceNm(center, { lat: p.latitudeDeg, lon: p.longitudeDeg })).toBeCloseTo(1.2, 3);
+    expect(orbit[orbit.length - 1].timeSeconds).toBeGreaterThanOrEqual(600);
   });
 });

@@ -57,6 +57,7 @@ function ScenarioSummary() {
       </dl>
 
       <h3 className="panel__sub">Aeronave ({r.stats.totalInbounds})</h3>
+      {ev.traffic.flights.length === 0 && <div className="notice">Niciun trafic în scenariu.</div>}
       <ul className="flight-list">
         {ev.traffic.flights.map((f) => (
           <li key={f.id}>

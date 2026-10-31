@@ -8,7 +8,7 @@ React 19 + TypeScript + Vite 8, hartă Leaflet (react-leaflet 5), stare comună 
 npm install
 npm run dev:mock   # fără backend: port local al motorului (src/api/mockBackend.ts), pill „MOCK” în UI
 npm run dev        # cu backend: pornește întâi „AERIS API” (dotnet run → http://localhost:5271)
-npm test           # vitest: interpolare, rute AIP, mock = backend, traiectorii
+npm test           # vitest: interpolare, rute AIP, mock = backend, traiectorii, scheme zod, store (revizii, reset)
 npm run build      # build de producție (tsc + vite)
 ```
 
@@ -28,6 +28,7 @@ Taste: `Spațiu` redare/pauză, `Esc` deselectare, `1` / `2` vedere largă / apr
 
 ```
 src/contracts/backend.ts   tipurile răspunsurilor backendului (commit ad6e098)
+src/contracts/schemas.ts   scheme zod: fiecare răspuns e validat la sosire; un contract schimbat dă eroare cu numele câmpului
 src/data/                  geometria LRCV din AIP + puncte sintetice + preseturi meteo
 src/sim/                   geometrie, interpolare, traiectorii sintetice, model de trafic (funcții pure, testate)
 src/api/                   client HTTP + mock
