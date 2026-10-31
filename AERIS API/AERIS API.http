@@ -1,12 +1,45 @@
 @AERIS_API_HostAddress = http://localhost:5271
 
-### 1. Obținere evaluare scenariu demonstrativ (GET)
+### =============================================================
+### 1. SIMULARE CRAIOVA (LRCV) & SFATURI DECONGESTIONARE / ORBITĂ
+### =============================================================
+
+### 1.1 Rulare simulare completă Craiova (Vânt lateral puternic din Sud 180°, 22 kts, rafale 26 kts)
+### Savanna și Wilga vor primi recomandare de orbită paralelă cu pista sau deviere la Balta Verde / Podari
+GET {{AERIS_API_HostAddress}}/api/craiova/simulation?windSpeed=22&windDirection=180&windGust=26
+Accept: application/json
+
+###
+
+### 1.2 Rulare simulare Craiova cu vânt slab (toate aeronavele aterizează în secvență optimă)
+GET {{AERIS_API_HostAddress}}/api/craiova/simulation?windSpeed=6&windDirection=090&windGust=8
+Accept: application/json
+
+###
+
+### 1.3 Verificare aerodromuri alternative din Oltenia (Balta Verde, Podari, Slatina)
+GET {{AERIS_API_HostAddress}}/api/craiova/alternates?windSpeed=22&windDirection=180&cruiseSpeedKnots=70
+Accept: application/json
+
+###
+
+### 1.4 Colectare trafic OpenSky Network (LRCV bounding box)
+GET {{AERIS_API_HostAddress}}/api/craiova/live-traffic
+Accept: application/json
+
+###
+
+### =============================================================
+### 2. MOTORUL DE PLANIFICARE GENERAL (SEQUENCING & SCHEDULING)
+### =============================================================
+
+### 2.1 Evaluare scenariu demonstrativ (GET)
 GET {{AERIS_API_HostAddress}}/api/planning/sample
 Accept: application/json
 
 ###
 
-### 2. Evaluare scenariu custom prin POST (toată matematica evaluată)
+### 2.2 Evaluare scenariu custom prin POST
 POST {{AERIS_API_HostAddress}}/api/planning/evaluate
 Content-Type: application/json
 
@@ -47,11 +80,5 @@ Content-Type: application/json
     }
   ]
 }
-
-###
-
-### 3. Evaluare pe ruta alternativă (/api/evaluate)
-GET {{AERIS_API_HostAddress}}/api/evaluate
-Accept: application/json
 
 ###

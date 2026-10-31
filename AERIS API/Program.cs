@@ -22,8 +22,10 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Înregistrare motor de planificare în containerul de Dependency Injection
+// Înregistrare servicii în containerul de Dependency Injection
 builder.Services.AddScoped<IPlanningService, PlanningService>();
+builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
+builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
 var app = builder.Build();
 

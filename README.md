@@ -1,16 +1,29 @@
 # KWAD / AERIS - Air Traffic Management Planning & Sequencing Engine
 
-AERIS este un motor de planificare și optimizare a secvențierii sosirilor de aeronave (Arrival Management / Runway Sequencing) dezvoltat în .NET 10 (ASP.NET Core Web API).
+AERIS este un motor de planificare, secvențiere și suport decizional pentru sosirile de aeronave (Arrival Management / Runway Sequencing & Decision Advisory), dezvoltat în .NET 10 (ASP.NET Core Web API).
 
-## Caracteristici Principale
-- **Reguli de zbor mixte:** Suport pentru zboruri IFR (Instrument Flight Rules) și VFR (Visual Flight Rules).
-- **Separare minimă:** Respectă distanțarea temporală minimă între sosiri consecutive pe pistă (*wake vortex separation*).
-- **Ferestre de timp admise:** Respectă constrângerile de tip $[Earliest, Latest]$ pentru fiecare aeronavă.
-- **Sloturi blocate (*Frozen Slots*):** Suport pentru sloturi orare fixe stabilite de controlorii de trafic aerian.
-- **Optimizare & Ierarhizare:** Calculează automat toate combinațiile de inserare VFR, evaluează întârzierile și returnează cele mai bune variante clasificate după întârzierea totală și maximă.
-- **Swagger / OpenAPI:** Interfață Swagger UI integrată pentru testare și documentare interactivă.
+---
 
-## Rulare și Testare
+## 🎯 Modulul Dedicat: Aeroportul Internațional Craiova (LRCV / CRA)
+Sistemul integrează date în timp real din rețeaua **OpenSky Network** pentru spațiul aerian Craiova și calculează scenarii optime de aterizare pentru trafic mixt (comercial + aviație mică de agrement):
+
+- **Integrare OpenSky Network API:** Preluare automată a zborurilor active din sectorul Craiova (bounding box Oltenia) cu fallback transparent pe simulare realistă a orarului regulat (Wizz Air A320/A321 din Londra Luton și Milano Bergamo).
+- **Trafic mixt & Aviație de agrement:** Modele pentru aeronave mici fără instrumentație IFR avansată (ICP Savannah S, PZL-104 Wilga 35A, Cessna 172 Skyhawk).
+- **Trigonometria Vântului Lateral (*Crosswind*):**
+  - Calcul al componentei de vânt lateral și de față pentru pista 09/27 (capete 092° / 272°).
+  - Selectarea automată a pistei active pentru maximizarea componentei de vânt de față.
+- **Reguli de Prioritizare:**
+  - Aeronavele comerciale IFR au prioritate pe pistă și limite superioare de vânt lateral (32-35 kts).
+  - Aeronavele mici de agrement (Savannah 11 kts, Wilga 13 kts) cedează prioritatea.
+- **Sistem de Recomandări (*Decision Support Tool*):**
+  - **Orbită de așteptare (*Holding Pattern*):** Recomandare de orbitare paralelă cu latura sudică a pistei (zona Cârcea - Pielești, 1500 ft QNH) până la eliberarea pistei sau scăderea vântului lateral.
+  - **Deviere către aerodromuri alternative (*Alternates*):**
+    - **Aerodromul Balta Verde Craiova (`LRBV`):** La 11.8 km (cap 245°), pistă înierbată 13/31 oferind reducere substanțială a vântului lateral.
+    - **Aerodrom Podari (`PODARI`):** La 14.5 km (cap 225°), pistă dedicată ULM 02/20, aliniată aproape perfect cu vântul de sud.
+
+---
+
+## 🚀 Rulare și Testare
 
 ### 1. Pornire API
 ```bash
@@ -20,10 +33,14 @@ dotnet run
 
 ### 2. Swagger UI
 După pornire, deschideți în browser:
-```
-http://localhost:5271/swagger
-```
+👉 **`http://localhost:5271/swagger`** *(sau direct `http://localhost:5271/`)*
 
-### 3. Endpoint-uri disponibile:
-- `GET /api/planning/sample` - Evaluează instant scenariul demonstrativ predefinit.
-- `POST /api/planning/evaluate` - Evaluează un scenariu personalizat transmis în corpul cererii (JSON).
+### 3. Endpoint-uri Craiova:
+- `GET /api/craiova/simulation?windSpeed=22&windDirection=180&windGust=26` - Simulare completă a aterizărilor pe Craiova cu vânt lateral critic, sfaturi de orbită și deviere.
+- `GET /api/craiova/alternates?windSpeed=20&windDirection=180` - Calculul vântului lateral și timpilor de zbor către Balta Verde și Podari.
+- `GET /api/craiova/live-traffic` - Colectare trafic live OpenSky Network.
+- `POST /api/craiova/evaluate` - Evaluare scenariu meteo și trafic personalizat.
+
+### 4. Endpoint-uri de Planificare Generală:
+- `GET /api/planning/sample` - Scenariul de referință cu 4 aeronave.
+- `POST /api/planning/evaluate` - Optimizare matematică sloturi sosire cu separare minimă.
