@@ -22,12 +22,17 @@ import { M_PER_NM, altitudeLabel, clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 
+// Leaflet desenează liniile (inele, CTR, trasee) doar pe ecran plus o margine și le redesenează abia după
+// ce lași harta; cu marginea implicită de 10% se vedea marginea tăiată în timpul tragerii. padding: 1 = un
+// ecran întreg în fiecare direcție. Sunt puține linii, deci costul e mic.
+
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
   const basemap = useApp((s) => s.basemap);
+  const renderer = useMemo(() => L.svg({ padding: 1 }), []); // câte unul pe hartă: Live și Demo au hărți separate
 
   return (
-    <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0} zoomDelta={0.5} scrollWheelZoom={false} minZoom={7} maxZoom={16} attributionControl>
+    <MapContainer bounds={MAP_BOUNDS_WIDE} renderer={renderer} className="map" zoomSnap={0} zoomDelta={0.5} scrollWheelZoom={false} minZoom={7} maxZoom={16} attributionControl>
       {basemap === 'osm' && (
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"

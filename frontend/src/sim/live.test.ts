@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as mockLive from '../api/mockLive';
 import { livePositionsSchema, metarSchema, type LiveFlight } from '../contracts/live';
 import { bearingDeg, distanceNm } from './geomath';
@@ -76,5 +76,24 @@ describe('airlineFor', () => {
     expect(airlineFor('THY5AD')).toBe('Turkish Airlines');
     expect(airlineFor('XYZ123')).toBeNull(); // operator necunoscut
     expect(airlineFor('YR-CRA')).toBeNull(); // înmatriculare, nu zbor de linie
+  });
+});
+
+describe('datele de exemplu pentru Live', () => {
+  it('avioanele avansează între două interogări, nu sar înapoi la poziția de pornire', () => {
+    vi.useFakeTimers({ now: Date.now() });
+    try {
+      const before = mockLive.livePositions().flights;
+      vi.setSystemTime(Date.now() + 60_000);
+      const after = mockLive.livePositions().flights;
+      for (const [i, f] of before.entries()) {
+        const a = { lat: f.latitude!, lon: f.longitude! };
+        const b = { lat: after[i].latitude!, lon: after[i].longitude! };
+        expect(distanceNm(a, b)).toBeCloseTo((f.velocityKnots! * 60) / 3600, 2); // un minut pe viteza raportată
+        expect(bearingDeg(a, b)).toBeCloseTo(f.trueTrackDegrees!, 0);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
