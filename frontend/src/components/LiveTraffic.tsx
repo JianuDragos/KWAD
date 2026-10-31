@@ -5,6 +5,7 @@ import { Marker, Tooltip } from 'react-leaflet';
 import type { LiveFlight } from '../contracts/live';
 import { extrapolate, trendArrow } from '../sim/live';
 import { altitudeBand, altitudeLabel } from '../sim/units';
+import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { GLYPH_IFR } from './MapView';
 
@@ -24,6 +25,7 @@ export function LiveTraffic() {
 function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   const selected = useLive((s) => s.selectedIcao === flight.icao24);
   const select = useLive((s) => s.select);
+  const speed = useSpeed();
   const pos = extrapolate(flight, now);
   const stale = now - flight.lastContact > STALE_SECONDS;
   const heading = Math.round(flight.trueTrackDegrees ?? 0);
@@ -59,7 +61,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
         <br />
         <span className={`db-alt ${band}`}>{flight.baroAltitudeMeters != null ? altitudeLabel(flight.baroAltitudeMeters) : '—'}</span> {trendArrow(flight.verticalRateMs)}
         <br />
-        {flight.velocityKnots != null ? `${Math.round(flight.velocityKnots)} kt` : ''}
+        {flight.velocityKnots != null ? speed.label(flight.velocityKnots) : ''}
       </Tooltip>
     </Marker>
   );

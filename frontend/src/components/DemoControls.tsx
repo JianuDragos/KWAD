@@ -1,5 +1,6 @@
-import { WEATHER_PRESETS } from '../data/weatherPresets';
+import { WEATHER_PRESETS, presetLabel } from '../data/weatherPresets';
 import { clockLabel } from '../sim/units';
+import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 import { WindArrow } from './WindArrow';
 
@@ -13,6 +14,7 @@ export function DemoControls() {
   const hasData = useApp((s) => !!s.evaluation);
   const { togglePlay, setSpeed, setWeatherPreset, reset } = useApp.getState();
   const stale = useIsStale();
+  const units = useSpeed(); // `speed` e deja viteza redării
 
   return (
     <>
@@ -41,7 +43,7 @@ export function DemoControls() {
         <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData}>
           {WEATHER_PRESETS.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.label}
+              {presetLabel(p, units.label)}
             </option>
           ))}
         </select>
@@ -73,6 +75,7 @@ function Clock() {
 function Conditions() {
   const result = useApp((s) => s.evaluation?.result ?? null);
   const runway = useApp((s) => s.evaluation?.traffic.runway ?? null);
+  const speed = useSpeed();
   if (!result || !runway) return null;
   const w = result.weather;
   return (
@@ -82,11 +85,11 @@ function Conditions() {
       </span>
       <WindArrow direction={w.windDirectionDegrees} />
       <span className="atis__wind">
-        {String(w.windDirectionDegrees).padStart(3, '0')}° {w.windSpeedKnots}
-        {w.windGustKnots > w.windSpeedKnots ? `G${w.windGustKnots}` : ''} kt
+        {String(w.windDirectionDegrees).padStart(3, '0')}° {speed.value(w.windSpeedKnots)}
+        {w.windGustKnots > w.windSpeedKnots ? `G${speed.value(w.windGustKnots)}` : ''} {speed.unit}
       </span>
       <span className={`atis__xw ${result.isCrosswindCriticalForLightAircraft ? 'is-critical' : ''}`} title="Vânt lateral pe pista în folosință">
-        lateral {result.activeRunwayCrosswindKnots} kt
+        lateral {speed.label(result.activeRunwayCrosswindKnots)}
       </span>
     </div>
   );

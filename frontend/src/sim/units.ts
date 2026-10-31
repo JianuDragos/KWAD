@@ -48,3 +48,9 @@ export function altitudeBand(altitudeMeters: number | null): string {
   const ft = metersToFeet(altitudeMeters);
   return ALTITUDE_BANDS.find((b) => ft < b.maxFt)!.id;
 }
+
+/** Unitatea în care se afișează vitezele (vânt, viteză sol); datele vin în noduri și rămân în noduri în calcule. */
+export type SpeedUnit = 'kmh' | 'kt';
+export const SPEED_UNIT_LABEL: Record<SpeedUnit, string> = { kmh: 'km/h', kt: 'kt' };
+export const speedValue = (knots: number, unit: SpeedUnit) => Math.round(unit === 'kmh' ? knots * 1.852 : knots);
+export const speedLabel = (knots: number, unit: SpeedUnit) => `${speedValue(knots, unit)} ${SPEED_UNIT_LABEL[unit]}`;

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { altitudeLabel, clockLabel, minutesLabel } from '../sim/units';
+import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { CATEGORY_LABEL, STATUS_CLASS, isUnsequenced } from './flightStyle';
 
@@ -97,6 +98,7 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
 function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
   const ac = flight.aircraft;
   const adv = flight.advisory;
+  const speed = useSpeed();
   const overLimit = !!adv && adv.currentCrosswindKnots > adv.maxCrosswindLimitKnots;
   return (
     <div className="strip__body" id={id}>
@@ -119,7 +121,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           </>
         )}
         <dt>Vânt lateral</dt>
-        <dd className={overLimit ? 'txt-warn' : ''}>{adv ? `${adv.currentCrosswindKnots} kt din maximum ${adv.maxCrosswindLimitKnots} kt` : '—'}</dd>
+        <dd className={overLimit ? 'txt-warn' : ''}>{adv ? `${speed.label(adv.currentCrosswindKnots)} din maximum ${speed.label(adv.maxCrosswindLimitKnots)}` : '—'}</dd>
         <dt>Combustibil</dt>
         <dd>{ac.remainingFuelMinutes ?? '—'} min</dd>
         <dt>Traseu</dt>
@@ -151,7 +153,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 {/* Codul LRBV primit e greșit (e Brașov); terenul e Craiova-Sud, LRCW în AIP. */}
                 <span>{a.code === 'LRBV' ? 'Craiova-Sud (LRCW)' : a.name}</span>
                 <span className="muted small">
-                  pista {a.bestRunway}, lateral {a.calculatedCrosswindKnots} kt, {a.estimatedFlightMinutes} min de zbor
+                  pista {a.bestRunway}, lateral {speed.label(a.calculatedCrosswindKnots)}, {a.estimatedFlightMinutes} min de zbor
                 </span>
               </li>
             ))}

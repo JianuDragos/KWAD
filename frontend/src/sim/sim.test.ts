@@ -5,7 +5,7 @@ import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
 import { bearingDeg, destination, distanceNm } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
-import { altitudeBand } from './units';
+import { altitudeBand, speedLabel } from './units';
 import { appendOrbit } from './synthetic';
 import { buildTraffic } from './traffic';
 
@@ -220,5 +220,14 @@ describe('altitudeBand', () => {
     expect(altitudeBand(ft(24000))).toBe('alt-3');
     expect(altitudeBand(ft(36000))).toBe('alt-4');
     expect(altitudeBand(null)).toBe('alt-unknown');
+  });
+});
+
+describe('speedLabel', () => {
+  it('afișează în unitatea aleasă, rotunjit la întreg', () => {
+    expect(speedLabel(10, 'kmh')).toBe('19 km/h'); // 18,52
+    expect(speedLabel(450, 'kmh')).toBe('833 km/h'); // 833,4
+    expect(speedLabel(450.4, 'kt')).toBe('450 kt');
+    expect(speedLabel(0, 'kmh')).toBe('0 km/h');
   });
 });
