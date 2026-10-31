@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import L from 'leaflet';
 import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import {
@@ -15,7 +15,7 @@ import {
   vfrFinalJoin,
   type RunwayId,
 } from '../data/geo';
-import { positionAt, trailUntil } from '../sim/interpolate';
+import { positionAt, trackBearingDeg, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { M_PER_NM, altitudeLabel, clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
@@ -175,44 +175,38 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
   );
 }
 
-const GLYPH_IFR =
-  '<svg viewBox="0 0 24 24" class="ac__glyph"><path d="M12 2 L19 20 L12 16 L5 20 Z"/></svg>';
-const GLYPH_VFR =
-  '<svg viewBox="0 0 24 24" class="ac__glyph"><path d="M12 4 L17 18 L12 15 L7 18 Z"/><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/></svg>';
+const GLYPH_IFR = '<path d="M12 2 L19 20 L12 16 L5 20 Z"/>';
+const GLYPH_VFR = '<path d="M12 4 L17 18 L12 15 L7 18 Z"/><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/>';
 
 function AircraftMarker({ flight }: { flight: FlightView }) {
   const t = useApp((s) => s.simTimeSeconds);
   const selected = useApp((s) => s.selectedId === flight.id);
   const select = useApp((s) => s.select);
-  const markerRef = useRef<L.Marker>(null);
-  const lastHeading = useRef(0);
 
   // După capătul traseului (aterizat sau ajuns la alternativă) avionul rămâne pe hartă, estompat.
-  const last = flight.track[flight.track.length - 1];
+  const track = flight.track;
+  const last = track[track.length - 1];
   const done = !!last && t > last.timeSeconds;
   const pos = done
     ? { lat: last.latitudeDeg, lon: last.longitudeDeg, altitudeMeters: last.altitudeMeters, headingDeg: null }
-    : positionAt(flight.track, t);
-  const heading = pos?.headingDeg ?? null;
+    : positionAt(track, t);
+  // Pe loc (aterizat, capăt de traseu) păstrăm direcția ultimului segment.
+  const heading = Math.round(pos?.headingDeg ?? (track.length > 1 ? trackBearingDeg(track[track.length - 2], last) : 0));
   const rules = flight.aircraft.flightRules.toLowerCase();
+  const statusClass = STATUS_CLASS[flight.status];
 
+  // Rotația e în HTML-ul iconiței: Leaflet recreează elementul la fiecare schimbare, deci nu se mai pierde.
+  // Pe segmente drepte direcția e constantă, așa că iconița se recreează doar la viraje.
   const icon = useMemo(
     () =>
       L.divIcon({
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${STATUS_CLASS[flight.status]} ${selected ? 'ac--selected' : ''} ${done ? 'ac--done' : ''}">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</div>`,
+        html: `<div class="ac ac--${rules} ${statusClass} ${selected ? 'ac--selected' : ''} ${done ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
       }),
-    [rules, flight.status, selected, done],
+    [rules, statusClass, selected, done, heading],
   );
-
-  // Rotim doar glifa, fără să recreăm iconița la fiecare cadru. Fără direcție (avion pe loc) păstrăm ultima.
-  useEffect(() => {
-    if (heading !== null) lastHeading.current = heading;
-    const el = markerRef.current?.getElement()?.querySelector<SVGElement>('.ac__glyph');
-    if (el) el.style.transform = `rotate(${lastHeading.current}deg)`;
-  }, [heading, icon]);
 
   const trail = useMemo(() => trailUntil(flight.track, t), [flight.track, t]);
   if (!pos) return null;
@@ -232,7 +226,6 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
       {!done && <Polyline positions={trail} pathOptions={{ className: `trail trail--${rules}` }} interactive={false} />}
       {selected && <Polyline positions={flight.plannedRoute} pathOptions={{ className: 'planned' }} interactive={false} />}
       <Marker
-        ref={markerRef}
         position={[pos.lat, pos.lon]}
         icon={icon}
         keyboard

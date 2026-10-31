@@ -1,6 +1,6 @@
 // Timeline simplu de sosiri, legat de aceeași stare ca harta. Modulul complet (cererea VFR,
 // variante, Apply) este al lui Daha; aici e doar afișarea și selecția.
-import type { PointerEvent } from 'react';
+import { useState, type PointerEvent } from 'react';
 import { clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, isUnsequenced } from './flightStyle';
@@ -10,6 +10,7 @@ export function Timeline() {
   const t = useApp((s) => s.simTimeSeconds);
   const selectedId = useApp((s) => s.selectedId);
   const { select, seek } = useApp.getState();
+  const [collapsed, setCollapsed] = useState(false);
   if (!ev) return <section className="timeline" />;
 
   const { startSeconds: t0, endSeconds: t1, flights } = ev.traffic;
@@ -24,9 +25,14 @@ export function Timeline() {
   };
 
   return (
-    <section className="timeline" aria-label="Timeline sosiri">
+    <section className={`timeline ${collapsed ? 'timeline--collapsed' : ''}`} aria-label="Timeline sosiri">
       <div className="tl-row tl-row--axis">
-        <div className="tl-label muted small">ora scenariului</div>
+        <div className="tl-label">
+          {/* Restrâns rămâne doar axa, ca ceasul să poată fi mutat în continuare. */}
+          <button className="btn btn--ghost tl-toggle" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed}>
+            {collapsed ? '▸' : '▾'} Sosiri
+          </button>
+        </div>
         <div className="tl-track tl-axis" onPointerDown={onAxis} onPointerMove={onAxis} title="Click / trage pentru a muta ceasul">
           {ticks.map((s) => (
             <span key={s} className="tl-tick" style={{ left: x(s) }}>

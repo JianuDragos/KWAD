@@ -34,7 +34,7 @@ code { font-family: var(--mono); font-size: 12px; }
   overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
-  grid-template-rows: auto minmax(0, 1fr) 210px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-areas:
     'top top'
     'map panel'
@@ -188,7 +188,10 @@ select { background: var(--surface-2); border: 1px solid var(--line-strong); bor
 .ai .notice { color: var(--muted); }
 
 /* ---------- timeline ---------- */
-.timeline { grid-area: tl; background: var(--surface); border-top: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; padding: 6px 14px; }
+.timeline { grid-area: tl; background: var(--surface); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 210px; padding: 6px 14px; }
+.timeline.timeline--collapsed { height: auto; min-height: 0; }
+.timeline--collapsed .tl-body, .timeline--collapsed .tl-legend { display: none; }
+.tl-toggle { padding: 0 4px; font-size: 12px; color: var(--muted); }
 .tl-body { overflow: auto; flex: 1; }
 .tl-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; height: 26px; cursor: pointer; border-radius: 4px; }
 .tl-row:hover { background: var(--surface-2); }
