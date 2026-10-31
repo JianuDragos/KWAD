@@ -22,10 +22,14 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Înregistrare servicii în containerul de Dependency Injection
+// ── Servicii existente (legacy – neatinse) ────────────────────────────────────
 builder.Services.AddScoped<IPlanningService, PlanningService>();
 builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
+
+// ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
+builder.Services.AddHttpClient<IMetarService, MetarService>();
+builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyLiveService>();
 
 var app = builder.Build();
 
