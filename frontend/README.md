@@ -1,78 +1,84 @@
-# AERIS — Consola Radar ATC (Frontend)
+# AERIS — frontend
 
-React 19 + TypeScript + Vite 8, hartă radar Leaflet (`react-leaflet` 5), validare de graniță Zod și stare comună Zustand.
+React 19 + TypeScript + Vite 8, hartă Leaflet (react-leaflet 5), stare comună Zustand.
 
 ## Ce trebuie instalat
 
-Doar două programe; restul (biblioteci, fonturi IBM Plex, geometrie AIP `LRCV`) se află deja în proiect.
+Doar două programe; restul (biblioteci, fonturi, date AIP) e în proiect.
 
 | Program | Versiune | De unde |
 |---|---|---|
 | Node.js | 22.12+ sau 24 (vezi `.nvmrc`) | https://nodejs.org |
 | .NET SDK | 10 (pentru backend) | https://dotnet.microsoft.com/download |
 
-Fonturile (`IBM Plex Sans Condensed` și `IBM Plex Mono`) sunt incluse local în `src/assets/fonts` (licență OFL) pentru ca demo-ul să funcționeze complet offline.
+Fonturile (IBM Plex Sans Condensed și IBM Plex Mono) sunt în `src/assets/fonts`, cu licența OFL; nu se instalează pe sistem și nu se descarcă de pe internet.
 
 ## Pornire
 
-Backendul, din `AERIS API`:
+Backendul, din `KWAD/AERIS API`:
 
 ```bash
 dotnet run
 ```
 
-Frontendul, din `frontend` (prima dată `npm ci` instalează bibliotecile exact din `package-lock.json`):
+Frontendul, din `KWAD/frontend` (prima dată `npm ci` instalează bibliotecile exact din `package-lock.json`):
 
 ```bash
 npm ci
+```
+
+```bash
 npm run dev
 ```
 
-Deschide http://localhost:5173 (pagina Live) sau http://localhost:5173/#/demo (simularea interactivă).
+Deschide http://localhost:5173 (pagina Live) sau http://localhost:5173/#/demo (simularea).
 
 Alte comenzi:
 
 ```bash
-npm run dev:mock   # fără backend: motor matematic + date mock în src/api/mockBackend.ts și src/api/mockLive.ts
-npm test           # suita de 49 teste unitare (Vitest)
+npm run dev:mock   # fără backend: date de exemplu din src/api/mockBackend.ts și src/api/mockLive.ts
+npm test           # testele (vitest)
 npm run build      # build de producție în dist/
 ```
 
-Backendul nu necesită CORS în dev: `/api` trece prin proxy-ul Vite către `http://localhost:5271`. Dacă backendul rulează pe alt port, pornește frontendul cu variabila `AERIS_API`, de exemplu în PowerShell:
-```powershell
-$env:AERIS_API="http://localhost:5272"; npm run dev
-```
+Backendul nu are CORS: în dev, `/api` trece prin proxy-ul Vite spre `http://localhost:5271`. Dacă backendul rulează pe alt port, pornește frontendul cu variabila `AERIS_API`, de exemplu în PowerShell `$env:AERIS_API="http://localhost:5272"; npm run dev`.
 
-## Două moduri de operare
+**Internet:** pagina Live are nevoie de internet (backendul cere datele de la OpenSky și aviationweather.gov), la fel fundalul „Hartă geografică”. Pagina Demo și modul `dev:mock` merg fără internet.
 
-- **`#/live` (implicit):** Avioanele reale din OpenSky (`/api/craiova/live-positions`, actualizare la 15 s), geofencing VFR pe punctele `VFR-S`, `VFR-N`, `VFR-W` (`/api/craiova/vfr/tracking`) și METAR-ul real `LRCV` (`/api/weather/metar/decoded`, cache 5 min).
-- **`#/demo` (pentru prezentarea Hackathon):** Simulare matematică 4D completă, cu preseturi meteo (`Calm`, `Vânt de vest`, `Vânt lateral moderat`, `Vânt lateral puternic 180° 22G26 kt`), cronologie interactivă și panouri de calcul fizic.
+## Două pagini
 
-## Ce afișează Modul Demo (`#/demo`)
+- `#/live` (implicit): avioanele reale din OpenSky (`/api/craiova/live-positions`, la 15 s), punctele VFR (`/api/craiova/vfr/tracking`) și METAR-ul real LRCV (`/api/weather/metar/decoded`, la 5 min). Pista afișată e cea cu vânt de față după METAR.
+- `#/demo`: simularea pentru prezentare (descrisă mai jos). La prezentare deschide direct `http://localhost:5173/#/demo`.
 
-1. **Harta Radar (`MapView.tsx`):**
-   - CTR Craiova (20 NM), pista `08/26` (relevmente adevărate AIP $88.93^\circ / 268.95^\circ$), tranzițiile RNP reale din AIP România (`TITEK`, `PEMOK`, `PANZU` $\to$ `OZZET` / `NECCO` $\to$ `CV508` / `CV408` $\to$ `THR 26/08`).
-   - Traiectorii sintetice sincronizate la secundă cu sloturile din backend și **circuite de așteptare tip hipodrom ICAO (`appendRacetrack`)** pentru aeronavele în holding.
-2. **Predicția Viitorului 4D (`DetailsPanel.tsx`):**
-   - Afișează altitudinea de densitate ($\text{DA}$), vântul în altitudine la $2000\text{ ft}$ și $5000\text{ ft}$ (legea lui Hellmann + spirala Ekman) și fereastra optimă VFR.
-   - Butoane interactive pentru orizonturile `T+0m`, `T+5m`, `T+10m`, `T+15m`, `T+30m`, `T+45m` — click pe orice orizont mută ceasul simulării la acel moment viitor.
-3. **Analiza Zborului în Fiecare Bandă (`StripDetails`):**
-   - **2 Pași Înaintea Avionului (`T0` $\to$ `Pas +1` $\to$ `Pas +2`):** Click pe fiecare pas mută harta la momentul respectiv și afișează fix-ul, altitudinea, $\text{GS}$, $\text{HDG}$ corectat și acțiunea ATC.
-   - **Analiză De-la-Decolare-la-Aterizare:** Afișează aerodromul de origine, distanța $\text{TOD}$, rata de coborâre $\text{ROD}$ pe panta de $3.0^\circ$, unghiul de derivă $\text{WCA}$, bara vizuală $\text{LDR} / 2500\text{ m}$, $\text{ROT}$ și tabelul celor 6 faze cinematice.
-   - **Calcul VFR Orbită vs. Redirecționare:** Afișează *Point of No Return* ($\text{PNR}$) și clasamentul pistelor înierbate apropiate (`PODARI`, `LRCW` Craiova-Sud, `SLATINA`) cu scorul matematic $0\text{–}100$, capul compas corectat la vânt, $\text{ETE}$ și $\text{LDR}$.
-4. **Interpretare AI 4B (`AskAi.tsx`):**
-   - Trimite întrebarea împreună cu starea scenariului către `POST /api/craiova/explain` și redă explicația în limbaj natural pe baza enunțurilor matematice verificate.
+Comutatorul Live / Demo din bara de sus schimbă adresa, deci modul rămâne și după refresh.
 
-Taste rapide: `Spațiu` redare/pauză, `Esc` deselectare, `1` / `2` vedere largă / apropiată.
+## Ce face (Demo)
+
+- Încarcă traficul cu `GET /api/craiova/live-traffic?forceSimulated=true` (repetabil) și îl evaluează cu `POST /api/craiova/evaluate` pentru presetul meteo ales. Frontendul deține scenariul și o revizie care crește la fiecare modificare; răspunsurile pentru revizii vechi sunt ignorate.
+- Harta: CTR 20 NM, pista 08/26, tranzițiile RNP reale din AIP (AIRAC 2026-10-01), avioane cu bloc de date, urmă doar până la momentul curent, traseul planificat pentru avionul selectat și circuite de așteptare tip hipodrom (`appendRacetrack`). Fără fundal implicit (merge offline); OSM opțional.
+- Pozițiile avioanelor sunt **sintetice**: traiectoriile urmează traseele AIP și aterizează exact la slotul dat de backend (sau la ETA dacă nu există slot). Frontendul nu calculează ordinea.
+- Panou:
+  - sus: predicția pe 45 de minute (`T+0` .. `T+45m`), altitudinea de densitate și vântul la 2000 ft / 5000 ft (click pe un orizont mută ceasul simulării acolo);
+  - în banda fiecărui avion: predicția cu 2 pași înainte (`T0` -> `Pas +1` -> `Pas +2`, click pentru salt în timp), analiza de la decolare la aterizare (TOD, panta de 3°, unghiul de derivă, distanța de oprire pe pistă și cele 6 faze), iar pentru VFR calculul Point of No Return (PNR) și clasamentul pistelor apropiate (Podari, Craiova-Sud, Slatina);
+  - jos: modulul de întrebări pentru AI-ul local (`AskAi`), care explică rezultatele scenariului în limbaj natural.
+- Timeline jos (fereastră, ETA, slot, ceas care se poate muta cu mouse-ul).
+
+Taste: `Spațiu` redare/pauză, `Esc` deselectare, `1` / `2` vedere largă / apropiată.
 
 ## Structură
 
 ```text
-src/contracts/backend.ts   Tipurile TypeScript ale backendului (inclusiv modelele matematice 4D)
-src/contracts/schemas.ts   Scheme Zod: fiecare răspuns API este validat strict la graniță
-src/data/                  Geometria LRCV din AIP (lrcv-geo.json, pista 08/26) + preseturi meteo
-src/sim/                   Geometrie sferică, interpolare, hipodrom ICAO (appendRacetrack), model trafic
-src/api/                   Client HTTP + motor mock complet (mockBackend.ts, mockLive.ts)
-src/state/store.ts         Starea comună Zustand (scenariu, revizie, ceas, selecție)
+src/contracts/backend.ts   tipurile răspunsurilor backendului
+src/contracts/schemas.ts   scheme zod: fiecare răspuns e validat la sosire; un contract schimbat dă eroare cu numele câmpului
+src/data/                  geometria LRCV din AIP + puncte sintetice + preseturi meteo
+src/sim/                   geometrie, interpolare, traiectorii sintetice (hipodrom / orbită), model de trafic
+src/api/                   client HTTP + mock
+src/state/store.ts         starea comună (scenariu, revizie, ceas, selecție)
 src/components/            TopBar, MapView, DetailsPanel, Timeline, AskAi, LiveView
 ```
+
+## Comportamente ale backendului pe care UI-ul le arată explicit
+
+- Doar primul VFR primește slot (`SequenceGenerator.cs`); celelalte apar „fără slot”.
+- „Balta Verde / LRBV” din backend este Craiova-Sud (LRCW) în AIP; pe hartă se folosesc coordonatele AIP ale LRCW.
+- Ora: backendul calculează față de o bază fixă 14:00, fără dată sau fus orar; UI-ul scrie „ora scenariului”.
