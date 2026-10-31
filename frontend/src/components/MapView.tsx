@@ -18,18 +18,17 @@ import {
 import { destination } from '../sim/geomath';
 import { positionAt, trackBearingDeg, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
-import { M_PER_NM, altitudeLabel, clockLabel } from '../sim/units';
+import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
-
-// Leaflet desenează liniile (inele, CTR, trasee) doar pe ecran plus o margine și le redesenează abia după
-// ce lași harta; cu marginea implicită de 10% se vedea marginea tăiată în timpul tragerii. padding: 1 = un
-// ecran întreg în fiecare direcție. Sunt puține linii, deci costul e mic.
 
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
   const basemap = useApp((s) => s.basemap);
-  const renderer = useMemo(() => L.svg({ padding: 1 }), []); // câte unul pe hartă: Live și Demo au hărți separate
+  // Leaflet desenează liniile (inele, CTR, trasee) doar pe ecran plus o margine și le redesenează abia după
+  // ce lași harta; cu marginea implicită de 10% se vedea marginea tăiată în timpul tragerii. padding: 1 = un
+  // ecran întreg în fiecare direcție; sunt puține linii, deci costul e mic. Câte un renderer pe hartă.
+  const renderer = useMemo(() => L.svg({ padding: 1 }), []);
 
   return (
     <MapContainer bounds={MAP_BOUNDS_WIDE} renderer={renderer} className="map" zoomSnap={0} zoomDelta={0.5} scrollWheelZoom={false} minZoom={7} maxZoom={16} attributionControl>
@@ -233,6 +232,7 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
   const heading = Math.round(pos?.headingDeg ?? (track.length > 1 ? trackBearingDeg(track[track.length - 2], last) : 0));
   const rules = flight.aircraft.flightRules.toLowerCase();
   const statusClass = STATUS_CLASS[flight.status];
+  const band = altitudeBand(pos?.altitudeMeters ?? null); // culoarea după altitudine
 
   // Rotația e în HTML-ul iconiței: Leaflet recreează elementul la fiecare schimbare, deci nu se mai pierde.
   // Pe segmente drepte direcția e constantă, așa că iconița se recreează doar la viraje.
@@ -242,9 +242,9 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${statusClass} ${selected ? 'ac--selected' : ''} ${done ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
+        html: `<div class="ac ac--${rules} ${band} ${statusClass} ${selected ? 'ac--selected' : ''} ${done ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
       }),
-    [rules, statusClass, selected, done, heading],
+    [rules, band, statusClass, selected, done, heading],
   );
 
   const trail = useMemo(() => trailUntil(flight.track, t), [flight.track, t]);
@@ -286,7 +286,7 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
         >
           <span className="db-callsign">{flight.callsign}</span>
           <br />
-          {altitudeLabel(pos.altitudeMeters)} {flight.aircraft.flightRules}
+          <span className={`db-alt ${band}`}>{altitudeLabel(pos.altitudeMeters)}</span> {flight.aircraft.flightRules}
           <br />
           <span className={isUnsequenced(flight) ? 'db-warn' : ''}>{tag}</span>
         </Tooltip>

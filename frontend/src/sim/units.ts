@@ -30,3 +30,21 @@ export function minutesLabel(seconds: number): string {
   const s = abs % 60;
   return s === 0 ? `${sign}${m} min` : `${sign}${m}:${String(s).padStart(2, '0')} min`;
 }
+
+/**
+ * Benzile de altitudine pentru culoarea avioanelor pe hartă (altitudine barometrică, față de nivelul mării;
+ * aerodromul e la 628 ft). Culorile sunt în index.css, clasele alt-0 … alt-4.
+ */
+export const ALTITUDE_BANDS = [
+  { id: 'alt-0', maxFt: 1500, label: 'sub 1 500 ft (aterizare, decolare)' },
+  { id: 'alt-1', maxFt: 5000, label: '1 500–5 000 ft (apropiere)' },
+  { id: 'alt-2', maxFt: 10000, label: '5 000–10 000 ft' },
+  { id: 'alt-3', maxFt: 25000, label: '10 000–25 000 ft' },
+  { id: 'alt-4', maxFt: Infinity, label: 'peste 25 000 ft (croazieră)' },
+] as const;
+
+export function altitudeBand(altitudeMeters: number | null): string {
+  if (altitudeMeters == null) return 'alt-unknown';
+  const ft = metersToFeet(altitudeMeters);
+  return ALTITUDE_BANDS.find((b) => ft < b.maxFt)!.id;
+}

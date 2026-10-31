@@ -81,3 +81,21 @@ describe('useLive', () => {
     stop();
   });
 });
+
+describe('useLive, răspunsuri în altă ordine', () => {
+  it('ignoră un răspuns mai vechi care sosește după unul mai nou', async () => {
+    const { useLive, positions } = await freshStore();
+    const older = { ...mockLive.livePositions(), queryTimeUtc: '2026-10-31T10:00:00Z' };
+    const newer = { ...mockLive.livePositions(), queryTimeUtc: '2026-10-31T10:00:15Z' };
+    let resolveOlder!: (v: typeof older) => void;
+    positions.mockImplementationOnce(() => new Promise((r) => (resolveOlder = r))).mockResolvedValueOnce(newer);
+    const stop = useLive.getState().start(); // prima cerere (cea veche) rămâne în așteptare
+    setVisibility('hidden');
+    setVisibility('visible'); // a doua cerere (cea nouă) răspunde imediat
+    await vi.advanceTimersByTimeAsync(0);
+    resolveOlder(older);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useLive.getState().positions?.queryTimeUtc).toBe(newer.queryTimeUtc);
+    stop();
+  });
+});

@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { LiveFlight } from '../contracts/live';
 import { extrapolate, trendArrow } from '../sim/live';
-import { altitudeLabel } from '../sim/units';
+import { altitudeBand, altitudeLabel } from '../sim/units';
 import { useLive } from '../state/live';
 import { GLYPH_IFR } from './MapView';
 
@@ -27,6 +27,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   const pos = extrapolate(flight, now);
   const stale = now - flight.lastContact > STALE_SECONDS;
   const heading = Math.round(flight.trueTrackDegrees ?? 0);
+  const band = altitudeBand(flight.baroAltitudeMeters); // culoarea după altitudine
 
   const icon = useMemo(
     () =>
@@ -34,9 +35,9 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--live ${selected ? 'ac--selected' : ''} ${stale ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${GLYPH_IFR}</svg></div>`,
+        html: `<div class="ac ac--live ${band} ${selected ? 'ac--selected' : ''} ${stale ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${GLYPH_IFR}</svg></div>`,
       }),
-    [selected, stale, heading],
+    [band, selected, stale, heading],
   );
   if (!pos) return null;
 
@@ -56,7 +57,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
       <Tooltip key={String(selected)} permanent direction="right" offset={[12, 0]} className={`datablock ${selected ? 'datablock--selected' : ''}`}>
         <span className="db-callsign">{flight.callsign || flight.icao24.toUpperCase()}</span>
         <br />
-        {flight.baroAltitudeMeters != null ? altitudeLabel(flight.baroAltitudeMeters) : '—'} {trendArrow(flight.verticalRateMs)}
+        <span className={`db-alt ${band}`}>{flight.baroAltitudeMeters != null ? altitudeLabel(flight.baroAltitudeMeters) : '—'}</span> {trendArrow(flight.verticalRateMs)}
         <br />
         {flight.velocityKnots != null ? `${Math.round(flight.velocityKnots)} kt` : ''}
       </Tooltip>

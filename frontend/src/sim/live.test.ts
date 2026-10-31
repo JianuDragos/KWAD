@@ -76,6 +76,7 @@ describe('airlineFor', () => {
     expect(airlineFor('THY5AD')).toBe('Turkish Airlines');
     expect(airlineFor('XYZ123')).toBeNull(); // operator necunoscut
     expect(airlineFor('YR-CRA')).toBeNull(); // înmatriculare, nu zbor de linie
+    expect(airlineFor('THYABC')).toBeNull(); // după cod trebuie să urmeze numărul zborului
   });
 });
 
