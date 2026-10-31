@@ -4,10 +4,9 @@ import { ARP, LRCW, arrivalRoute, publishedAltitudeFt, threshold } from '../data
 import { WEATHER_PRESETS } from '../data/weatherPresets';
 import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
-import { bearingDeg, destination, distanceNm, greatCirclePoints } from './geomath';
+import { destination, distanceNm, greatCirclePoints } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
 import { altitudeBand, speedLabel } from './units';
-import { appendOrbit } from './synthetic';
 import { buildTraffic } from './traffic';
 
 const P = (t: number, lat: number, lon: number, alt = 0, source: TrackPoint['source'] = 'synthetic'): TrackPoint => ({
@@ -224,21 +223,6 @@ describe('buildTraffic', () => {
     const west = mock.evaluateSimulation(aircrafts, WEATHER_PRESETS.find((p) => p.id === 'west')!.weather, 'test');
     expect(west.activeRunway).toBe('26');
     expect(buildTraffic(aircrafts, west).runway).toBe('26');
-  });
-});
-
-describe('appendOrbit', () => {
-  it('se rotește în sensul acelor de ceasornic (direcția crește) și ține raza', () => {
-    const center = { lat: 44.3, lon: 23.9 };
-    const north = destination(center, 0, 3);
-    const start: TrackPoint[] = [P(0, north.lat, north.lon)];
-    const orbit = appendOrbit(start, center, 1.2, 1500, 90, 600);
-    const bearings = orbit.slice(1, 4).map((p) => bearingDeg(center, { lat: p.latitudeDeg, lon: p.longitudeDeg }));
-    expect(bearings[0]).toBeCloseTo(0, 1);
-    expect(bearings[1]).toBeCloseTo(22.5, 1);
-    expect(bearings[2]).toBeCloseTo(45, 1);
-    for (const p of orbit.slice(1)) expect(distanceNm(center, { lat: p.latitudeDeg, lon: p.longitudeDeg })).toBeCloseTo(1.2, 3);
-    expect(orbit[orbit.length - 1].timeSeconds).toBeGreaterThanOrEqual(600);
   });
 });
 

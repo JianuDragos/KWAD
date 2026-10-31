@@ -26,7 +26,7 @@ import {
 } from '../data/geo';
 import { destination, distanceNm, greatCircleInterpolate, greatCirclePoints, type LatLon } from './geomath';
 import type { TrackPoint } from './interpolate';
-import { appendLeg, appendOrbit, appendRacetrack, trackArrivingAt, type PlannedFix } from './synthetic';
+import { appendLeg, appendRacetrack, trackArrivingAt, type PlannedFix } from './synthetic';
 import { metersToFeet } from './units';
 
 export type FlightKind = 'approach' | 'hold' | 'divert';
@@ -87,7 +87,6 @@ export function buildTraffic(
   aircrafts: CraiovaAircraft[],
   result: CraiovaSimulationResult,
   firs: FirEntry[] = FALLBACK_FIRS,
-  useTrajectoryEngine: boolean = true,
 ): TrafficModel {
   const runway = runwayFromBackend(result.activeRunway);
   if (aircrafts.length === 0) {
@@ -131,14 +130,10 @@ export function buildTraffic(
         const holdFix = toIf[toIf.length - 1];
         let track = trackArrivingAt(fixes, speeds, aircraft.etaSeconds);
         const todPoint = extractTod(track, todFixIndex, holdFix);
-        track = useTrajectoryEngine
-          ? appendRacetrack(track, holdFix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds)
-          : appendOrbit(track, holdFix, 2.5, holdAlt, 210, endSeconds);
+        track = appendRacetrack(track, holdFix, runwayTrueBearing(runway), 'Right', holdAlt, 210, endSeconds);
         const fullRoute = latLngs(fixes);
         const routeDistanceNm = Math.round(polylineDistanceNm(fixes));
-        const holdLabel = useTrajectoryEngine
-          ? `${origin.icao} → ${iaf} → hipodrom ${holdFix.id} (${holdAlt}ft)`
-          : `${origin.icao} → ${iaf} → așteptare ${holdFix.id}`;
+        const holdLabel = `${origin.icao} → ${iaf} → hipodrom ${holdFix.id} (${holdAlt}ft)`;
         return {
           ...base,
           entryFixId: iaf,
@@ -190,13 +185,9 @@ export function buildTraffic(
       if (kind === 'hold') {
         const center = destination(ARP, 180, 2.5); // latura sudică a pistei (Cârcea – Pielești, după backend)
         const alt = advisory?.orbitAdvice?.recommendedAltitudeFeet ?? 1500;
-        track = useTrajectoryEngine
-          ? appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds)
-          : appendOrbit(track, center, 1.2, alt, speed, endSeconds);
+        track = appendRacetrack(track, center, runwayTrueBearing(runway), 'Right', alt, speed, endSeconds);
         const fullRoute = latLngs(vfrEnrouteFixes);
-        const holdLabel = useTrajectoryEngine
-          ? `${origin.icao} → ${entryPoint.id} → hipodrom sud (${alt}ft)`
-          : `${origin.icao} → ${entryPoint.id} → orbită sud`;
+        const holdLabel = `${origin.icao} → ${entryPoint.id} → hipodrom sud (${alt}ft)`;
         return {
           ...base,
           entryFixId: entryPoint.id,

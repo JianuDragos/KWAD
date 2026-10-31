@@ -14,9 +14,8 @@ export function DemoControls() {
   const revision = useApp((s) => s.scenario?.revision ?? 0);
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
-  const useTrajectoryEngine = useApp((s) => s.useTrajectoryEngine);
   const evaluationResult = useApp((s) => s.evaluation?.result);
-  const { togglePlay, setSpeed, setWeatherPreset, setTrafficPreset, setUseTrajectoryEngine, reset } = useApp.getState();
+  const { togglePlay, setSpeed, setWeatherPreset, setTrafficPreset, reset } = useApp.getState();
   const stale = useIsStale();
   const units = useSpeed();
 
@@ -65,35 +64,20 @@ export function DemoControls() {
         </select>
       </label>
 
-      <label className={`checkbox-toggle ${useTrajectoryEngine ? 'is-active' : ''}`} title="Comută între noul motor Trajectory & Separation Engine și planificatorul vechi">
-        <input
-          type="checkbox"
-          checked={useTrajectoryEngine}
-          onChange={(e) => setUseTrajectoryEngine(e.target.checked)}
-          disabled={!hasData}
-        />
-        <span>use Trajectory Engine</span>
-      </label>
-
       <div className="spacer" />
 
       <div className="pills" aria-live="polite">
         {status === 'loading' && <span className="pill pill--busy">Se calculează</span>}
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
-        {useTrajectoryEngine && evaluationResult?.safetyAssessment?.isSafe && (
+        {evaluationResult?.safetyAssessment?.isSafe && (
           <span className="pill pill--ok" title={evaluationResult.safetyAssessment.summary}>
             ● Traiectorii Sigure (EASA)
           </span>
         )}
-        {useTrajectoryEngine && evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
+        {evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
           <span className="pill pill--warn" title={evaluationResult.safetyAssessment.summary}>
             ▲ {evaluationResult.safetyAssessment.conflicts.length} Conflicte
-          </span>
-        )}
-        {!useTrajectoryEngine && (
-          <span className="pill pill--legacy" title="Planificator vechi: ecart fix 120s, cercuri arbitrare fără eșalonare de siaj">
-            Motor Vechi (Legacy)
           </span>
         )}
         <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>

@@ -25,6 +25,12 @@ import { BASE_TIME_OFFSET_SECONDS, useApp, type MapViewPreset } from '../state/s
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 import { useLive } from '../state/live';
 
+/** Funcție stabilă: un ref inline s-ar re-rula la fiecare randare. */
+const hideLeafletPrefix = (map: L.Map | null) => void map?.attributionControl.setPrefix(false);
+
+/** Licența CC BY-SA cere credit cât timp limitele FIR sunt pe hartă, cu sau fără harta OSM. */
+const FIR_ATTRIBUTION = 'FIR: <a href="https://github.com/vatsimnetwork/vatspy-data-project">VATSpy</a> CC BY-SA 4.0';
+
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
   const basemap = useApp((s) => s.basemap);
@@ -42,11 +48,12 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
       maxZoom={16}
       worldCopyJump
       attributionControl
+      ref={hideLeafletPrefix}
     >
       {basemap === 'osm' && (
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &middot; FIR: VATSpy CC BY-SA 4.0'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           className="basemap-osm"
           maxZoom={18}
         />
@@ -360,7 +367,7 @@ function AirspaceAndGridLayers() {
             (isSector && vp.zoom >= 6.2 && vp.zoom <= 9.2);
 
           return (
-            <Polygon key={`fir-${fir.id}`} positions={fir.polygons} pathOptions={{ className: cls }} interactive={false}>
+            <Polygon key={`fir-${fir.id}`} positions={fir.polygons} pathOptions={{ className: cls }} interactive={false} attribution={FIR_ATTRIBUTION}>
               {showLabel && (
                 <Tooltip permanent direction="center" className={`lbl lbl--fir ${isRomania || isTraversed ? 'lbl--fir-hi' : ''}`}>
                   {fir.id}

@@ -20,6 +20,15 @@ describe('romatsaArrivals', () => {
     expect(Math.abs(eta.WZZ3762 - 360)).toBeLessThan(120);
   });
 
+  it('nu pune începutul ferestrei de sosire înainte de 14:00', () => {
+    const ifr = romatsaIfrSchema.parse(file('ifr'));
+    const first = ifr.mockLiveIfrFlights[0];
+    const atZero = { ...first, takeoffToLandingProfile: { topOfDescentUtc: '2026-10-31T14:00:00Z', topOfDescentDistanceFromLrcvNm: 0 } };
+    const [a] = romatsaArrivals({ ...ifr, mockLiveIfrFlights: [atZero] }, { ...romatsaVfrSchema.parse(file('vfr')), mockLiveVfrFlights: [] });
+    expect(a.etaSeconds).toBe(0);
+    expect(a.earliestSeconds).toBe(0);
+  });
+
   it('mock-ul conține exact avioanele calculate din bazele ROMATSA', () => {
     expect(withRomatsa(realisticCraiovaTraffic(), arrivals)).toEqual(liveTraffic().traffic);
   });

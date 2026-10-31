@@ -56,7 +56,7 @@ export function romatsaArrivals(ifr: RomatsaIfr, vfr: RomatsaVfr): CraiovaAircra
   const ifrTypes = new Map(ifr.ifrAircraftPerformanceDatabase.map((a) => [a.icaoCode, a.kinematics]));
   const vfrTypes = new Map(vfr.aircraftDatabase.map((a) => [a.icaoCode, a.vfrProfile]));
   const points = new Map(vfr.vfrVisualReportingPoints.find((p) => p.aerodromeIcao === 'LRCV')?.points.map((p) => [p.code, p]) ?? []);
-  const window = (eta: number) => ({ etaSeconds: eta, earliestSeconds: Math.max(0, eta - 60), latestSeconds: eta + 300, frozenTimeSeconds: null });
+  const arrivalWindow = (eta: number) => ({ etaSeconds: eta, earliestSeconds: Math.max(0, eta - 60), latestSeconds: eta + 300, frozenTimeSeconds: null });
 
   const ifrArrivals = ifr.mockLiveIfrFlights.flatMap((f): CraiovaAircraft[] => {
     const type = ifrTypes.get(f.aircraftIcao);
@@ -66,7 +66,7 @@ export function romatsaArrivals(ifr: RomatsaIfr, vfr: RomatsaVfr): CraiovaAircra
     return [{
       id: f.aircraftId ?? f.callsign, callsign: f.callsign, modelName: f.aircraftModel,
       category: categoryFor(typeCode.get(f.aircraftIcao), true), flightRules: 'IFR', hasInstrumentAvionics: true,
-      maxCrosswindKnots: type.maxCrosswindDryKnots, ...window(eta), speedKnots: type.finalApproachSpeedVappKnots,
+      maxCrosswindKnots: type.maxCrosswindDryKnots, ...arrivalWindow(eta), speedKnots: type.finalApproachSpeedVappKnots,
       remainingFuelMinutes: f.flightPlan.remainingFuelMinutes,
     }];
   });
@@ -83,7 +83,7 @@ export function romatsaArrivals(ifr: RomatsaIfr, vfr: RomatsaVfr): CraiovaAircra
     return [{
       id: f.callsign, callsign: f.callsign, modelName: f.aircraftModel,
       category, flightRules: 'VFR', hasInstrumentAvionics: category !== 'UltralightAndGlider',
-      maxCrosswindKnots: type.maxCrosswindLimitKnots, ...window(eta), speedKnots: type.standardVfrPatternSpeedKnots,
+      maxCrosswindKnots: type.maxCrosswindLimitKnots, ...arrivalWindow(eta), speedKnots: type.standardVfrPatternSpeedKnots,
       remainingFuelMinutes: f.flightPlan.enduranceMinutes - f.flightPlan.estimatedFlightTimeMinutes,
     }];
   });

@@ -27,33 +27,6 @@ export function appendLeg(track: TrackPoint[], to: LatLon, altitudeFt: number, s
   return [...track, point(last.timeSeconds + seconds, to, altitudeFt)];
 }
 
-/** Ture de așteptare circulare în jurul unui centru, în sensul acelor de ceasornic, până la untilSeconds. */
-export function appendOrbit(
-  track: TrackPoint[],
-  center: LatLon,
-  radiusNm: number,
-  altitudeFt: number,
-  speedKt: number,
-  untilSeconds: number,
-): TrackPoint[] {
-  const out = [...track];
-  const last = out[out.length - 1];
-  const steps = 16;
-  const stepSeconds = ((2 * Math.PI * radiusNm) / steps / speedKt) * 3600;
-  let angle = bearingDeg(center, { lat: last.latitudeDeg, lon: last.longitudeDeg });
-  let t = last.timeSeconds;
-  // intrarea în cerc
-  const entry = destination(center, angle, radiusNm);
-  t += (distanceNm({ lat: last.latitudeDeg, lon: last.longitudeDeg }, entry) / speedKt) * 3600;
-  out.push(point(t, entry, altitudeFt));
-  while (t < untilSeconds) {
-    angle = (angle + 360 / steps) % 360;
-    t += stepSeconds;
-    out.push(point(t, destination(center, angle, radiusNm), altitudeFt));
-  }
-  return out;
-}
-
 /**
  * Circuit standard de așteptare de tip hipodrom (ICAO Racetrack Holding Pattern).
  * Înlocuiește cercurile arbitrare prin traseu realist: Fix -> Viraj 180° -> Outbound -> Viraj 180° -> Inbound spre Fix.

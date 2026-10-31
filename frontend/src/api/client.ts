@@ -87,13 +87,20 @@ export function fetchScenarioTraffic(signal?: AbortSignal, preset: TrafficPreset
   const path = `/api/craiova/live-traffic?${qs}`;
   if (API_MOCK) return mockDelay(() => parseResponse(path, liveTrafficSchema, mock.liveTraffic(preset)), signal);
   if (preset === 'eurasia') return request(path, liveTrafficSchema, { signal });
-  // Scenariul implicit primește și zborurile spre LRCV din bazele mock ROMATSA.
-  return Promise.all([
-    request(path, liveTrafficSchema, { signal }),
+  // Scenariul implicit primește și zborurile spre LRCV din bazele mock ROMATSA. Sunt un extra:
+  // un backend fără ele (sau cu date invalide) nu trebuie să oprească Demo-ul.
+  const romatsa = Promise.all([
     request('/api/craiova/romatsa/ifr', romatsaIfrSchema, { signal }),
     request('/api/craiova/romatsa/vfr', romatsaVfrSchema, { signal }),
-  ]).then(([live, ifr, vfr]) => {
-    const traffic = withRomatsa(live.traffic, romatsaArrivals(ifr, vfr));
+  ]).then(
+    ([ifr, vfr]) => romatsaArrivals(ifr, vfr),
+    (e: unknown) => {
+      console.warn('Zborurile ROMATSA nu sunt disponibile; Demo continuă fără ele.', e);
+      return [];
+    },
+  );
+  return Promise.all([request(path, liveTrafficSchema, { signal }), romatsa]).then(([live, extra]) => {
+    const traffic = withRomatsa(live.traffic, extra);
     return { ...live, count: traffic.length, traffic };
   });
 }

@@ -76,11 +76,6 @@ export default function App() {
           </MapView>
         )}
         <AltitudeLegend />
-        {mode === 'demo' && (
-          <p className="map-banner">
-            Simulare 4D Decolare → Aterizare (nu pentru uz operațional). Rute Great-Circle + proceduri AIP LRCV; limite FIR orientative (VATSpy CC BY-SA 4.0).
-          </p>
-        )}
         <div className="map-controls">
           <div className="seg" role="group" aria-label="Vedere hartă">
             <button
