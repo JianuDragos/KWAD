@@ -155,14 +155,14 @@ public static class MetarParser
                 // Base în MetarRaw este în SUTE de ft (ex: 3 = 300 ft, 6 = 600 ft, 8 = 800 ft)
                 int baseHundreds = l.Base ?? 0;
                 int baseFt = baseHundreds * 100;
-                int baseM = (int)(baseFt * 0.3048);
+                int baseM = FeetToRoundedMeters(baseFt);
                 bool isCeiling = l.Cover == "BKN" || l.Cover == "OVC" || l.Cover == "OVX";
                 string coverName = l.Cover switch
                 {
-                    "FEW" => "Few (1-2 octas)",
-                    "SCT" => "Scattered (3-4 octas)",
-                    "BKN" => "Broken (5-7 octas) – PLAFON",
-                    "OVC" => "Overcast (8 octas) – PLAFON",
+                    "FEW" => "Câțiva nori",
+                    "SCT" => "Nori împrăștiați",
+                    "BKN" => "Cer mai mult acoperit (plafon)",
+                    "OVC" => "Cer acoperit complet (plafon)",
                     "OVX" => "Cer acoperit – vizibilitate obscurată",
                     _ => l.Cover!
                 };
@@ -178,11 +178,13 @@ public static class MetarParser
             .ToList();
     }
 
+    /// <summary>Picioare → metri rotunjiți la 10 m, pentru textele afișate (METAR raportează plafonul în sute de ft).</summary>
+    private static int FeetToRoundedMeters(int feet) => (int)Math.Round(feet * 0.3048 / 10.0) * 10;
+
     private static string BuildSkyDescription(List<CloudLayerDecoded> layers)
     {
-        if (layers.Count == 0) return "Cer senin (CAVOK sau CLR)";
-        var parts = layers.Select(l =>
-            $"{l.Code} la {l.BaseFeet} ft ({l.BaseMeters} m) – {l.CoverName}");
+        if (layers.Count == 0) return "Cer senin";
+        var parts = layers.Select(l => $"{l.CoverName} la {l.BaseMeters} m");
         return string.Join("; ", parts);
     }
 
@@ -295,9 +297,9 @@ public static class MetarParser
     private static string BuildFlightCategoryDescription(string cat) => cat switch
     {
         "VFR"  => "VFR – Condiții vizuale, zbor VFR permis fără restricții",
-        "MVFR" => "MVFR – Condiții marginale VFR: vizibilitate 3-5 km sau plafon 1000-3000 ft",
-        "IFR"  => "IFR – Condiții instrumentale: vizibilitate sub 3 km sau plafon sub 1000 ft",
-        "LIFR" => "LIFR – Condiții IFR severe: vizibilitate sub 1 km sau plafon sub 500 ft",
+        "MVFR" => "MVFR – Condiții marginale VFR: vizibilitate 3-5 km sau plafon 300-900 m",
+        "IFR"  => "IFR – Condiții instrumentale: vizibilitate sub 3 km sau plafon sub 300 m",
+        "LIFR" => "LIFR – Condiții IFR severe: vizibilitate sub 1 km sau plafon sub 150 m",
         _      => cat
     };
 
@@ -329,7 +331,7 @@ public static class MetarParser
 
         int ceilingFt = clouds.Where(c => c.IsCeiling).Select(c => c.BaseFeet).DefaultIfEmpty(0).Min();
         if (ceilingFt > 0)
-            sb.Append($"Plafon {ceilingFt} ft. ");
+            sb.Append($"Plafon {FeetToRoundedMeters(ceilingFt)} m. ");
 
         sb.Append($"Vizibilitate {visMeters} m. ");
 
@@ -365,8 +367,8 @@ public static class MetarParser
             VÂNT: {(isVariable ? $"variabil {windSpd} kts" : $"{windDir}° / {windSpd} kts")}{(windGust.HasValue ? $", rafale {windGust} kts" : "")}
             Vânt lateral față de pista 08/26: {xw:0.#} kts
             VIZIBILITATE: {visMeters} m
-            PLAFON: {(ceilingFt > 0 ? $"{ceilingFt} ft" : "Nelimitat")}
-            NORI: {string.Join(", ", clouds.Select(c => $"{c.Code} {c.BaseFeet}ft"))}
+            PLAFON: {(ceilingFt > 0 ? $"{FeetToRoundedMeters(ceilingFt)} m" : "Nelimitat")}
+            NORI: {string.Join(", ", clouds.Select(c => $"{c.CoverName} la {c.BaseMeters} m"))}
             TEMPERATURĂ: {temp}°C | Punct de rouă: {dewp}°C | Umiditate: {humidity}%
             QNH: {qnh} hPa
             FENOMENE: {phenomena ?? "Fără"}

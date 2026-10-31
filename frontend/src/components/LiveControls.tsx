@@ -3,6 +3,7 @@ import { CRITICAL_CROSSWIND_KT, runwayForWind, windComponents } from '../sim/liv
 import { useLive } from '../state/live';
 import { useSpeed } from '../state/units';
 import { WindArrow } from './WindArrow';
+import { HINT } from '../data/glossary';
 
 /** Bara de sus pe pagina Live: ora reală, pista și vântul din METAR, vechimea datelor. */
 export function LiveControls() {
@@ -18,19 +19,19 @@ export function LiveControls() {
       <UtcClock />
       {metar && runway && (
         <div className="atis">
-          <span className="atis__rwy" title="Pista cu vânt de față, după METAR">
+          <span className="atis__rwy" title={HINT.RWY}>
             RWY {runway}
           </span>
           {metar.windDirectionDegrees != null && <WindArrow direction={metar.windDirectionDegrees} />}
-          <span className="atis__wind">
+          <span className="atis__wind" title={HINT.WIND}>
             {metar.isWindVariable || metar.windDirectionDegrees == null ? 'VRB' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`} {speed.value(metar.windSpeedKnots)}
             {metar.windGustKnots ? `G${speed.value(metar.windGustKnots)}` : ''} {speed.unit}
           </span>
-          <span className="atis__xw">QNH {metar.qnhHpa}</span>
-          {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`}>lateral {speed.label(xw)}</span>}
+          <span className="atis__xw" title={HINT.QNH}>QNH {metar.qnhHpa}</span>
+          {xw != null && <span className={`atis__xw ${xw > CRITICAL_CROSSWIND_KT ? 'is-critical' : ''}`} title={HINT.CROSSWIND}>lateral {speed.label(xw)}</span>}
         </div>
       )}
-      {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title="Validare VMC după vizibilitate ≥ 5 km și plafon ≥ 450 m">{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}
+      {vmcStatus && <span className={`pill vmc-pill vmc-pill--${vmcStatus.toLowerCase()}`} title={HINT.VMC}>{vmcStatus === 'IMC' ? 'VFR SUSPENDAT' : vmcStatus === 'MVFR' ? 'MARGINAL VFR' : 'VMC'}</span>}
       <div className="spacer" />
       <div className="pills" aria-live="polite">
         {error && <span className="pill pill--err">Fără date noi</span>}
@@ -47,7 +48,7 @@ function UtcClock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="clock" title="Ora reală, UTC">
+    <div className="clock" title={HINT.UTC}>
       <span className="clock__time">{now.toISOString().slice(11, 19)}</span>
       <span className="clock__zone">UTC</span>
     </div>

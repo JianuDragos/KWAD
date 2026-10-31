@@ -6,6 +6,7 @@ import { M_PER_NM, altitudeLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { AskAi } from './AskAi';
+import { HINT } from '../data/glossary';
 
 export function LivePanel() {
   const positions = useLive((s) => s.positions);
@@ -59,15 +60,14 @@ function MetarBlock({ metar }: { metar: Metar }) {
   const wind = metar.isWindVariable || metar.windDirectionDegrees == null ? 'variabil' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`;
   return (
     <section className="metar" aria-label="METAR Craiova">
-      <p className="metar__raw">{metar.rawMetar}</p>
       <dl className="kv">
-        <dt>Vânt</dt>
+        <dt title={HINT.WIND}>Vânt</dt>
         <dd className="num">
           {wind} {speed.label(metar.windSpeedKnots)}{metar.windGustKnots ? `, rafale ${speed.label(metar.windGustKnots)}` : ''}
         </dd>
-        <dt>Vizibilitate</dt>
+        <dt title={HINT.VISIBILITY}>Vizibilitate</dt>
         <dd className="num">{metar.visibilityMeters >= 9999 ? '10 km sau mai mult' : `${metar.visibilityMeters} m`}</dd>
-        <dt>Nori</dt>
+        <dt title={HINT.CLOUDS}>Nori</dt>
         <dd>{metar.skyConditionDescription}</dd>
         {metar.weatherPhenomena && (
           <>
@@ -75,13 +75,13 @@ function MetarBlock({ metar }: { metar: Metar }) {
             <dd>{metar.weatherPhenomena}</dd>
           </>
         )}
-        <dt>Temp. / rouă</dt>
+        <dt title={HINT.TEMP_DEW}>Temp. / rouă</dt>
         <dd className="num">
           {metar.temperatureCelsius}° / {metar.dewPointCelsius}°
         </dd>
-        <dt>QNH</dt>
+        <dt title={HINT.QNH}>QNH</dt>
         <dd className="num">{metar.qnhHpa} hPa</dd>
-        <dt>Categorie</dt>
+        <dt title={HINT.FLIGHT_CAT}>Categorie</dt>
         <dd>
           <span className={`fltcat fltcat--${metar.flightCategory.toLowerCase()}`}>{metar.flightCategory}</span>
         </dd>
@@ -118,19 +118,19 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
           <dl className="kv">
             <dt>Companie</dt>
             <dd>{airlineFor(flight.callsign) ?? 'necunoscută'}</dd>
-            <dt>Înmatriculare</dt>
+            <dt title={HINT.REGISTRATION}>Înmatriculare</dt>
             <dd>{flight.originCountry ?? '—'}</dd>
-            <dt>Viteză sol</dt>
+            <dt title={HINT.GROUND_SPEED}>Viteză sol</dt>
             <dd className="num">{flight.velocityKnots != null ? speed.label(flight.velocityKnots) : '—'}</dd>
-            <dt>Direcție</dt>
+            <dt title={HINT.TRACK}>Direcție</dt>
             <dd className="num">{flight.trueTrackDegrees != null ? `${String(Math.round(flight.trueTrackDegrees)).padStart(3, '0')}°` : '—'}</dd>
-            <dt>Rată verticală</dt>
+            <dt title={HINT.VERTICAL_RATE}>Rată verticală</dt>
             <dd className="num">{flight.verticalRateMs != null ? verticalRateLabel(flight.verticalRateMs) : '—'}</dd>
-            <dt>Squawk</dt>
+            <dt title={HINT.SQUAWK}>Squawk</dt>
             <dd className="num">{flight.squawk ?? '—'}</dd>
-            <dt>Reguli</dt>
+            <dt title={HINT.RULES}>Reguli</dt>
             <dd>{flight.flightRules}</dd>
-            <dt>Cod ICAO</dt>
+            <dt title={HINT.ICAO24}>Cod ICAO</dt>
             <dd className="num">{flight.icao24.toUpperCase()}</dd>
           </dl>
         </div>

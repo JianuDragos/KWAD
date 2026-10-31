@@ -62,7 +62,7 @@ public record MetarDecoded(
 
     // ── Nori ──────────────────────────────────────────────────────────────────
     List<CloudLayerDecoded> CloudLayers, // Lista straturilor de nori decodate
-    string SkyConditionDescription,    // Ex: "Overcast la 700 ft (cer acoperit)"
+    string SkyConditionDescription,    // Ex: "Cer acoperit complet (plafon) la 460 m"
 
     // ── Temperatură & Rouă ────────────────────────────────────────────────────
     double TemperatureCelsius,         // Temperatura (°C)
@@ -115,7 +115,7 @@ public sealed record MetarData(
 /// </summary>
 public record CloudLayerDecoded(
     string Code,           // "BKN", "OVC", etc.
-    string CoverName,      // "Broken (5-7 octas)", "Overcast (8 octas)"
+    string CoverName,      // "Cer mai mult acoperit (plafon)", "Cer acoperit complet (plafon)"
     int BaseHundredsFeet,  // Baza în sute de ft: ex 3 = 300 ft
     int BaseFeet,          // Baza în picioare: ex 300
     int BaseMeters,        // Baza în metri: ex ~90 m

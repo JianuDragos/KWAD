@@ -4,6 +4,7 @@ import { clockLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 import { WindArrow } from './WindArrow';
+import { HINT } from '../data/glossary';
 
 /** Bara de sus pe pagina Demo: ceasul simulării, redare, scenariu trafic și preset meteo. */
 export function DemoControls() {
@@ -71,16 +72,16 @@ export function DemoControls() {
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
         {evaluationResult?.safetyAssessment?.isSafe && (
-          <span className="pill pill--ok" title={evaluationResult.safetyAssessment.summary}>
+          <span className="pill pill--ok" title={`${HINT.SAFE}\n\n${evaluationResult.safetyAssessment.summary}`}>
             ● Traiectorii Sigure (EASA)
           </span>
         )}
         {evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
-          <span className="pill pill--warn" title={evaluationResult.safetyAssessment.summary}>
+          <span className="pill pill--warn" title={`${HINT.CONFLICTS}\n\n${evaluationResult.safetyAssessment.summary}`}>
             ▲ {evaluationResult.safetyAssessment.conflicts.length} Conflicte
           </span>
         )}
-        <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>
+        <span className="pill" title={HINT.REVISION}>rev {revision}</span>
       </div>
     </>
   );
@@ -90,7 +91,7 @@ export function DemoControls() {
 function Clock() {
   const t = useApp((s) => s.simTimeSeconds);
   return (
-    <div className="clock" title="Ora scenariului">
+    <div className="clock" title={HINT.SCENARIO_CLOCK}>
       <span className="clock__time">{clockLabel(BASE_TIME_OFFSET_SECONDS + t)}</span>
     </div>
   );
@@ -105,15 +106,15 @@ function Conditions() {
   const w = result.weather;
   return (
     <div className="atis">
-      <span className="atis__rwy" title="Pista în folosință">
+      <span className="atis__rwy" title={HINT.RWY}>
         RWY {runway}
       </span>
       <WindArrow direction={w.windDirectionDegrees} />
-      <span className="atis__wind">
+      <span className="atis__wind" title={HINT.WIND}>
         {String(w.windDirectionDegrees).padStart(3, '0')}° {speed.value(w.windSpeedKnots)}
         {w.windGustKnots > w.windSpeedKnots ? `G${speed.value(w.windGustKnots)}` : ''} {speed.unit}
       </span>
-      <span className={`atis__xw ${result.isCrosswindCriticalForLightAircraft ? 'is-critical' : ''}`} title="Vânt lateral pe pista în folosință">
+      <span className={`atis__xw ${result.isCrosswindCriticalForLightAircraft ? 'is-critical' : ''}`} title={HINT.CROSSWIND}>
         lateral {speed.label(result.activeRunwayCrosswindKnots)}
       </span>
     </div>

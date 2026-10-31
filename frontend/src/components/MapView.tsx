@@ -17,7 +17,7 @@ import {
   vfrFinalJoin,
   type RunwayId,
 } from '../data/geo';
-import { destination, trackBearingDegSafe } from './mapHelpers';
+import { TrafficRendererContext, destination, trackBearingDegSafe, useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
 import { positionAt, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetLabel, feetToMeters } from '../sim/units';
@@ -34,6 +34,7 @@ const FIR_ATTRIBUTION = 'FIR: <a href="https://github.com/vatsimnetwork/vatspy-d
 /** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
 export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
   const renderer = useMemo(() => L.svg({ padding: 0.75 }), []);
+  const trafficRenderer = useMemo(() => L.svg({ padding: 0.75 }), []);
 
   return (
     <MapContainer
@@ -55,11 +56,13 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
         className="basemap-osm"
         maxZoom={18}
       />
-      <ViewController />
-      <BackgroundClick onClick={onBackgroundClick} />
-      <AirspaceAndGridLayers />
-      <StaticLayers runway={runway} />
-      {children}
+      <TrafficRendererContext.Provider value={trafficRenderer}>
+        <ViewController />
+        <BackgroundClick onClick={onBackgroundClick} />
+        <AirspaceAndGridLayers />
+        <StaticLayers runway={runway} />
+        {children}
+      </TrafficRendererContext.Provider>
     </MapContainer>
   );
 }
@@ -139,6 +142,7 @@ function applyView(map: L.Map, view: MapViewPreset, flights: FlightView[] | null
 
 function ViewController() {
   const map = useMap();
+  const trafficRenderer = useTrafficRenderer();
   const view = useApp((s) => s.view);
   const viewNonce = useApp((s) => s.viewNonce);
   useEffect(() => {
@@ -185,8 +189,12 @@ function ViewController() {
       m._move(centerFor(zoom), zoom, { pinch: true, round: false });
       // În timpul zoom-ului Leaflet doar scalează imaginea SVG desenată la zoom-ul de start: la zoom out
       // liniile rămân strânse în zona veche, iar avioanele (markere) sunt deja la locul nou. Redesenăm des.
-      const renderer = map.options.renderer as (L.Renderer & { _map?: L.Map; _zoom: number; _reset(): void }) | undefined;
+      type Redrawable = L.Renderer & { _map?: L.Map; _zoom: number; _reset(): void };
+      const renderer = map.options.renderer as Redrawable | undefined;
       if (!done && renderer?._map && Math.abs(zoom - renderer._zoom) > REDRAW_EVERY_ZOOM) renderer._reset();
+      // Liniile avioanelor la fiecare cadru: scalate ca imagine, grosimea și liniuțele lor ar sări la redesenare.
+      const traffic = trafficRenderer as Redrawable | undefined;
+      if (!done && traffic?._map) traffic._reset();
       if (done) {
         target = null;
         frame = 0;
@@ -212,7 +220,7 @@ function ViewController() {
       el.removeEventListener('wheel', onWheel);
       cancelAnimationFrame(frame);
     };
-  }, [map]);
+  }, [map, trafficRenderer]);
   return null;
 }
 
@@ -531,7 +539,7 @@ function resolveFlightVisualState(flight: FlightView, t: number) {
 }
 
 function AircraftMarker({ flight }: { flight: FlightView }) {
-  const t = useApp((s) => s.simTimeSeconds);
+  const t = useHeldWhileZooming(useApp((s) => s.simTimeSeconds));
   const selected = useApp((s) => s.selectedId === flight.id);
   const showAllRoutes = useApp((s) => s.showAllRoutes);
   const select = useApp((s) => s.select);
@@ -583,6 +591,7 @@ function AircraftMarkerView({
 }) {
   const rules = flight.aircraft.flightRules.toLowerCase();
   const statusClass = STATUS_CLASS[flight.status];
+  const trafficRenderer = useTrafficRenderer();
   const dimmed = done || preTakeoff;
 
   const icon = useMemo(
@@ -615,14 +624,16 @@ function AircraftMarkerView({
       {/* Traiectoria completă Decolare → Aterizare pentru fiecare avion */}
       {(showAllRoutes || selected) && (
         <Polyline
+          renderer={trafficRenderer}
           positions={flight.fullRoute}
           pathOptions={{ className: selected ? 'planned planned--selected' : `full-route full-route--${rules}` }}
           interactive={false}
         />
       )}
-      {trail.length > 1 && <Polyline positions={trail} pathOptions={{ className: `trail trail--${rules}` }} interactive={false} />}
+      {trail.length > 1 && <Polyline renderer={trafficRenderer} positions={trail} pathOptions={{ className: `trail trail--${rules}` }} interactive={false} />}
       {selected && flight.todPoint && (
         <CircleMarker
+          renderer={trafficRenderer}
           center={[flight.todPoint.lat, flight.todPoint.lon]}
           radius={4}
           pathOptions={{ className: 'tod-marker' }}

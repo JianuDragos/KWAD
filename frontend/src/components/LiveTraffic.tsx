@@ -9,9 +9,8 @@ import { extrapolate, trendArrow } from '../sim/live';
 import { altitudeBand, altitudeLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
-import { useApp } from '../state/store';
 import { GLYPH_IFR } from './MapView';
-import { isInboundTowards } from './mapHelpers';
+import { isInboundTowards, useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
 
 /** Peste atâtea secunde fără contact, avionul apare estompat (date vechi). */
 const STALE_SECONDS = 60;
@@ -40,9 +39,11 @@ function recordLiveHistory(flights: LiveFlight[] | null) {
 }
 
 export function LiveTraffic() {
-  const flights = useLive((s) => s.positions?.flights ?? null);
-  const tracking = useLive((s) => s.vfrTracking);
-  const [now, setNow] = useState(() => Date.now() / 1000);
+  const flights = useHeldWhileZooming(useLive((s) => s.positions?.flights ?? null));
+  const tracking = useHeldWhileZooming(useLive((s) => s.vfrTracking));
+  const trafficRenderer = useTrafficRenderer();
+  const [tickNow, setNow] = useState(() => Date.now() / 1000);
+  const now = useHeldWhileZooming(tickNow);
 
   useEffect(() => {
     recordLiveHistory(flights);
@@ -66,12 +67,13 @@ export function LiveTraffic() {
         const point = tracking?.points.find((p) => p.code === f.pointCode);
         return point ? (
           <Polyline
+            renderer={trafficRenderer}
             key={`vfr-route-${f.flightId}`}
             positions={[
               [live.latitude, live.longitude],
               [point.lat, point.long],
             ]}
-            pathOptions={{ className: 'full-route full-route--vfr' }}
+            pathOptions={{ className: 'full-route full-route--vfr predicted' }}
             interactive={false}
           />
         ) : null;
@@ -82,7 +84,7 @@ export function LiveTraffic() {
 
 function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   const selected = useLive((s) => s.selectedIcao === flight.icao24);
-  const showAllRoutes = useApp((s) => s.showAllRoutes);
+  const showAllRoutes = useLive((s) => s.showRoutes);
   const select = useLive((s) => s.select);
   const speed = useSpeed();
   const pos = extrapolate(flight, now);
@@ -90,6 +92,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   const heading = Math.round(flight.trueTrackDegrees ?? 0);
   const band = altitudeBand(flight.baroAltitudeMeters);
   const rulesLower = flight.flightRules.toLowerCase();
+  const trafficRenderer = useTrafficRenderer();
 
   const icon = useMemo(
     () =>
@@ -119,25 +122,27 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   return (
     <>
       {trailPoints.length > 1 && (
-        <Polyline positions={trailPoints} pathOptions={{ className: `trail trail--${rulesLower}` }} interactive={false} />
+        <Polyline renderer={trafficRenderer} positions={trailPoints} pathOptions={{ className: `trail trail--${rulesLower}` }} interactive={false} />
       )}
       {(showAllRoutes || selected) && projEnd && (
         <Polyline
+          renderer={trafficRenderer}
           positions={[
             [pos.lat, pos.lon],
             [projEnd.lat, projEnd.lon],
           ]}
-          pathOptions={{ className: `live-vector trail--${rulesLower}` }}
+          pathOptions={{ className: `live-vector trail--${rulesLower} predicted` }}
           interactive={false}
         />
       )}
       {(selected || (showAllRoutes && inboundToLrcv && distToLrcvNm <= 45)) && (
         <Polyline
+          renderer={trafficRenderer}
           positions={[
             [pos.lat, pos.lon],
             [ARP.lat, ARP.lon],
           ]}
-          pathOptions={{ className: selected ? 'planned planned--selected' : `full-route full-route--${rulesLower}` }}
+          pathOptions={{ className: `${selected ? 'planned planned--selected' : `full-route full-route--${rulesLower}`} predicted` }}
           interactive={false}
         />
       )}

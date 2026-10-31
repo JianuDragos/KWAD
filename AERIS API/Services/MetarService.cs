@@ -55,7 +55,7 @@ public class MetarService : IMetarService
                 : "unknown",
             SkyConditionDescription = weather.CeilingKnown
                 ? decoded.SkyConditionDescription
-                : $"Cloud cover {weather.CloudCoverPercent?.ToString() ?? "unknown"}%; cloud ceiling unavailable, VMC cannot be confirmed.",
+                : $"Acoperire cu nori {weather.CloudCoverPercent?.ToString() ?? "necunoscută"}%; înălțimea plafonului nu e cunoscută, deci condițiile VMC nu pot fi confirmate.",
             ControllerSummary = weather.CeilingKnown
                 ? decoded.ControllerSummary
                 : $"{weather.SourceProvider}; cloud ceiling unavailable, VMC cannot be confirmed. {decoded.ControllerSummary}",

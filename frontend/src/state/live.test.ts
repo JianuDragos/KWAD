@@ -60,6 +60,18 @@ describe('useLive', () => {
     stop();
   });
 
+  it('nu cere din nou dacă tab-ul revine la câteva secunde după ultima cerere', async () => {
+    const { useLive, positions } = await freshStore();
+    const stop = useLive.getState().start();
+    for (let i = 0; i < 5; i++) {
+      setVisibility('hidden');
+      await vi.advanceTimersByTimeAsync(500);
+      setVisibility('visible');
+    }
+    expect(positions).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
   it('după oprire nu mai cere nimic', async () => {
     const { useLive, positions, POSITIONS_EVERY_MS } = await freshStore();
     useLive.getState().start()();
@@ -84,15 +96,13 @@ describe('useLive', () => {
 
 describe('useLive, răspunsuri în altă ordine', () => {
   it('ignoră un răspuns mai vechi care sosește după unul mai nou', async () => {
-    const { useLive, positions } = await freshStore();
+    const { useLive, positions, POSITIONS_EVERY_MS } = await freshStore();
     const older = { ...mockLive.livePositions(), queryTimeUtc: '2026-10-31T10:00:00Z' };
     const newer = { ...mockLive.livePositions(), queryTimeUtc: '2026-10-31T10:00:15Z' };
     let resolveOlder!: (v: typeof older) => void;
     positions.mockImplementationOnce(() => new Promise((r) => (resolveOlder = r))).mockResolvedValueOnce(newer);
     const stop = useLive.getState().start(); // prima cerere (cea veche) rămâne în așteptare
-    setVisibility('hidden');
-    setVisibility('visible'); // a doua cerere (cea nouă) răspunde imediat
-    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(POSITIONS_EVERY_MS); // a doua cerere (cea nouă) răspunde imediat
     resolveOlder(older);
     await vi.advanceTimersByTimeAsync(0);
     expect(useLive.getState().positions?.queryTimeUtc).toBe(newer.queryTimeUtc);

@@ -9,6 +9,7 @@ import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
+import { HINT } from '../data/glossary';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { AskAi } from './AskAi';
 import { CATEGORY_LABEL, STATUS_CLASS, isUnsequenced } from './flightStyle';
@@ -71,7 +72,7 @@ function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
     <section className="math-box math-box--future" aria-label="Predicția Viitorului 4D">
       <button className="math-box__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="math-box__title">Predicția Viitorului 4D (T+0 → T+45m)</span>
-        <span className="math-box__badge">DA {feetLabel(fp.densityAltitudeFeet)}</span>
+        <span className="math-box__badge" title={HINT.DENSITY_ALT}>DA {feetLabel(fp.densityAltitudeFeet)}</span>
       </button>
       {open && (
         <div className="math-box__body">
@@ -89,7 +90,7 @@ function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
               </span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">Fereastră VFR</span>
+              <span className="math-metric__lbl" title={HINT.VFR_WINDOW}>Fereastră VFR</span>
               <span className="math-metric__val">{fp.optimalVfrLandingWindow.split(' ')[0]}</span>
             </div>
           </div>
@@ -156,9 +157,9 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
         </span>
         <span className="strip__time">{flight.slot ? clock(flight.slot.calculatedTimeSeconds) : clock(ac.etaSeconds)}</span>
         <span className="strip__type">
-          <span className={`rules rules--${rules}`}>{ac.flightRules}</span> {ac.modelName}
+          <span className={`rules rules--${rules}`} title={HINT[ac.flightRules]}>{ac.flightRules}</span> {ac.modelName}
         </span>
-        <span className="strip__when">{tag ? <span className="strip__tag">{tag}</span> : flight.slot ? 'slot' : 'ETA'}</span>
+        <span className="strip__when" title={flight.slot ? HINT.SLOT : HINT.ETA}>{tag ? <span className="strip__tag">{tag}</span> : flight.slot ? 'slot' : 'ETA'}</span>
       </button>
       {expanded && <StripDetails flight={flight} id={bodyId} />}
     </article>
@@ -187,31 +188,31 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
         </dd>
         <dt>Decolare</dt>
         <dd className="num">{clock(flight.takeoffSeconds)}</dd>
-        <dt>Categorie</dt>
+        <dt title={HINT.CATEGORY}>Categorie</dt>
         <dd>{CATEGORY_LABEL[ac.category]}</dd>
-        <dt>ETA</dt>
+        <dt title={HINT.ETA}>ETA</dt>
         <dd className="num">{clock(ac.etaSeconds)}</dd>
-        <dt>Fereastră</dt>
+        <dt title={HINT.WINDOW}>Fereastră</dt>
         <dd className="num">
           {clock(ac.earliestSeconds)}–{clock(ac.latestSeconds)}
         </dd>
         {flight.slot && (
           <>
-            <dt>Slot</dt>
+            <dt title={HINT.SLOT}>Slot</dt>
             <dd className="num">
               {clock(flight.slot.calculatedTimeSeconds)} <span className="muted">întârziere {minutesLabel(flight.slot.delaySeconds)}</span>
             </dd>
           </>
         )}
-        <dt>Vânt lateral</dt>
+        <dt title={HINT.CROSSWIND}>Vânt lateral</dt>
         <dd className={overLimit ? 'txt-warn' : ''}>{adv ? `${speed.label(adv.currentCrosswindKnots)} din maximum ${speed.label(adv.maxCrosswindLimitKnots)}` : '—'}</dd>
-        <dt>Combustibil</dt>
+        <dt title={HINT.FUEL}>Combustibil</dt>
         <dd>{ac.remainingFuelMinutes ?? '—'} min</dd>
         <dt>Traseu</dt>
         <dd>{flight.routeLabel}</dd>
         {flight.traversedFirs.length > 0 && (
           <>
-            <dt>Sectoare FIR</dt>
+            <dt title={HINT.FIR}>Sectoare FIR</dt>
             <dd className="fir-chips">
               {flight.traversedFirs.map((firId) => (
                 <span key={firId} className={`fir-chip ${firId === 'LRBB' ? 'fir-chip--lrbb' : ''}`}>
@@ -307,15 +308,15 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           </div>
           <div className="math-metrics">
             <div className="math-metric">
-              <span className="math-metric__lbl">Top of Descent</span>
+              <span className="math-metric__lbl" title={HINT.TOD}>Top of Descent</span>
               <span className="math-metric__val">{ttl.topOfDescentDistanceNm} NM</span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">Pantă {ttl.optimalGlidepathDegrees}° ROD</span>
+              <span className="math-metric__lbl" title={HINT.ROD}>Pantă {ttl.optimalGlidepathDegrees}° ROD</span>
               <span className="math-metric__val">{verticalRateLabel(-feetToMeters(ttl.requiredRateOfDescentFpm) / 60)}</span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">Unghi derivă WCA</span>
+              <span className="math-metric__lbl" title={HINT.WCA}>Unghi derivă WCA</span>
               <span className="math-metric__val">
                 {ttl.windCorrectionAngleCrabDegrees >= 0 ? `+${ttl.windCorrectionAngleCrabDegrees}` : ttl.windCorrectionAngleCrabDegrees}°
               </span>
@@ -323,10 +324,10 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           </div>
           <div className="ldr-bar">
             <div className="ldr-bar__labels">
-              <span>
+              <span title={HINT.LDR}>
                 Distanță aterizare (LDR): <strong>{ttl.landingDistanceRequiredMeters} m</strong> / {ttl.landingDistanceAvailableMeters} m
               </span>
-              <span className="num">ROT {ttl.predictedRunwayOccupancySeconds}s</span>
+              <span className="num" title={HINT.ROT}>ROT {ttl.predictedRunwayOccupancySeconds}s</span>
             </div>
             <div className="ldr-bar__track">
               <div className="ldr-bar__fill" style={{ width: `${Math.min(100, Math.round(ttl.runwayUsedPercent))}%` }} />
@@ -357,22 +358,22 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
         >
           <div className="math-card__head">
             <strong>Calcul VFR: Orbită vs. Redirecționare</strong>
-            <span className="math-badge">PNR {vfrRedir.pointOfNoReturnMinutes} min</span>
+            <span className="math-badge" title={HINT.PNR}>PNR {vfrRedir.pointOfNoReturnMinutes} min</span>
           </div>
           <p className="small">{vfrRedir.mathematicalJustification}</p>
           <div className="math-metrics">
             <div className="math-metric">
-              <span className="math-metric__lbl">Pistă optimă</span>
+              <span className="math-metric__lbl" title={HINT.BEST_RUNWAY}>Pistă optimă</span>
               <span className="math-metric__val">
                 {vfrRedir.bestAlternateCode === 'LRBV' ? 'LRCW' : vfrRedir.bestAlternateCode} ({vfrRedir.bestAlternateRunway.split(' ')[0]})
               </span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">Cap de zbor</span>
+              <span className="math-metric__lbl" title={HINT.HEADING}>Cap de zbor</span>
               <span className="math-metric__val">{vfrRedir.redirectionHeadingToFlyDegrees}°</span>
             </div>
             <div className="math-metric">
-              <span className="math-metric__lbl">ETE / Rezervă</span>
+              <span className="math-metric__lbl" title={HINT.ETE}>ETE / Rezervă</span>
               <span className="math-metric__val">
                 {vfrRedir.redirectionEtaMinutes}m / {vfrRedir.fuelRemainingAtAlternateMinutes}m
               </span>

@@ -128,6 +128,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .planned { stroke: var(--select); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-opacity: .85; fill: none; }
 .planned--selected { stroke: var(--select); stroke-width: 2.1; stroke-dasharray: 6 4; stroke-opacity: .95; }
 .live-vector { stroke-width: 1.6; stroke-opacity: .6; fill: none; }
+/* Pe Live direcțiile viitoare sunt estimări: punctate, ca să nu pară trasee sigure. */
+.predicted { stroke-dasharray: 0.1 6; stroke-linecap: round; stroke-width: 2.4; stroke-opacity: .8; }
 
 .origin-apt { stroke: var(--ifr); fill: var(--scope); stroke-width: 2; }
 .hub-apt { stroke: var(--cleared); fill: var(--cleared); stroke-width: 2; }
@@ -388,7 +390,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .clock__zone { color: var(--muted); font-size: 13px; }
 .strip--live { border-left-color: var(--faint); }
 .metar { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-.metar__raw { font: 13px/1.4 var(--mono); background: var(--raised); padding: 6px 8px; border-radius: 3px; overflow-wrap: anywhere; }
 .fltcat { font: 600 12px/1 var(--mono); padding: 2px 6px; border-radius: 2px; color: var(--scope); background: var(--muted); }
 .fltcat--vfr { background: var(--cleared); }
 .fltcat--mvfr { background: #7fb3ff; }
@@ -416,3 +417,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .ai__chip:hover:not(:disabled) { color: var(--text); border-color: var(--text); }
 .ai__answer { display: grid; gap: 6px; margin-top: 8px; }
 .ai__sentences { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+/* ---------- explicații la hover (data/glossary.ts) ---------- */
+.atis > [title], .clock[title], .pill[title], .rules[title], .strip__when[title], .math-badge[title], .math-box__badge[title],
+.kv dt[title], .math-metric__lbl[title], .ldr-bar__labels [title], .tl-eta, .tl-slot, .tl-window { cursor: help; }
+.kv dt[title], .math-metric__lbl[title] { text-decoration: underline dotted rgba(154, 168, 163, .55); text-underline-offset: 3px; }

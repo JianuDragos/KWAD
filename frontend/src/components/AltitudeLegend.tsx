@@ -6,7 +6,7 @@ export function AltitudeLegend() {
   const [open, setOpen] = useState(false);
   return (
     <div className="alt-legend">
-      <button className="alt-legend__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className="alt-legend__toggle" onClick={() => setOpen(!open)} aria-expanded={open} title="Culoarea altitudinii din eticheta fiecărui avion (în metri, față de nivelul mării)">
         <span aria-hidden="true">{open ? '▾' : '▴'}</span> Altitudine
       </button>
       {open && (

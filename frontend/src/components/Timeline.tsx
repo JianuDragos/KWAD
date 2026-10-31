@@ -4,6 +4,7 @@ import type { FlightView } from '../sim/traffic';
 import { clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, isUnsequenced } from './flightStyle';
+import { HINT } from '../data/glossary';
 
 const sequenceTime = (f: FlightView) => f.slot?.calculatedTimeSeconds ?? f.aircraft.etaSeconds;
 
@@ -90,7 +91,7 @@ export function Timeline() {
           return (
             <div key={f.id} className={`tl-row ${f.id === selectedId ? 'is-selected' : ''}`} onClick={() => select(f.id)}>
               <button className="tl-label tl-label--btn" aria-pressed={f.id === selectedId} title={`${f.origin.icao} (${f.origin.city}) → LRCV`}>
-                <span className={`rules rules--${f.aircraft.flightRules.toLowerCase()}`}>{f.aircraft.flightRules}</span> {f.callsign}{' '}
+                <span className={`rules rules--${f.aircraft.flightRules.toLowerCase()}`} title={HINT[f.aircraft.flightRules]}>{f.aircraft.flightRules}</span> {f.callsign}{' '}
                 <span className="muted">{f.origin.icao}</span>
               </button>
               <div className="tl-track">
@@ -111,10 +112,10 @@ export function Timeline() {
                 <span
                   className="tl-window"
                   style={{ left: x(f.aircraft.earliestSeconds), width: `calc(${x(f.aircraft.latestSeconds)} - ${x(f.aircraft.earliestSeconds)})` }}
-                  title="Fereastra de sosire"
+                  title={HINT.WINDOW}
                 />
-                <span className="tl-eta" style={{ left: x(f.aircraft.etaSeconds) }} title="ETA" />
-                {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title="Slot planificat" />}
+                <span className="tl-eta" style={{ left: x(f.aircraft.etaSeconds) }} title={HINT.ETA} />
+                {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title={HINT.SLOT} />}
                 {!f.slot && (
                   <span className={`tl-flag ${isUnsequenced(f) ? 'tl-flag--warn' : STATUS_CLASS[f.status]}`} style={{ left: x(f.aircraft.etaSeconds) }}>
                     {isUnsequenced(f) ? 'fără slot' : f.status === 'DivertRecommended' ? 'deviere' : 'așteptare'}

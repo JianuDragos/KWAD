@@ -42,7 +42,7 @@ export function metar(): Metar {
     windGustKnots: null,
     isWindVariable: false,
     visibilityMeters: 7000,
-    skyConditionDescription: 'Broken la 300 ft, overcast la 700 ft',
+    skyConditionDescription: 'Cer mai mult acoperit (plafon) la 90 m; Cer acoperit complet (plafon) la 210 m',
     temperatureCelsius: 11,
     dewPointCelsius: 11,
     qnhHpa: 1020,

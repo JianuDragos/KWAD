@@ -21,6 +21,9 @@ interface LiveState {
   updatedAtMs: number | null;
   selectedIcao: string | null;
   select: (icao: string | null) => void;
+  /** Direcțiile estimate (vector 5 min, linia spre LRCV) pentru toate avioanele; oprit implicit, sunt doar estimări. */
+  showRoutes: boolean;
+  setShowRoutes: (show: boolean) => void;
   /** Pornește interogarea; întoarce funcția de oprire. Se oprește singură cât tab-ul e ascuns. */
   start: () => () => void;
 }
@@ -29,7 +32,12 @@ const message = (e: unknown) => (e instanceof ApiError ? e.message : 'Serviciul 
 
 export const useLive = create<LiveState>()((set, get) => {
   let lastMetarRequestAtMs: number | null = null;
+  let lastPositionsRequestAtMs: number | null = null;
   async function loadPositions() {
+    // Revenirea în tab cere imediat, dar nu mai des decât intervalul: schimbările dese de tab ar consuma cota OpenSky.
+    const now = Date.now();
+    if (lastPositionsRequestAtMs !== null && now - lastPositionsRequestAtMs < POSITIONS_EVERY_MS - 1000) return;
+    lastPositionsRequestAtMs = now;
     try {
       const positions = await fetchLivePositions();
       // Două cereri pot fi în zbor deodată (de ex. la revenirea în tab); un răspuns mai vechi
@@ -69,6 +77,8 @@ export const useLive = create<LiveState>()((set, get) => {
     updatedAtMs: null,
     selectedIcao: null,
     select: (selectedIcao) => set({ selectedIcao }),
+    showRoutes: false,
+    setShowRoutes: (showRoutes) => set({ showRoutes }),
     start: () => {
       let timers: number[] = [];
       const run = () => {
