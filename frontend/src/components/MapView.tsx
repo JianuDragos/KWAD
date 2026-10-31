@@ -15,6 +15,7 @@ import {
   vfrFinalJoin,
   type RunwayId,
 } from '../data/geo';
+import { destination } from '../sim/geomath';
 import { positionAt, trackBearingDeg, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { M_PER_NM, altitudeLabel, clockLabel } from '../sim/units';
@@ -148,6 +149,16 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
       {[5, 10, 15].map((nm) => (
         <Circle key={nm} center={[ARP.lat, ARP.lon]} radius={ring(nm)} pathOptions={{ className: 'range-ring', fill: false }} interactive={false} />
       ))}
+      {[5, 10, 15, CTR_RADIUS_NM].map((nm) => {
+        const p = destination(ARP, 135, nm); // etichete pe radialul 135°, ca la scope-urile clasice
+        return (
+          <CircleMarker key={`lbl-${nm}`} center={[p.lat, p.lon]} radius={0} pathOptions={{ stroke: false }} interactive={false}>
+            <Tooltip permanent direction="center" className="lbl lbl--ring">
+              {nm === CTR_RADIUS_NM ? `CTR ${nm} NM` : `${nm} NM`}
+            </Tooltip>
+          </CircleMarker>
+        );
+      })}
       {routes.map((r) => (
         <Polyline key={r.iaf} positions={r.points} pathOptions={{ className: 'route' }} interactive={false} />
       ))}
@@ -258,7 +269,7 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
       >
         {/* Avioanele aterizate stau grămadă la capătul pistei: eticheta lor apare doar la hover sau selecție. */}
         <Tooltip
-          key={done && !selected ? 'hover' : 'permanent'}
+          key={`${done && !selected ? 'hover' : 'permanent'}-${selected}`} // Leaflet nu actualizează className după creare
           permanent={!done || selected}
           direction="right"
           offset={[12, 0]}
@@ -266,7 +277,7 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
         >
           <span className="db-callsign">{flight.callsign}</span>
           <br />
-          {altitudeLabel(pos.altitudeMeters)} · {flight.aircraft.flightRules}
+          {altitudeLabel(pos.altitudeMeters)} {flight.aircraft.flightRules}
           <br />
           <span className={isUnsequenced(flight) ? 'db-warn' : ''}>{tag}</span>
         </Tooltip>

@@ -49,20 +49,23 @@ export default function App() {
       <TopBar />
       <main className="map-area">
         <MapView />
-        <div className="map-banner">SIMULARE · nu pentru uz operațional · poziții sintetice pe trasee AIP (AIRAC 2026-10-01)</div>
-        <div className="map-controls" role="group" aria-label="Vedere hartă">
-          <button className={`btn btn--seg ${view === 'wide' ? 'is-on' : ''}`} onClick={() => setView('wide')} title="Tasta 1">
-            Larg
-          </button>
-          <button className={`btn btn--seg ${view === 'close' ? 'is-on' : ''}`} onClick={() => setView('close')} title="Tasta 2">
-            Apropiat
-          </button>
+        <p className="map-banner">Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.</p>
+        <div className="map-controls">
+          <div className="seg" role="group" aria-label="Vedere hartă">
+            <button className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`} onClick={() => setView('wide')} aria-pressed={view === 'wide'} aria-keyshortcuts="1">
+              Larg
+            </button>
+            <button className={`seg__btn ${view === 'close' ? 'is-on' : ''}`} onClick={() => setView('close')} aria-pressed={view === 'close'} aria-keyshortcuts="2">
+              Apropiat
+            </button>
+          </div>
           <button
-            className={`btn btn--seg ${basemap === 'osm' ? 'is-on' : ''}`}
+            className={`seg__btn seg__btn--solo ${basemap === 'osm' ? 'is-on' : ''}`}
             onClick={() => setBasemap(basemap === 'osm' ? 'none' : 'osm')}
+            aria-pressed={basemap === 'osm'}
             title="Fundal OpenStreetMap (necesită internet)"
           >
-            Hartă OSM
+            Hartă geografică
           </button>
         </div>
       </main>

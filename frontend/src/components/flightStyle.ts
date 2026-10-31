@@ -1,12 +1,5 @@
 import type { FlightView } from '../sim/traffic';
 
-export const STATUS_LABEL: Record<FlightView['status'], string> = {
-  ClearedForApproach: 'Aprobat apropiere',
-  HoldInOrbitRecommended: 'Așteptare (orbită)',
-  DivertRecommended: 'Deviere recomandată',
-  Necunoscut: 'Fără recomandare',
-};
-
 export const STATUS_SHORT: Record<FlightView['status'], string> = {
   ClearedForApproach: 'APP',
   HoldInOrbitRecommended: 'HOLD',

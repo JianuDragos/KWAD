@@ -8,10 +8,10 @@ export interface WeatherPreset {
 
 // Preseturi de simulare (inventate), nu observații reale.
 export const WEATHER_PRESETS: WeatherPreset[] = [
-  { id: 'calm', label: 'Calm · 090° 6 kt', weather: { windDirectionDegrees: 90, windSpeedKnots: 6, windGustKnots: 8, visibilityMeters: 9999 } },
-  { id: 'west', label: 'Vest · 260° 15 kt', weather: { windDirectionDegrees: 260, windSpeedKnots: 15, windGustKnots: 18, visibilityMeters: 9999 } },
-  { id: 'cross-moderate', label: 'Lateral · 200° 12 kt', weather: { windDirectionDegrees: 200, windSpeedKnots: 12, windGustKnots: 14, visibilityMeters: 9999 } },
-  { id: 'cross-critical', label: 'Lateral critic · 180° 22G26 kt', weather: { windDirectionDegrees: 180, windSpeedKnots: 22, windGustKnots: 26, visibilityMeters: 9999 } },
+  { id: 'calm', label: 'Calm, 090° 6 kt', weather: { windDirectionDegrees: 90, windSpeedKnots: 6, windGustKnots: 8, visibilityMeters: 9999 } },
+  { id: 'west', label: 'Vânt de vest, 260° 15 kt', weather: { windDirectionDegrees: 260, windSpeedKnots: 15, windGustKnots: 18, visibilityMeters: 9999 } },
+  { id: 'cross-moderate', label: 'Vânt lateral, 200° 12 kt', weather: { windDirectionDegrees: 200, windSpeedKnots: 12, windGustKnots: 14, visibilityMeters: 9999 } },
+  { id: 'cross-critical', label: 'Vânt lateral puternic, 180° 22 kt cu rafale 26', weather: { windDirectionDegrees: 180, windSpeedKnots: 22, windGustKnots: 26, visibilityMeters: 9999 } },
 ];
 
 export const DEFAULT_PRESET_ID = 'calm';
