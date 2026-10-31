@@ -44,8 +44,12 @@ public record AircraftAdvisory(
     AircraftCategory Category,
     FlightRules FlightRules,
     bool HasInstrumentAvionics,
+    string AssignedRunway,                   // Pista de aterizare alocată (ex: "09" sau "27")
     double CurrentCrosswindKnots,
+    double CurrentHeadwindKnots,
     double MaxCrosswindLimitKnots,
+    bool IsOppositeDirectionLanding,         // true dacă execută aterizare pe sensul invers (reciprocal runway) pentru a avea vânt de față
+    string? OppositeDirectionAdvice,         // Detalii manevră sens invers (deconflictualizare și transformare vânt de spate în vânt de față)
     AdvisoryStatus AdvisoryStatus,
     string AdvisoryReason,
     OrbitPatternAdvice? OrbitAdvice = null,

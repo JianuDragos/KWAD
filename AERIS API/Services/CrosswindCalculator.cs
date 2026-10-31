@@ -32,4 +32,38 @@ public class CrosswindCalculator
 
         return ("09", 92.0, cross09, head09);
     }
+
+    /// <summary>
+    /// Returnează identificatorul pistei opuse (sens invers / reciprocal).
+    /// </summary>
+    public static string GetReciprocalRunway(string runwayId)
+    {
+        return runwayId switch
+        {
+            "09" => "27",
+            "27" => "09",
+            "13" => "31",
+            "31" => "13",
+            "02" => "20",
+            "20" => "02",
+            _ => runwayId
+        };
+    }
+
+    /// <summary>
+    /// Returnează capul magnetic pentru pistele din zona Craiova și aerodromurile locale.
+    /// </summary>
+    public static double GetRunwayHeading(string runwayId)
+    {
+        return runwayId switch
+        {
+            "09" => 92.0,
+            "27" => 272.0,
+            "13" => 130.0,
+            "31" => 310.0,
+            "02" => 20.0,
+            "20" => 200.0,
+            _ => 92.0
+        };
+    }
 }

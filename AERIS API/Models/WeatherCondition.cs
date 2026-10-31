@@ -4,7 +4,8 @@ public record WeatherCondition(
     double WindDirectionDegrees = 180, // Direcția vântului (ex: 180° = vânt din sud, vânt lateral pe pista 09/27 din Craiova)
     double WindSpeedKnots = 20,        // Viteza de bază a vântului (noduri)
     double WindGustKnots = 26,         // Rafale (noduri)
-    double VisibilityMeters = 9999     // Vizibilitate
+    double VisibilityMeters = 9999,    // Vizibilitate
+    string? ForceRunwayInUse = null    // Opțional: dacă se forțează o anumită pistă (ex: "09" pentru ILS comercial)
 );
 
 public record RunwayInfo(
