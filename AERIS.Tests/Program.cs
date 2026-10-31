@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace AERIS.Tests;
@@ -29,7 +30,11 @@ public class Program
             var sw = Stopwatch.StartNew();
             try
             {
-                method.Invoke(testClass, null);
+                var invocationResult = method.Invoke(testClass, null);
+                if (invocationResult is Task task)
+                {
+                    task.GetAwaiter().GetResult();
+                }
                 sw.Stop();
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write(" [PASS] ");

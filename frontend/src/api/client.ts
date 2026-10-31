@@ -5,6 +5,7 @@ import type {
   EvaluationRequest,
   LiveTrafficResponse,
   PlanningResponse,
+  TrafficPresetId,
   WeatherCondition,
 } from '../contracts/backend';
 import type { z } from 'zod';
@@ -80,9 +81,10 @@ function mockDelay<T>(produce: () => T, signal?: AbortSignal, ms = 350): Promise
 /** Lista de aeronave a scenariului. Mereu forceSimulated=true: datele live nu sunt repetabile. */
 // În mock trecem răspunsurile prin aceleași scheme, ca mock-ul și schemele să nu poată diverge.
 
-export function fetchScenarioTraffic(signal?: AbortSignal): Promise<LiveTrafficResponse> {
-  const path = '/api/craiova/live-traffic?forceSimulated=true';
-  if (API_MOCK) return mockDelay(() => parseResponse(path, liveTrafficSchema, mock.liveTraffic()), signal);
+export function fetchScenarioTraffic(signal?: AbortSignal, preset: TrafficPresetId = 'default'): Promise<LiveTrafficResponse> {
+  const qs = preset === 'eurasia' ? 'forceSimulated=true&preset=eurasia' : 'forceSimulated=true';
+  const path = `/api/craiova/live-traffic?${qs}`;
+  if (API_MOCK) return mockDelay(() => parseResponse(path, liveTrafficSchema, mock.liveTraffic(preset)), signal);
   return request(path, liveTrafficSchema, { signal });
 }
 
@@ -111,7 +113,7 @@ export function evaluatePlanning(body: EvaluationRequest, signal?: AbortSignal):
 
 // ---------- Date reale (pagina Live) ----------
 
-/** Pozițiile reale din OpenSky, prin backend (fără cache: fiecare apel consumă din cota OpenSky). */
+/** Pozițiile reale din OpenSky, prin backend (cache partajat 15s + protecție Retry-After și fallback ADSB.lol). */
 export function fetchLivePositions(signal?: AbortSignal): Promise<LivePositions> {
   const path = '/api/craiova/live-positions';
   if (API_MOCK) return mockDelay(() => parseResponse(path, livePositionsSchema, mockLive.livePositions()), signal);

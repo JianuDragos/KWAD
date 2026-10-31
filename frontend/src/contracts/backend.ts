@@ -93,6 +93,7 @@ export interface CraiovaAircraft {
   frozenTimeSeconds?: number | null;
   speedKnots?: number;            // implicit 100
   remainingFuelMinutes?: number;  // implicit 90
+  departureIcao?: string | null;  // ex: "EGGW", "LIME", "ZBAA", "LROP", "LRBS"
 }
 
 export interface AlternateAerodrome {
@@ -179,6 +180,8 @@ export interface TakeoffToLandingAnalysis {
   runwayUsedPercent: number;
   predictedRunwayOccupancySeconds: number;
   phases: FlightMissionPhase[];
+  departureLatitude?: number | null;
+  departureLongitude?: number | null;
 }
 
 export interface PredictionStepSnapshot {
@@ -383,6 +386,8 @@ export interface LiveTrafficResponse {
   count: number;
   traffic: CraiovaAircraft[];
 }
+
+export type TrafficPresetId = 'default' | 'eurasia';
 
 /** 400 automat de la [ApiController] când body-ul nu se poate deserializa (format ProblemDetails). */
 export interface ValidationProblem {

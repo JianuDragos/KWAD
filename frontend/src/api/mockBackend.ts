@@ -16,10 +16,14 @@ import type {
   ScenarioRules,
   ScheduleSlot,
   TakeoffToLandingAnalysis,
+  TrafficPresetId,
   TwoStepsAheadPrediction,
   VfrRedirectionAnalysis,
   WeatherCondition,
 } from '../contracts/backend';
+import { resolveOriginAirport } from '../data/airports';
+import { ARP } from '../data/geo';
+import { distanceNm } from '../sim/geomath';
 import { clockLabel } from '../sim/units';
 
 /** Math.Round din .NET rotunjește la par la jumătate (MidpointRounding.ToEven). */
@@ -168,23 +172,37 @@ export class MockBadRequest extends Error {}
 
 function light(base: number): CraiovaAircraft[] {
   return [
-    { id: 'YR-SAV', callsign: 'YR-5123', modelName: 'ICP Savannah S (Ultralight STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 11, etaSeconds: base, earliestSeconds: Math.max(0, base - 60), latestSeconds: base + 300, frozenTimeSeconds: null, speedKnots: 65, remainingFuelMinutes: 75 },
-    { id: 'YR-WILG', callsign: 'YR-WLG', modelName: 'PZL-104 Wilga 35A (STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 13, etaSeconds: base + 180, earliestSeconds: base + 120, latestSeconds: base + 480, frozenTimeSeconds: null, speedKnots: 75, remainingFuelMinutes: 80 },
-    { id: 'YR-C172', callsign: 'YR-CRA', modelName: 'Cessna 172N Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: base + 360, earliestSeconds: base + 300, latestSeconds: base + 660, frozenTimeSeconds: null, speedKnots: 95, remainingFuelMinutes: 90 },
+    { id: 'YR-SAV', callsign: 'YR-5123', modelName: 'ICP Savannah S (Ultralight STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 11, etaSeconds: base, earliestSeconds: Math.max(0, base - 60), latestSeconds: base + 300, frozenTimeSeconds: null, speedKnots: 65, remainingFuelMinutes: 75, departureIcao: 'PODARI' },
+    { id: 'YR-WILG', callsign: 'YR-WLG', modelName: 'PZL-104 Wilga 35A (STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 13, etaSeconds: base + 180, earliestSeconds: base + 120, latestSeconds: base + 480, frozenTimeSeconds: null, speedKnots: 75, remainingFuelMinutes: 80, departureIcao: 'LRCW' },
+    { id: 'YR-C172', callsign: 'YR-CRA', modelName: 'Cessna 172N Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: base + 360, earliestSeconds: base + 300, latestSeconds: base + 660, frozenTimeSeconds: null, speedKnots: 95, remainingFuelMinutes: 90, departureIcao: 'LRBS' },
   ];
 }
 
 export function realisticCraiovaTraffic(): CraiovaAircraft[] {
   return [
-    { id: 'W4-3751', callsign: 'WZZ3751', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 0, earliestSeconds: 0, latestSeconds: 240, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 110 },
-    { id: 'W4-3762', callsign: 'WZZ3762', modelName: 'Airbus A321neo', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 35, etaSeconds: 360, earliestSeconds: 300, latestSeconds: 720, frozenTimeSeconds: null, speedKnots: 150, remainingFuelMinutes: 125 },
+    { id: 'W4-3751', callsign: 'WZZ3751', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 0, earliestSeconds: 0, latestSeconds: 240, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 110, departureIcao: 'EGGW' },
+    { id: 'W4-3762', callsign: 'WZZ3762', modelName: 'Airbus A321neo', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 35, etaSeconds: 360, earliestSeconds: 300, latestSeconds: 720, frozenTimeSeconds: null, speedKnots: 150, remainingFuelMinutes: 125, departureIcao: 'LIME' },
     ...light(120),
   ];
 }
 
-export function liveTraffic(): LiveTrafficResponse {
-  const traffic = realisticCraiovaTraffic();
-  return { source: 'Trafic simulat realist (OpenSky bypass / mod demonstrativ)', count: traffic.length, traffic };
+export function eurasiaLongHaulTraffic(): CraiovaAircraft[] {
+  return [
+    { id: 'W4-3751', callsign: 'WZZ3751', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 0, earliestSeconds: 0, latestSeconds: 240, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 110, departureIcao: 'EGGW' },
+    { id: 'CA-841', callsign: 'CCA841', modelName: 'Airbus A330-343 (Long-Haul)', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 36, etaSeconds: 210, earliestSeconds: 150, latestSeconds: 600, frozenTimeSeconds: null, speedKnots: 148, remainingFuelMinutes: 135, departureIcao: 'ZBAA' },
+    { id: 'W4-3762', callsign: 'WZZ3762', modelName: 'Airbus A321neo', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 35, etaSeconds: 420, earliestSeconds: 360, latestSeconds: 780, frozenTimeSeconds: null, speedKnots: 150, remainingFuelMinutes: 125, departureIcao: 'LIME' },
+    { id: 'RO-204', callsign: 'ROT204', modelName: 'ATR 72-600', category: 'RegionalTurboprop', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 28, etaSeconds: 600, earliestSeconds: 540, latestSeconds: 900, frozenTimeSeconds: null, speedKnots: 125, remainingFuelMinutes: 95, departureIcao: 'LROP' },
+    ...light(180),
+  ];
+}
+
+export function liveTraffic(preset: TrafficPresetId = 'default'): LiveTrafficResponse {
+  const traffic = preset === 'eurasia' ? eurasiaLongHaulTraffic() : realisticCraiovaTraffic();
+  const source =
+    preset === 'eurasia'
+      ? 'Scenariu Eurasia Long-Haul (Beijing ZBAA / Londra EGGW / Milano LIME / Otopeni LROP → LRCV)'
+      : 'Trafic simulat realist (OpenSky bypass / mod demonstrativ)';
+  return { source, count: traffic.length, traffic };
 }
 
 // ---------- CraiovaAdvisoryEngine ----------
@@ -249,15 +267,18 @@ function buildMockMathForAircraft(
   twoStepsAhead: TwoStepsAheadPrediction;
   vfrRedirection: VfrRedirectionAnalysis | null;
 } {
+  const origin = resolveOriginAirport(ac, null);
+  const routeNm = Math.max(8, roundEven(distanceNm(origin, ARP), 0));
   const isJet = ac.category === 'CommercialJet' || ac.category === 'RegionalTurboprop';
-  const cruiseAlt = isJet ? 32000 : 2500;
-  const cruiseTas = isJet ? 445 : (ac.speedKnots ?? 90);
-  const vApp = isJet ? 140 : Math.max(55, (ac.speedKnots ?? 80) * 0.82);
+  const isTurboprop = ac.category === 'RegionalTurboprop';
+  const cruiseAlt = isTurboprop ? 18000 : isJet ? (routeNm > 2000 ? 37000 : 34000) : 2500;
+  const cruiseTas = isTurboprop ? 275 : isJet ? (routeNm > 2000 ? 470 : 445) : (ac.speedKnots ?? 90);
+  const vApp = isTurboprop ? 120 : isJet ? 140 : Math.max(55, (ac.speedKnots ?? 80) * 0.82);
   const vTouch = roundEven(vApp * 0.92, 1);
   const wt = windTriangle(rwyHeading, vApp, weather.windDirectionDegrees, Math.max(weather.windSpeedKnots, weather.windGustKnots));
   const rodFpm = roundEven(wt.gsKt * 101.2686 * Math.tan((3 * Math.PI) / 180), 0);
-  const todNm = roundEven(((cruiseAlt - 626) / 1000) * 3.18, 1);
-  const baseLdr = isJet ? 1480 : ac.category === 'UltralightAndGlider' ? 185 : 390;
+  const todNm = roundEven(Math.min(routeNm * 0.45, ((cruiseAlt - 626) / 1000) * 3.18), 1);
+  const baseLdr = isTurboprop ? 1090 : isJet ? 1480 : ac.category === 'UltralightAndGlider' ? 185 : 390;
   const ldrM = roundEven(baseLdr * Math.pow(Math.max(35, vTouch - hw * 0.5) / vTouch, 2) * 1.15, 0);
   const rotSec = isJet ? 52 : 34;
 
@@ -276,10 +297,16 @@ function buildMockMathForAircraft(
     ? `THR RWY ${rwyId} (Touchdown)`
     : status === 'HoldInOrbitRecommended' ? (isJet ? 'Holding VOR CRA (4000 ft)' : 'Ieșire Orbită / Reevaluare Meteo') : `${bestAlt?.name ?? 'Podari'} (Pistă ${bestAlt?.bestRunway ?? '20'})`;
 
+  const cruiseDistNm = roundEven(Math.max(2, routeNm - todNm - 15), 1);
+  const cruiseGs = Math.max(45, roundEven(cruiseTas - hw * 0.8, 0));
+  const cruiseMin = roundEven((cruiseDistNm / cruiseGs) * 60, 1);
+
   const takeoffToLanding: TakeoffToLandingAnalysis = {
-    departureAerodromeIcao: isJet ? 'LIMC' : 'LRCS',
-    departureAerodromeName: isJet ? 'Milano Bergamo' : 'Caransebeș / Regiune',
-    totalRouteDistanceNm: isJet ? 565 : 42,
+    departureAerodromeIcao: origin.icao,
+    departureAerodromeName: `${origin.name} (${origin.city})`,
+    departureLatitude: origin.lat,
+    departureLongitude: origin.lon,
+    totalRouteDistanceNm: routeNm,
     cruiseAltitudeFeet: cruiseAlt,
     cruiseTasKnots: cruiseTas,
     windDirectionAtAltitudeDegrees: (weather.windDirectionDegrees + 12) % 360,
@@ -301,9 +328,9 @@ function buildMockMathForAircraft(
     runwayUsedPercent: roundEven((ldrM / 2500) * 100, 1),
     predictedRunwayOccupancySeconds: rotSec,
     phases: [
-      { phaseOrder: 1, phaseCode: 'TOF', phaseName: '1. Takeoff & Initial Climb', startAltitudeFeet: 400, endAltitudeFeet: 1500, trueAirspeedKnots: roundEven(vApp * 1.1, 0), groundSpeedKnots: roundEven(vApp * 1.1, 0), distanceNm: 4.5, durationMinutes: 2.5, verticalRateFpm: isJet ? 2400 : 650, fuelBurnedMinutesEquivalent: 3.2, keyMathNote: 'Accelerare inițială' },
-      { phaseOrder: 2, phaseCode: 'CRZ', phaseName: '2. Enroute Cruise', startAltitudeFeet: cruiseAlt, endAltitudeFeet: cruiseAlt, trueAirspeedKnots: cruiseTas, groundSpeedKnots: roundEven(cruiseTas - hw * 0.8, 0), distanceNm: isJet ? 440 : 25, durationMinutes: isJet ? 58 : 16, verticalRateFpm: 0, fuelBurnedMinutesEquivalent: isJet ? 58 : 16, keyMathNote: `Croazieră stabilizată ${cruiseAlt} ft` },
-      { phaseOrder: 3, phaseCode: 'TOD', phaseName: '3. Top of Descent (TOD)', startAltitudeFeet: cruiseAlt, endAltitudeFeet: isJet ? 4000 : 1500, trueAirspeedKnots: roundEven(cruiseTas * 0.9, 0), groundSpeedKnots: roundEven(cruiseTas * 0.9 - hw, 0), distanceNm: todNm, durationMinutes: 14, verticalRateFpm: isJet ? -1800 : -500, fuelBurnedMinutesEquivalent: 8.5, keyMathNote: `Profil 3.0° inițiat la ${todNm} NM` },
+      { phaseOrder: 1, phaseCode: 'TOF', phaseName: '1. Takeoff & Initial Climb', startAltitudeFeet: origin.elevationFt, endAltitudeFeet: Math.max(1500, origin.elevationFt + 1000), trueAirspeedKnots: roundEven(vApp * 1.1, 0), groundSpeedKnots: roundEven(vApp * 1.1, 0), distanceNm: 4.5, durationMinutes: 2.5, verticalRateFpm: isJet ? 2400 : 650, fuelBurnedMinutesEquivalent: 3.2, keyMathNote: `Decolare ${origin.icao}` },
+      { phaseOrder: 2, phaseCode: 'CRZ', phaseName: '2. Enroute Cruise', startAltitudeFeet: cruiseAlt, endAltitudeFeet: cruiseAlt, trueAirspeedKnots: cruiseTas, groundSpeedKnots: cruiseGs, distanceNm: cruiseDistNm, durationMinutes: cruiseMin, verticalRateFpm: 0, fuelBurnedMinutesEquivalent: cruiseMin, keyMathNote: `Croazieră stabilizată ${cruiseAlt} ft` },
+      { phaseOrder: 3, phaseCode: 'TOD', phaseName: '3. Top of Descent (TOD)', startAltitudeFeet: cruiseAlt, endAltitudeFeet: isJet ? 4000 : 1500, trueAirspeedKnots: roundEven(cruiseTas * 0.9, 0), groundSpeedKnots: Math.max(45, roundEven(cruiseTas * 0.9 - hw, 0)), distanceNm: todNm, durationMinutes: roundEven((todNm / Math.max(60, cruiseTas * 0.78)) * 60, 1), verticalRateFpm: isJet ? -1800 : -500, fuelBurnedMinutesEquivalent: 8.5, keyMathNote: `Profil 3.0° inițiat la ${todNm} NM` },
       { phaseOrder: 4, phaseCode: 'IAF', phaseName: '4. TMA / Initial Approach (IAF/IF)', startAltitudeFeet: isJet ? 4000 : 1500, endAltitudeFeet: isJet ? 2300 : 1100, trueAirspeedKnots: isJet ? 210 : cruiseTas, groundSpeedKnots: isJet ? 202 : wt.gsKt, distanceNm: 5.6, durationMinutes: 2.2, verticalRateFpm: -rodFpm, fuelBurnedMinutesEquivalent: 2.0, keyMathNote: 'Configurare flaps' },
       { phaseOrder: 5, phaseCode: 'FAF', phaseName: '5. Final Approach (FAF 3.0°)', startAltitudeFeet: isJet ? 2300 : 1100, endAltitudeFeet: 626, trueAirspeedKnots: roundEven(vApp, 0), groundSpeedKnots: wt.gsKt, distanceNm: 4.9, durationMinutes: 2.1, verticalRateFpm: -rodFpm, fuelBurnedMinutesEquivalent: 1.9, keyMathNote: `Derivă vânt WCA ${wt.wcaDeg >= 0 ? '+' : ''}${wt.wcaDeg}° | ROD -${rodFpm} fpm` },
       { phaseOrder: 6, phaseCode: 'LDG', phaseName: '6. Touchdown & Rollout', startAltitudeFeet: 626, endAltitudeFeet: 626, trueAirspeedKnots: vTouch, groundSpeedKnots: roundEven(Math.max(35, wt.gsKt - 10), 0), distanceNm: roundEven(ldrM / 1852, 2), durationMinutes: roundEven(rotSec / 60, 2), verticalRateFpm: 0, fuelBurnedMinutesEquivalent: 0.5, keyMathNote: `LDR ${ldrM}m / 2500m | ROT ${rotSec}s` },

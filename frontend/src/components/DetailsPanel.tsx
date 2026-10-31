@@ -1,7 +1,7 @@
 // Raftul de benzi de zbor + motorul de predicție matematică 4D:
 // 1. Predicția Viitorului (T+0 .. T+45 min, forfecare vânt Hellmann-Ekman, altitudine densitate)
 // 2. Doi Pași Înaintea Avionului (T0 → Pasul +1 → Pasul +2)
-// 3. Analiză De-la-Decolare-la-Aterizare (6 faze, TOD, ROD 3.0°, WCA, LDR vs 2500m)
+// 3. Analiză De-la-Decolare-la-Aterizare (6 faze, TOD, ROD 3.0°, WCA, LDR vs 2500m, Sectoare FIR)
 // 4. Decizie VFR Orbită vs. Redirecționare (PNR + scor multi-criterial piste înierbate apropiate)
 import { useEffect, useRef, useState } from 'react';
 import type { FuturePredictionSummary } from '../contracts/backend';
@@ -42,7 +42,7 @@ export function DetailsPanel() {
       {futurePrediction && <FuturePredictionBox fp={futurePrediction} />}
 
       <div className="panel__head">
-        <h2 className="panel__title">Sosiri & Calcule Zbor</h2>
+        <h2 className="panel__title">Sosiri &amp; Calcule Zbor</h2>
         <span className="panel__count">
           {stats.clearedToLandCount} aprobate
           {stats.holdingInOrbitCount > 0 && <>, {stats.holdingInOrbitCount} în așteptare</>}
@@ -78,11 +78,15 @@ function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
           <div className="math-metrics">
             <div className="math-metric">
               <span className="math-metric__lbl">Vânt 2000 ft</span>
-              <span className="math-metric__val">{fp.windAt2000FtDegrees}° / {fp.windAt2000FtKnots} kt</span>
+              <span className="math-metric__val">
+                {fp.windAt2000FtDegrees}° / {fp.windAt2000FtKnots} kt
+              </span>
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Vânt 5000 ft</span>
-              <span className="math-metric__val">{fp.windAt5000FtDegrees}° / {fp.windAt5000FtKnots} kt</span>
+              <span className="math-metric__val">
+                {fp.windAt5000FtDegrees}° / {fp.windAt5000FtKnots} kt
+              </span>
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Fereastră VFR</span>
@@ -103,8 +107,12 @@ function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
                   title={`Salt ceas la ${h.formattedTime} (T+${h.horizonMinutes}m) — Trafic activ: ${h.activeAirborneCount}, Holding: ${h.holdingCount}`}
                 >
                   <span className="horizon-pill__t">T+{h.horizonMinutes}m</span>
-                  <span className="horizon-pill__xw">RWY {h.recommendedRunway} · {h.predictedCrosswindKnots} kt</span>
-                  <span className="horizon-pill__load">{h.activeAirborneCount} av. ({h.holdingCount} hold)</span>
+                  <span className="horizon-pill__xw">
+                    RWY {h.recommendedRunway} · {h.predictedCrosswindKnots} kt
+                  </span>
+                  <span className="horizon-pill__load">
+                    {h.activeAirborneCount} av. ({h.holdingCount} hold)
+                  </span>
                 </button>
               );
             })}
@@ -130,7 +138,6 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
   const tag = stripTag(flight);
   const bodyId = `strip-${flight.id}`;
 
-  // Selectat de pe hartă sau din timeline: aducem banda în vedere.
   useEffect(() => {
     if (expanded) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [expanded]);
@@ -144,7 +151,9 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
         aria-expanded={expanded}
         aria-controls={bodyId}
       >
-        <span className="strip__cs">{flight.callsign}</span>
+        <span className="strip__cs">
+          {flight.callsign} <span className="strip__orig">{flight.origin.icao}→LRCV</span>
+        </span>
         <span className="strip__time">{flight.slot ? clock(flight.slot.calculatedTimeSeconds) : clock(ac.etaSeconds)}</span>
         <span className="strip__type">
           <span className={`rules rules--${rules}`}>{ac.flightRules}</span> {ac.modelName}
@@ -161,6 +170,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
   const adv = flight.advisory;
   const speed = useSpeed();
   const seek = useApp((s) => s.seek);
+  const setView = useApp((s) => s.setView);
   const [showPhases, setShowPhases] = useState(false);
   const overLimit = !!adv && adv.currentCrosswindKnots > adv.maxCrosswindLimitKnots;
   const ttl = adv?.takeoffToLanding;
@@ -171,6 +181,12 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
     <div className="strip__body" id={id}>
       {isUnsequenced(flight) && <p className="notice notice--warn">Aprobat pentru apropiere, dar fără slot de aterizare. Pe hartă aterizează la ETA.</p>}
       <dl className="kv">
+        <dt>Origine</dt>
+        <dd>
+          <strong>{flight.origin.icao}</strong> · {flight.origin.name} ({flight.routeDistanceNm} NM)
+        </dd>
+        <dt>Decolare</dt>
+        <dd className="num">{clock(flight.takeoffSeconds)}</dd>
         <dt>Categorie</dt>
         <dd>{CATEGORY_LABEL[ac.category]}</dd>
         <dt>ETA</dt>
@@ -192,14 +208,61 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
         <dt>Combustibil</dt>
         <dd>{ac.remainingFuelMinutes ?? '—'} min</dd>
         <dt>Traseu</dt>
-        <dd>
-          {flight.routeLabel} <span className="muted">(sintetic)</span>
-        </dd>
+        <dd>{flight.routeLabel}</dd>
+        {flight.traversedFirs.length > 0 && (
+          <>
+            <dt>Sectoare FIR</dt>
+            <dd className="fir-chips">
+              {flight.traversedFirs.map((firId) => (
+                <span key={firId} className={`fir-chip ${firId === 'LRBB' ? 'fir-chip--lrbb' : ''}`}>
+                  {firId}
+                </span>
+              ))}
+            </dd>
+          </>
+        )}
         <dt>Acum</dt>
         <dd className="num">
           <FlightNow flight={flight} />
         </dd>
       </dl>
+
+      {/* Butoane rapide de navigare pe traiectoria completă Decolare → TOD → Apropiere */}
+      <div className="jump-btns" role="group" aria-label="Salt rapid pe traiectorie">
+        <button
+          type="button"
+          className="btn btn--xs"
+          onClick={() => {
+            setView('continental');
+            seek(flight.takeoffSeconds + 60);
+          }}
+          title={`Vezi decolarea de pe ${flight.origin.icao} pe harta continentală`}
+        >
+          Decolare {flight.origin.icao}
+        </button>
+        {flight.todPoint && (
+          <button
+            type="button"
+            className="btn btn--xs"
+            onClick={() => seek(flight.todPoint!.timeSeconds)}
+            title="Salt ceas la punctul Top of Descent (TOD)"
+          >
+            TOD ({flight.todPoint.distanceToLandingNm} NM)
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn btn--xs"
+          onClick={() => {
+            setView('wide');
+            seek((flight.landingSeconds ?? ac.etaSeconds) - 480);
+          }}
+          title="Salt la intrarea în TMA Craiova"
+        >
+          Apropiere LRCV
+        </button>
+      </div>
+
       {adv && <p className="reason">{adv.advisoryReason}</p>}
 
       {/* 1. DOI PAȘI ÎNAINTEA AVIONULUI (Two Steps Ahead Prediction) */}
@@ -238,7 +301,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
         <div className="math-card">
           <div className="math-card__head">
             <strong>Analiză Decolare → Aterizare</strong>
-            <span className="muted small">{ttl.departureAerodromeIcao} → LRCV ({ttl.totalRouteDistanceNm} NM)</span>
+            <span className="muted small">
+              {ttl.departureAerodromeIcao} → LRCV ({ttl.totalRouteDistanceNm} NM)
+            </span>
           </div>
           <div className="math-metrics">
             <div className="math-metric">
@@ -251,19 +316,20 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Unghi derivă WCA</span>
-              <span className="math-metric__val">{ttl.windCorrectionAngleCrabDegrees >= 0 ? `+${ttl.windCorrectionAngleCrabDegrees}` : ttl.windCorrectionAngleCrabDegrees}°</span>
+              <span className="math-metric__val">
+                {ttl.windCorrectionAngleCrabDegrees >= 0 ? `+${ttl.windCorrectionAngleCrabDegrees}` : ttl.windCorrectionAngleCrabDegrees}°
+              </span>
             </div>
           </div>
           <div className="ldr-bar">
             <div className="ldr-bar__labels">
-              <span>Distanță aterizare (LDR): <strong>{ttl.landingDistanceRequiredMeters} m</strong> / {ttl.landingDistanceAvailableMeters} m</span>
+              <span>
+                Distanță aterizare (LDR): <strong>{ttl.landingDistanceRequiredMeters} m</strong> / {ttl.landingDistanceAvailableMeters} m
+              </span>
               <span className="num">ROT {ttl.predictedRunwayOccupancySeconds}s</span>
             </div>
             <div className="ldr-bar__track">
-              <div
-                className="ldr-bar__fill"
-                style={{ width: `${Math.min(100, Math.round(ttl.runwayUsedPercent))}%` }}
-              />
+              <div className="ldr-bar__fill" style={{ width: `${Math.min(100, Math.round(ttl.runwayUsedPercent))}%` }} />
             </div>
           </div>
           <button type="button" className="btn-link" onClick={() => setShowPhases(!showPhases)}>
@@ -286,7 +352,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
 
       {/* 3. DECIZIE VFR ORBITĂ VS. REDIRECȚIONARE LA PISTE APROPIATE */}
       {vfrRedir && (
-        <div className={`math-card ${vfrRedir.recommendedDecision === 'DivertImmediately' ? 'math-card--divert' : vfrRedir.recommendedDecision === 'OrbitThenLandOrDivert' ? 'math-card--hold' : ''}`}>
+        <div
+          className={`math-card ${vfrRedir.recommendedDecision === 'DivertImmediately' ? 'math-card--divert' : vfrRedir.recommendedDecision === 'OrbitThenLandOrDivert' ? 'math-card--hold' : ''}`}
+        >
           <div className="math-card__head">
             <strong>Calcul VFR: Orbită vs. Redirecționare</strong>
             <span className="math-badge">PNR {vfrRedir.pointOfNoReturnMinutes} min</span>
@@ -295,7 +363,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           <div className="math-metrics">
             <div className="math-metric">
               <span className="math-metric__lbl">Pistă optimă</span>
-              <span className="math-metric__val">{vfrRedir.bestAlternateCode === 'LRBV' ? 'LRCW' : vfrRedir.bestAlternateCode} ({vfrRedir.bestAlternateRunway.split(' ')[0]})</span>
+              <span className="math-metric__val">
+                {vfrRedir.bestAlternateCode === 'LRBV' ? 'LRCW' : vfrRedir.bestAlternateCode} ({vfrRedir.bestAlternateRunway.split(' ')[0]})
+              </span>
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">Cap de zbor</span>
@@ -303,7 +373,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl">ETE / Rezervă</span>
-              <span className="math-metric__val">{vfrRedir.redirectionEtaMinutes}m / {vfrRedir.fuelRemainingAtAlternateMinutes}m</span>
+              <span className="math-metric__val">
+                {vfrRedir.redirectionEtaMinutes}m / {vfrRedir.fuelRemainingAtAlternateMinutes}m
+              </span>
             </div>
           </div>
         </div>
@@ -351,8 +423,15 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
 /** Altitudinea și direcția curente; singurul rând din panou care se actualizează la fiecare cadru. */
 function FlightNow({ flight }: { flight: FlightView }) {
   const t = useApp((s) => s.simTimeSeconds);
+  if (t < flight.takeoffSeconds) {
+    return (
+      <span className="muted">
+        la sol pe {flight.origin.icao} (dec. {clock(flight.takeoffSeconds)})
+      </span>
+    );
+  }
   const pos = positionAt(flight.track, t);
-  if (!pos) return <span className="muted">fără poziție acum</span>;
+  if (!pos) return <span className="muted">aterizat / finalizat</span>;
   return (
     <>
       {altitudeLabel(pos.altitudeMeters)}, {String(Math.round(pos.headingDeg ?? 0)).padStart(3, '0')}°

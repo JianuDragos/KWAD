@@ -1,3 +1,8 @@
+using System.Net;
+using System.Text.Json;
+using Aeris.LocalAI;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Aeris.PlanningEngine.Models;
 using Aeris.PlanningEngine.Models.TrajectorySeparation;
 using Aeris.PlanningEngine.Services;
@@ -304,5 +309,209 @@ public class TrajectorySeparationTests
 
         Assert.Equal("REDIRECT_TO_ALTERNATE", redir.RecommendedDecision);
         Assert.Equal("PODARI", redir.BestAlternateCode);
+    }
+
+    [Fact]
+    public void Test_16_LongHaulBeijingToCraiova_ResolvesCoordinatesAndKinematics()
+    {
+        var eurasia = OpenSkyService.GetEurasiaLongHaulTraffic();
+        var cca = eurasia.First(a => a.Id == "CA-841");
+        var weather = new WeatherCondition(WindDirectionDegrees: 260, WindSpeedKnots: 14, WindGustKnots: 18, VisibilityMeters: 9999);
+
+        var ttl = FlightPhysicsAndPredictionEngine.BuildTakeoffToLanding(cca, "26", weather, 210);
+
+        Assert.Equal("ZBAA", ttl.DepartureAerodromeIcao);
+        Assert.Equal("Beijing Capital", ttl.DepartureAerodromeName);
+        Assert.Equal(3885.0, ttl.TotalRouteDistanceNm);
+        Assert.NotNull(ttl.DepartureLatitude);
+        Assert.NotNull(ttl.DepartureLongitude);
+        Assert.InRange(ttl.DepartureLatitude!.Value, 40.0, 40.2);
+        Assert.InRange(ttl.DepartureLongitude!.Value, 116.4, 116.7);
+        Assert.Equal(6, ttl.Phases.Count);
+    }
+
+    [Fact]
+    public async Task Test_17_GroundedExplainer_FallsBackFromAliasToFullModelIdOn404()
+    {
+        var seenModels = new List<string>();
+        var handler = new DelegateHttpHandler(async (req, ct) =>
+        {
+            var body = await req.Content!.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(body);
+            var modelName = doc.RootElement.GetProperty("model").GetString()!;
+            seenModels.Add(modelName);
+            if (modelName == "aeris-local")
+                return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("model not found") };
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                choices = new[] { new { finish_reason = "stop", message = new { content = "[\"weather\"]" } } }
+            });
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) };
+        });
+
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
+        var explainer = new GroundedExplainer(client, model: "aeris-local", fallbackModel: "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0");
+        var statements = new[]
+        {
+            new ApprovedStatement("decision", "Pista activa RWY 26.", "SRC-1", Required: true),
+            new ApprovedStatement("weather", "Vant 260/12 kt.", "WX-1")
+        };
+
+        var explanation = await explainer.ExplainAsync(new ExplanationRequest("Care este vremea?", 1, statements));
+
+        Assert.Equal("grounded_selection", explanation.Mode);
+        Assert.Equal(new[] { "aeris-local", "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0" }, seenModels);
+        Assert.Contains("weather", explanation.StatementIds);
+    }
+
+    [Fact]
+    public async Task Test_18_OpenSkyLiveService_CachesWithinWindowAndFallsBackToAdsbLolOn429()
+    {
+        int openSkyCalls = 0;
+        int adsbLolCalls = 0;
+        var handler = new DelegateHttpHandler((req, _) =>
+        {
+            if (req.RequestUri!.Host.Contains("opensky-network.org"))
+            {
+                openSkyCalls++;
+                var resp = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+                resp.Headers.TryAddWithoutValidation("X-Rate-Limit-Retry-After-Seconds", "120");
+                return Task.FromResult(resp);
+            }
+
+            adsbLolCalls++;
+            var adsbJson = JsonSerializer.Serialize(new
+            {
+                ac = new[]
+                {
+                    new { hex = "4a0821", flight = "ROT204  ", lat = 44.35, lon = 24.10, alt_baro = 4500.0, gs = 195.0, track = 268.0, squawk = "2241", seen = 1.0 }
+                }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(adsbJson) });
+        });
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenSky:CacheSeconds"] = "15",
+                ["OpenSky:StaleCacheSeconds"] = "180",
+                ["OpenSky:AdsbLolFallbackEnabled"] = "true"
+            })
+            .Build();
+
+        using var client = new HttpClient(handler);
+        var service = new OpenSkyLiveService(client, NullLogger<OpenSkyLiveService>.Instance, config);
+
+        var first = await service.GetLivePositionsAsync();
+        var second = await service.GetLivePositionsAsync();
+
+        Assert.Equal(1, openSkyCalls);
+        Assert.Equal(1, adsbLolCalls);
+        Assert.Equal(1, first.AirborneCount);
+        Assert.Equal("ROT204", first.Flights[0].Callsign);
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public async Task Test_19_ResilientWeatherService_BatchesCorridorAndCaches20MinGridCells()
+    {
+        int httpCalls = 0;
+        var handler = new DelegateHttpHandler((_, _) =>
+        {
+            httpCalls++;
+            var bulkJson = JsonSerializer.Serialize(new object[]
+            {
+                new
+                {
+                    current = new
+                    {
+                        time = "2026-10-31T18:00",
+                        temperature_2m = 14.5,
+                        visibility = 9999.0,
+                        cloud_cover = 20.0,
+                        weather_code = 1.0,
+                        wind_speed_10m = 12.0,
+                        wind_direction_10m = 260.0,
+                        wind_gusts_10m = 16.0
+                    }
+                },
+                new
+                {
+                    current = new
+                    {
+                        time = "2026-10-31T18:00",
+                        temperature_2m = -8.0,
+                        visibility = 8000.0,
+                        cloud_cover = 75.0,
+                        weather_code = 3.0,
+                        wind_speed_10m = 28.0,
+                        wind_direction_10m = 300.0,
+                        wind_gusts_10m = 36.0
+                    }
+                }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(bulkJson) });
+        });
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["WeatherProviders:CorridorCacheMinutes"] = "20"
+            })
+            .Build();
+
+        var factory = new SingleClientFactory(handler);
+        var service = new ResilientWeatherService(factory, config, NullLogger<ResilientWeatherService>.Instance);
+
+        // 3 waypoints where the first two snap to the same 0.25° grid cell (44.25, 23.75) and the third snaps to (40.00, 116.50)
+        var waypoints = new List<(double Lat, double Lon)>
+        {
+            (44.31, 23.86),
+            (44.32, 23.87),
+            (40.07, 116.59)
+        };
+
+        var first = await service.GetCorridorWeatherAsync(waypoints);
+        var second = await service.GetCorridorWeatherAsync(waypoints);
+
+        Assert.Equal(1, httpCalls);
+        Assert.Equal(3, first.TotalPoints);
+        Assert.Equal(2, first.FetchedPointsCount);
+        Assert.Equal(3, second.TotalPoints);
+        Assert.Equal(0, second.FetchedPointsCount);
+        Assert.Equal(3, second.CachedPointsCount);
+        Assert.All(second.Points, p => Assert.True(p.FromCache));
+    }
+
+    [Fact]
+    public void Test_20_EurasiaTraffic_EvaluatesEndToEndWithBeijingCoordinates()
+    {
+        var planningService = new PlanningService();
+        var advisoryEngine = new CraiovaAdvisoryEngine(planningService, _engine);
+        var weather = new WeatherCondition(WindDirectionDegrees: 260, WindSpeedKnots: 14, WindGustKnots: 18, VisibilityMeters: 9999);
+        var eurasiaTraffic = OpenSkyService.GetEurasiaLongHaulTraffic();
+
+        var result = advisoryEngine.EvaluateSimulation(eurasiaTraffic, weather, "Eurasia Long-Haul Preset");
+
+        Assert.Equal(7, result.Advisories.Count);
+        var ccaAdvisory = result.Advisories.First(a => a.AircraftId == "CA-841");
+        Assert.Equal("CCA841", ccaAdvisory.Callsign);
+        Assert.NotNull(ccaAdvisory.TakeoffToLanding);
+        Assert.Equal("ZBAA", ccaAdvisory.TakeoffToLanding!.DepartureAerodromeIcao);
+        Assert.NotNull(ccaAdvisory.TakeoffToLanding.DepartureLatitude);
+        Assert.NotNull(ccaAdvisory.TakeoffToLanding.DepartureLongitude);
+        Assert.Equal(6, ccaAdvisory.TakeoffToLanding.Phases.Count);
+    }
+
+    private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+    }
+
+    private sealed class DelegateHttpHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responder) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            responder(request, cancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Aeris.PlanningEngine.Models;
 
@@ -7,6 +8,12 @@ public class OpenSkyService : IOpenSkyService
 {
     private readonly HttpClient _httpClient;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    // Protecție rate-limit pentru interogările ne-simulate (evită consumul cotei anonime OpenSky)
+    private static readonly SemaphoreSlim TrafficGate = new(1, 1);
+    private static (List<CraiovaAircraft> Aircrafts, string Source)? _cachedLiveTraffic;
+    private static DateTimeOffset _cachedTrafficAtUtc;
+    private static DateTimeOffset _backoffUntilUtc;
 
     // Bounding box pentru regiunea Craiova / Oltenia (cca. 60-80 NM)
     private const double Lamin = 43.8;
@@ -31,29 +38,63 @@ public class OpenSkyService : IOpenSkyService
             return (GetRealisticCraiovaTraffic(), "Trafic simulat realist (OpenSky bypass / mod demonstrativ)");
         }
 
+        var now = DateTimeOffset.UtcNow;
+        if (_cachedLiveTraffic is { } cached && now - _cachedTrafficAtUtc < TimeSpan.FromSeconds(15))
+        {
+            return cached;
+        }
+
+        await TrafficGate.WaitAsync();
         try
         {
-            string url = $"https://opensky-network.org/api/states/all?lamin={Lamin}&lomin={Lomin}&lamax={Lamax}&lomax={Lomax}";
-            var response = await _httpClient.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
+            now = DateTimeOffset.UtcNow;
+            if (_cachedLiveTraffic is { } refreshed && now - _cachedTrafficAtUtc < TimeSpan.FromSeconds(15))
             {
-                var content = await response.Content.ReadAsStringAsync();
-                var openSkyData = JsonSerializer.Deserialize<OpenSkyResponse>(content, JsonOptions);
+                return refreshed;
+            }
 
-                if (openSkyData?.States != null && openSkyData.States.Count > 0)
+            if (now >= _backoffUntilUtc)
+            {
+                try
                 {
-                    var liveAircrafts = ParseOpenSkyStates(openSkyData.States);
-                    // Blenduim traficul live din OpenSky cu zborurile locale de agrement/mici solicitate (Savannah, Wilga)
-                    // pentru a asigura simularea completă a cazurilor meteo/orbită pe Craiova
-                    var blendedTraffic = BlendWithLightTraffic(liveAircrafts);
-                    return (blendedTraffic, $"Live OpenSky API ({liveAircrafts.Count} zboruri reale detectate în spațiul Craiova + aeronave mici)");
+                    string url = string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"https://opensky-network.org/api/states/all?lamin={Lamin}&lomin={Lomin}&lamax={Lamax}&lomax={Lomax}");
+                    using var response = await _httpClient.GetAsync(url);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var content = await response.Content.ReadAsStringAsync();
+                        var openSkyData = JsonSerializer.Deserialize<OpenSkyResponse>(content, JsonOptions);
+
+                        if (openSkyData?.States != null && openSkyData.States.Count > 0)
+                        {
+                            var liveAircrafts = ParseOpenSkyStates(openSkyData.States);
+                            // Blenduim traficul live din OpenSky cu zborurile locale de agrement/mici solicitate (Savannah, Wilga)
+                            // pentru a asigura simularea completă a cazurilor meteo/orbită pe Craiova
+                            var blendedTraffic = BlendWithLightTraffic(liveAircrafts);
+                            var entry = (blendedTraffic, $"Live OpenSky API ({liveAircrafts.Count} zboruri reale detectate în spațiul Craiova + aeronave mici)");
+                            _cachedLiveTraffic = entry;
+                            _cachedTrafficAtUtc = DateTimeOffset.UtcNow;
+                            return entry;
+                        }
+                    }
+                    else
+                    {
+                        var retry = OpenSkyLiveService.ParseRetryAfter(response);
+                        _backoffUntilUtc = DateTimeOffset.UtcNow.Add(retry ?? TimeSpan.FromSeconds(60));
+                    }
+                }
+                catch
+                {
+                    // În caz de rate-limit (HTTP 429), timeout sau lipsă rețea la OpenSky, activăm backoff și fallback instantaneu
+                    _backoffUntilUtc = DateTimeOffset.UtcNow.AddSeconds(45);
                 }
             }
         }
-        catch
+        finally
         {
-            // În caz de rate-limit (HTTP 429), timeout sau lipsă rețea la OpenSky, fallback-ul funcționează instantaneu
+            TrafficGate.Release();
         }
 
         return (GetRealisticCraiovaTraffic(), "Trafic realist Craiova (OpenSky a returnat 0 zboruri active în sectorul LRCV sau rate-limit)");
@@ -72,7 +113,7 @@ public class OpenSkyService : IOpenSkyService
             string rawCallsign = state[1].GetString()?.Trim() ?? $"FLT{index}";
             string callsign = string.IsNullOrWhiteSpace(rawCallsign) ? $"TFC-{icao24.ToUpper()}" : rawCallsign;
             bool onGround = state[8].ValueKind == JsonValueKind.True;
-            
+
             if (onGround) continue; // Excludem avioanele parcate la sol
 
             double velocity = (state[9].ValueKind == JsonValueKind.Number) ? state[9].GetDouble() * 1.94384 : 140; // m/s în noduri
@@ -108,6 +149,8 @@ public class OpenSkyService : IOpenSkyService
             return "Boeing 737-800 (TAROM)";
         if (callsign.StartsWith("RYR") || callsign.StartsWith("FR"))
             return "Boeing 737-8200 (Ryanair)";
+        if (callsign.StartsWith("CCA") || callsign.StartsWith("CA"))
+            return "Airbus A330-200F (Air China Cargo)";
         return "Aeronava Comercială IFR";
     }
 
@@ -135,7 +178,8 @@ public class OpenSkyService : IOpenSkyService
                 EarliestSeconds: 0,
                 LatestSeconds: 240,
                 SpeedKnots: 145,
-                RemainingFuelMinutes: 110
+                RemainingFuelMinutes: 110,
+                DepartureIcao: "EGGW"
             ),
 
             // 2. Zbor comercial - Wizz Air din Milano Bergamo
@@ -151,11 +195,87 @@ public class OpenSkyService : IOpenSkyService
                 EarliestSeconds: 300,
                 LatestSeconds: 720,
                 SpeedKnots: 150,
-                RemainingFuelMinutes: 125
+                RemainingFuelMinutes: 125,
+                DepartureIcao: "LIME"
             )
         };
 
         // Adăugăm aeronavele mici de agrement locale (Savannah, Wilga, Cessna)
+        list.AddRange(GetStandardLightAircraftTraffic(baseOffsetSeconds: 120));
+        return list;
+    }
+
+    /// <summary>
+    /// Scenariu intercontinental &amp; regional extins (Eurasia Long-Haul):
+    /// Beijing Capital (ZBAA) -> LRCV, Londra Luton (EGGW) -> LRCV, Milano Bergamo (LIME) -> LRCV,
+    /// București Otopeni (LROP) -> LRCV + traficul VFR regional.
+    /// </summary>
+    public static List<CraiovaAircraft> GetEurasiaLongHaulTraffic()
+    {
+        var list = new List<CraiovaAircraft>
+        {
+            new(
+                Id: "W4-3751",
+                Callsign: "WZZ3751",
+                ModelName: "Airbus A320-232",
+                Category: AircraftCategory.CommercialJet,
+                FlightRules: FlightRules.IFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 33,
+                EtaSeconds: 0,
+                EarliestSeconds: 0,
+                LatestSeconds: 240,
+                SpeedKnots: 145,
+                RemainingFuelMinutes: 110,
+                DepartureIcao: "EGGW"
+            ),
+            new(
+                Id: "CA-841",
+                Callsign: "CCA841",
+                ModelName: "Airbus A330-200F",
+                Category: AircraftCategory.CommercialJet,
+                FlightRules: FlightRules.IFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 34,
+                EtaSeconds: 210,       // 14:03:30
+                EarliestSeconds: 150,
+                LatestSeconds: 600,
+                SpeedKnots: 148,
+                RemainingFuelMinutes: 135,
+                DepartureIcao: "ZBAA"
+            ),
+            new(
+                Id: "W4-3762",
+                Callsign: "WZZ3762",
+                ModelName: "Airbus A321neo",
+                Category: AircraftCategory.CommercialJet,
+                FlightRules: FlightRules.IFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 35,
+                EtaSeconds: 450,       // 14:07:30
+                EarliestSeconds: 360,
+                LatestSeconds: 840,
+                SpeedKnots: 150,
+                RemainingFuelMinutes: 125,
+                DepartureIcao: "LIME"
+            ),
+            new(
+                Id: "RO-204",
+                Callsign: "ROT204",
+                ModelName: "ATR 72-600",
+                Category: AircraftCategory.RegionalTurboprop,
+                FlightRules: FlightRules.IFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 28,
+                EtaSeconds: 660,       // 14:11
+                EarliestSeconds: 540,
+                LatestSeconds: 1020,
+                SpeedKnots: 125,
+                RemainingFuelMinutes: 95,
+                DepartureIcao: "LROP"
+            )
+        };
+
         list.AddRange(GetStandardLightAircraftTraffic(baseOffsetSeconds: 120));
         return list;
     }
@@ -177,7 +297,8 @@ public class OpenSkyService : IOpenSkyService
                 EarliestSeconds: Math.Max(0, baseOffsetSeconds - 60),
                 LatestSeconds: baseOffsetSeconds + 300,
                 SpeedKnots: 65,
-                RemainingFuelMinutes: 75
+                RemainingFuelMinutes: 75,
+                DepartureIcao: "PODARI"
             ),
 
             // 4. Aeronava utilitară / agrement - PZL-104 Wilga
@@ -193,7 +314,8 @@ public class OpenSkyService : IOpenSkyService
                 EarliestSeconds: baseOffsetSeconds + 120,
                 LatestSeconds: baseOffsetSeconds + 480,
                 SpeedKnots: 75,
-                RemainingFuelMinutes: 80
+                RemainingFuelMinutes: 80,
+                DepartureIcao: "LRCW"
             ),
 
             // 5. Aviație generală / Școală - Cessna 172 Skyhawk
@@ -209,7 +331,8 @@ public class OpenSkyService : IOpenSkyService
                 EarliestSeconds: baseOffsetSeconds + 300,
                 LatestSeconds: baseOffsetSeconds + 660,
                 SpeedKnots: 95,
-                RemainingFuelMinutes: 90
+                RemainingFuelMinutes: 90,
+                DepartureIcao: "LRBS"
             )
         };
     }

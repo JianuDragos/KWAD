@@ -1,20 +1,22 @@
+import type { TrafficPresetId } from '../contracts/backend';
 import { WEATHER_PRESETS, presetLabel } from '../data/weatherPresets';
 import { clockLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 import { WindArrow } from './WindArrow';
 
-/** Bara de sus pe pagina Demo: ceasul simulării, redare, preset meteo. */
+/** Bara de sus pe pagina Demo: ceasul simulării, redare, scenariu trafic și preset meteo. */
 export function DemoControls() {
   const playing = useApp((s) => s.playing);
   const speed = useApp((s) => s.speed);
   const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
+  const trafficPreset = useApp((s) => s.scenario?.trafficPreset ?? 'default');
   const revision = useApp((s) => s.scenario?.revision ?? 0);
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
-  const { togglePlay, setSpeed, setWeatherPreset, reset } = useApp.getState();
+  const { togglePlay, setSpeed, setWeatherPreset, setTrafficPreset, reset } = useApp.getState();
   const stale = useIsStale();
-  const units = useSpeed(); // `speed` e deja viteza redării
+  const units = useSpeed();
 
   return (
     <>
@@ -37,6 +39,18 @@ export function DemoControls() {
       </div>
 
       <Conditions />
+
+      <label className="group">
+        <span className="group__label">Trafic</span>
+        <select
+          value={trafficPreset}
+          onChange={(e) => void setTrafficPreset(e.target.value as TrafficPresetId)}
+          disabled={status === 'loading'}
+        >
+          <option value="default">Standard LRCV (EGGW / LIME + 3 VFR)</option>
+          <option value="eurasia">Eurasia Long-Haul (China ZBAA → LRCV)</option>
+        </select>
+      </label>
 
       <label className="group">
         <span className="group__label">Meteo</span>

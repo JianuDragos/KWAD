@@ -4,10 +4,17 @@ import { WEATHER_PRESETS } from '../data/weatherPresets';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from './schemas';
 
 describe('schemele răspunsurilor', () => {
-  it('acceptă toate răspunsurile mock-ului (aceeași formă ca backendul)', () => {
-    expect(liveTrafficSchema.safeParse(mock.liveTraffic()).success).toBe(true);
+  it('acceptă toate răspunsurile mock-ului (Standard și Eurasia Long-Haul)', () => {
+    expect(liveTrafficSchema.safeParse(mock.liveTraffic('default')).success).toBe(true);
+    const eurasiaLive = liveTrafficSchema.safeParse(mock.liveTraffic('eurasia'));
+    expect(eurasiaLive.success).toBe(true);
+    if (eurasiaLive.success) {
+      expect(eurasiaLive.data.traffic.some((a) => a.id === 'CA-841' && a.departureIcao === 'ZBAA')).toBe(true);
+    }
+
     for (const p of WEATHER_PRESETS) {
       expect(simulationResultSchema.safeParse(mock.evaluateSimulation(mock.realisticCraiovaTraffic(), p.weather, 't')).success).toBe(true);
+      expect(simulationResultSchema.safeParse(mock.evaluateSimulation(mock.eurasiaLongHaulTraffic(), p.weather, 'eurasia')).success).toBe(true);
     }
     const plan = mock.evaluatePlanning(
       [{ id: 'A', flightRules: 'IFR', etaSeconds: 0, earliestSeconds: 0, latestSeconds: 60 }],
@@ -16,14 +23,21 @@ describe('schemele răspunsurilor', () => {
     expect(planningResponseSchema.safeParse(plan).success).toBe(true);
   });
 
-  it('calculează predicția viitorului 4D, doi pași înainte, takeoff-to-landing și redirecționarea VFR', () => {
+  it('calculează predicția viitorului 4D, doi pași înainte, takeoff-to-landing cu coordonate origine și redirecționarea VFR', () => {
     const crossCritical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
-    const res = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), crossCritical, 'test');
+    const res = mock.evaluateSimulation(mock.eurasiaLongHaulTraffic(), crossCritical, 'test');
     expect(res.futurePrediction).toBeDefined();
     expect(res.futurePrediction?.horizons.map((h) => h.horizonMinutes)).toEqual([0, 5, 10, 15, 30, 45]);
 
+    const chinaJet = res.advisories.find((a) => a.aircraftId === 'CA-841')!;
+    expect(chinaJet.takeoffToLanding?.departureAerodromeIcao).toBe('ZBAA');
+    expect(chinaJet.takeoffToLanding?.departureLatitude).toBeCloseTo(40.074, 2);
+    expect(chinaJet.takeoffToLanding?.departureLongitude).toBeCloseTo(116.591, 2);
+    expect(chinaJet.takeoffToLanding?.totalRouteDistanceNm).toBeGreaterThan(3800);
+    expect(chinaJet.takeoffToLanding?.phases).toHaveLength(6);
+
     const jet = res.advisories.find((a) => a.aircraftId === 'W4-3751')!;
-    expect(jet.takeoffToLanding?.phases).toHaveLength(6);
+    expect(jet.takeoffToLanding?.departureAerodromeIcao).toBe('EGGW');
     expect(jet.twoStepsAhead?.stepOneAhead.timeSeconds).toBeGreaterThan(jet.twoStepsAhead!.currentState.timeSeconds);
     expect(jet.twoStepsAhead?.stepTwoAhead.timeSeconds).toBeGreaterThan(jet.twoStepsAhead!.stepOneAhead.timeSeconds);
 
