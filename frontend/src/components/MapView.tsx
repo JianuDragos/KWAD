@@ -28,7 +28,7 @@ export function MapView() {
   const select = useApp((s) => s.select);
 
   return (
-    <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0} zoomDelta={0.25} wheelPxPerZoomLevel={120} attributionControl>
+    <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0} zoomDelta={0.5} scrollWheelZoom={false} minZoom={7} maxZoom={16} attributionControl>
       {basemap === 'osm' && (
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -66,8 +66,46 @@ function ViewController() {
     ro.observe(map.getContainer());
     return () => ro.disconnect();
   }, [map]);
+  // Zoom propriu pe touchpad/rotiță: gesturile mută o țintă, iar harta alunecă lin spre ea la fiecare cadru,
+  // deci zoom-ul e progresiv, fără trepte, și nu se redesenează de zeci de ori pe secundă.
+  useEffect(() => {
+    const el = map.getContainer();
+    let target: number | null = null;
+    let point: L.Point | null = null;
+    let frame = 0;
+    const step = () => {
+      if (target === null || !point) return void (frame = 0);
+      const diff = target - map.getZoom();
+      const done = Math.abs(diff) < 0.002;
+      map.setZoomAround(point, done ? target : map.getZoom() + diff * ZOOM_EASING, { animate: false });
+      if (done) {
+        target = null;
+        frame = 0;
+      } else frame = requestAnimationFrame(step);
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // Firefox raportează în linii
+      const speed = e.ctrlKey ? PINCH_ZOOM_PER_PX : WHEEL_ZOOM_PER_PX; // ctrlKey = pinch pe touchpad
+      const next = (target ?? map.getZoom()) - px * speed;
+      target = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), next));
+      point = map.mouseEventToContainerPoint(e);
+      if (!frame) frame = requestAnimationFrame(step);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      cancelAnimationFrame(frame);
+    };
+  }, [map]);
   return null;
 }
+
+/** Viteza zoom-ului: niveluri de zoom per pixel de scroll / pinch. Mărește valorile pentru zoom mai rapid. */
+const WHEEL_ZOOM_PER_PX = 0.003;
+const PINCH_ZOOM_PER_PX = 0.006;
+/** Cât din distanța rămasă până la țintă parcurge zoom-ul pe cadru (mai mic = mai lin, mai lent). */
+const ZOOM_EASING = 0.18;
 
 function BackgroundClick({ onClick }: { onClick: () => void }) {
   const map = useMap();
