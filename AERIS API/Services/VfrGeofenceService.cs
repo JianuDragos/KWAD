@@ -58,9 +58,16 @@ public class VfrGeofenceEngine : IVfrGeofenceService
         return true;
     }
 
-    public IReadOnlyList<VfrTrackingState> Evaluate(LivePositionsResponse positions, MetarDecoded metar, string runway)
+    public IReadOnlyList<VfrTrackingState> Evaluate(LivePositionsResponse positions, MetarData metar, string runway)
     {
         var vmc = VmcChecker.IsVmcValid(metar);
+        var vmcStatus = VmcChecker.GetStatus(metar);
+        var vfrStatus = vmcStatus switch
+        {
+            "UNKNOWN" => "VFR SUSPENDED — WEATHER UNVERIFIED",
+            "IMC" => "VFR SUSPENDED — IMC",
+            _ => vmcStatus
+        };
         var threshold = Destination(AirportLat, AirportLon, runway == "27" ? 88.93 : 268.93, 2500);
         var states = new List<VfrTrackingState>();
         var currentKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -89,7 +96,7 @@ public class VfrGeofenceEngine : IVfrGeofenceService
             }
             states.Add(new VfrTrackingState(track.FlightId, track.Callsign, nearestTrackPoint.Point?.Code ?? "DIRECT",
                 Math.Round(nearestTrackPoint.Distance), Math.Round(remaining / speedMps / 60, 1), vmc,
-                vmc ? VmcChecker.GetStatus(metar) : "VFR SUSPENDED — IMC"));
+                vfrStatus));
         }
 
         foreach (var flight in positions.Flights.Where(f => (f.FlightRules is FlightRules.VFR or FlightRules.SVFR) && !f.OnGround && f.Latitude.HasValue && f.Longitude.HasValue))
@@ -111,7 +118,7 @@ public class VfrGeofenceEngine : IVfrGeofenceService
             var eta = distanceViaPoint / speedMps / 60.0;
             states.Add(new VfrTrackingState(flight.Icao24, flight.Callsign, nearest.Point.Code,
                 Math.Round(distanceToPoint), Math.Round(eta, 1), vmc,
-                vmc ? VmcChecker.GetStatus(metar) : "VFR SUSPENDED — IMC"));
+                vfrStatus));
         }
 
         lock (_sync) _inside.IntersectWith(currentKeys);

@@ -13,10 +13,12 @@ namespace AERIS_API.Controllers;
 public class WeatherController : ControllerBase
 {
     private readonly IMetarService _metarService;
+    private readonly IResilientWeatherService _weatherService;
 
-    public WeatherController(IMetarService metarService)
+    public WeatherController(IMetarService metarService, IResilientWeatherService weatherService)
     {
         _metarService = metarService;
+        _weatherService = weatherService;
     }
 
     /// <summary>
@@ -38,14 +40,17 @@ public class WeatherController : ControllerBase
     [ProducesResponseType(503)]
     public async Task<IActionResult> GetRawMetar()
     {
-        var raw = await _metarService.GetRawMetarAsync();
-        if (raw is null)
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        if (weather.RawMetar is null)
             return StatusCode(503, new { error = "METAR indisponibil momentan. aviationweather.gov nu a răspuns sau LRCV nu are METAR activ." });
 
         return Ok(new MetarRawResponse(
             Station: "LRCV",
-            Metar: raw,
-            RetrievedAt: DateTime.UtcNow
+            Metar: weather.RawMetar,
+            RetrievedAt: DateTime.UtcNow,
+            ObservationTimeUtc: weather.ObservationTimeUtc,
+            SourceProvider: weather.SourceProvider,
+            IsStale: weather.IsStale
         ));
     }
 
@@ -73,4 +78,4 @@ public class WeatherController : ControllerBase
 }
 
 /// <summary>Răspuns simplu pentru METAR brut.</summary>
-public record MetarRawResponse(string Station, string Metar, DateTime RetrievedAt);
+public record MetarRawResponse(string Station, string Metar, DateTime RetrievedAt, DateTime ObservationTimeUtc, string SourceProvider, bool IsStale);

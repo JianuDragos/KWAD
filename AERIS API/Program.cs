@@ -29,8 +29,13 @@ builder.Services.AddHttpClient<IOpenSkyService, OpenSkyService>();
 builder.Services.AddScoped<ICraiovaAdvisoryEngine, CraiovaAdvisoryEngine>();
 
 // ── Servicii noi: METAR + OpenSky Live Positions ──────────────────────────────
-builder.Services.AddHttpClient<IMetarService, AviationWeatherService>();
-builder.Services.AddSingleton<MetarFetchCache>();
+builder.Services.AddHttpClient("aviation-weather", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AERIS-Craiova-ATM/1.0 (weather monitoring)");
+});
+builder.Services.AddSingleton<IResilientWeatherService, ResilientWeatherService>();
+builder.Services.AddScoped<IMetarService, AviationWeatherService>();
 builder.Services.AddHttpClient<IOpenSkyLiveService, OpenSkyFetcher>();
 builder.Services.AddSingleton<VmcChecker>();
 builder.Services.AddSingleton<VfrGeofenceEngine>();

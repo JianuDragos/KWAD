@@ -17,6 +17,7 @@ public class CraiovaController : ControllerBase
     private readonly GroundedExplainer _groundedExplainer;
     private readonly IVfrGeofenceService _vfrGeofenceService;
     private readonly IOpenAipService _openAipService;
+    private readonly IResilientWeatherService _weatherService;
 
     public CraiovaController(
         IOpenSkyService openSkyService,
@@ -25,7 +26,8 @@ public class CraiovaController : ControllerBase
         IMetarService metarService,
         GroundedExplainer groundedExplainer,
         IVfrGeofenceService vfrGeofenceService,
-        IOpenAipService openAipService)
+        IOpenAipService openAipService,
+        IResilientWeatherService weatherService)
     {
         _openSkyService = openSkyService;
         _openSkyLiveService = openSkyLiveService;
@@ -34,6 +36,7 @@ public class CraiovaController : ControllerBase
         _groundedExplainer = groundedExplainer;
         _vfrGeofenceService = vfrGeofenceService;
         _openAipService = openAipService;
+        _weatherService = weatherService;
     }
 
     /// <summary>
@@ -157,31 +160,28 @@ public class CraiovaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetVfrStatus()
     {
-        var metar = await _metarService.GetDecodedMetarAsync();
-        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; statusul VMC este necunoscut." });
-        return Ok(VmcChecker.ToResponse(metar));
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        return Ok(VmcChecker.ToResponse(weather));
     }
 
     [HttpGet("vfr/status/detail")]
     public async Task<IActionResult> GetVfrStatusDetail()
     {
-        var metar = await _metarService.GetDecodedMetarAsync();
-        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; statusul VMC este necunoscut." });
-        return Ok(new { vmc = VmcChecker.ToStatus(metar), runwayWindComponents = VmcChecker.GetRunwayComponents(metar), rawMetar = metar.RawMetar });
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
+        return Ok(new { vmc = VmcChecker.ToStatus(weather), runwayWindComponents = VmcChecker.GetRunwayComponents(weather), rawMetar = weather.RawMetar, sourceProvider = weather.SourceProvider, isStale = weather.IsStale });
     }
 
     [HttpGet("vfr/tracking")]
     public async Task<IActionResult> GetVfrTracking([FromQuery] string runway = "09")
     {
-        var metar = await _metarService.GetDecodedMetarAsync();
-        if (metar is null) return StatusCode(503, new { error = "METAR indisponibil; tracking-ul VFR este suspendat până la validarea condițiilor." });
+        var weather = await _weatherService.GetAirportWeatherAsync("LRCV", 44.318056, 23.888611);
         var positions = await _openSkyLiveService.GetLivePositionsAsync();
-        var states = _vfrGeofenceService.Evaluate(positions, metar, runway == "27" ? "27" : "09");
+        var states = _vfrGeofenceService.Evaluate(positions, weather, runway == "27" ? "27" : "09");
         var trackingFlights = states.ToDictionary(s => s.FlightId, StringComparer.OrdinalIgnoreCase);
         var enrichedFlights = positions.Flights.Select(f => trackingFlights.TryGetValue(f.Icao24, out var state)
             ? f with { VfrEtaMinutes = state.EtaViaPointMinutes, VfrEntryPointCode = state.PointCode }
             : f);
-        return Ok(new { queryTimeUtc = DateTime.UtcNow, source = positions.Source, totalCount = positions.TotalCount, airborneCount = positions.AirborneCount, boundingBoxLamin = positions.BoundingBoxLamin, boundingBoxLamax = positions.BoundingBoxLamax, boundingBoxLomin = positions.BoundingBoxLomin, boundingBoxLomax = positions.BoundingBoxLomax, flights = enrichedFlights, vmc = VmcChecker.ToResponse(metar), points = _vfrGeofenceService.ReportingPoints, vfrFlights = states });
+        return Ok(new { queryTimeUtc = DateTime.UtcNow, source = positions.Source, totalCount = positions.TotalCount, airborneCount = positions.AirborneCount, boundingBoxLamin = positions.BoundingBoxLamin, boundingBoxLamax = positions.BoundingBoxLamax, boundingBoxLomin = positions.BoundingBoxLomin, boundingBoxLomax = positions.BoundingBoxLomax, flights = enrichedFlights, vmc = VmcChecker.ToResponse(weather), points = _vfrGeofenceService.ReportingPoints, vfrFlights = states });
     }
 
     /// <summary>

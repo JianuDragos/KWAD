@@ -14,11 +14,44 @@ public sealed class VmcChecker
 
     public static bool IsVmcValid(MetarDecoded metar) =>
         metar.VisibilityMeters >= MinimumVisibilityMeters &&
-        (GetCeilingFeet(metar) is not int ceiling || ceiling >= MinimumCeilingFeet);
+        metar.CeilingKnown && (GetCeilingFeet(metar) is not int ceiling || ceiling >= MinimumCeilingFeet);
 
     public static string GetStatus(MetarDecoded metar) =>
+        !metar.CeilingKnown ? "UNKNOWN" :
         !IsVmcValid(metar) ? "IMC" :
         metar.FlightCategory.Equals("MVFR", StringComparison.OrdinalIgnoreCase) ? "MVFR" : "VMC";
+
+    public static int? GetCeilingFeet(MetarData weather) => weather.CeilingFeet;
+
+    public static bool IsVmcValid(MetarData weather) =>
+        weather.VisibilityMeters is >= MinimumVisibilityMeters && weather.CeilingKnown &&
+        (weather.CeilingFeet is not int ceiling || ceiling >= MinimumCeilingFeet);
+
+    public static string GetStatus(MetarData weather) =>
+        weather.VisibilityMeters is null || !weather.CeilingKnown ? "UNKNOWN" :
+        !IsVmcValid(weather) ? "IMC" :
+        weather.FlightCategory.Equals("MVFR", StringComparison.OrdinalIgnoreCase) ? "MVFR" : "VMC";
+
+    public static VmcStatusResponse ToResponse(MetarData weather)
+    {
+        var speed = (double)(weather.WindGustKnots ?? weather.WindSpeedKnots ?? 0);
+        var direction = (double)(weather.WindDirectionDegrees ?? 0);
+        var cross09 = CrosswindCalculator.Calculate(direction, speed, 88.93).CrosswindKnots;
+        var cross27 = CrosswindCalculator.Calculate(direction, speed, 268.95).CrosswindKnots;
+        return new VmcStatusResponse(GetStatus(weather), IsVmcValid(weather), weather.VisibilityMeters ?? 0,
+            weather.CeilingFeet, weather.WindDirectionDegrees ?? 0, weather.WindSpeedKnots ?? 0,
+            cross09, cross27, weather.RawMetar ?? "", weather.SourceProvider, weather.IsStale, weather.SourceProvider);
+    }
+
+    public static VmcStatus ToStatus(MetarData weather) => new(
+        GetStatus(weather), IsVmcValid(weather), weather.VisibilityMeters ?? 0, weather.CeilingFeet,
+        weather.SourceProvider, weather.ObservationTimeUtc);
+
+    public static IReadOnlyList<RunwayWindComponent> GetRunwayComponents(MetarData weather) =>
+    [
+        Component("09", 88.93, weather.WindDirectionDegrees, weather.WindSpeedKnots, weather.WindGustKnots),
+        Component("27", 268.95, weather.WindDirectionDegrees, weather.WindSpeedKnots, weather.WindGustKnots)
+    ];
 
     public static (double Runway09Knots, double Runway27Knots) GetCrosswind(MetarDecoded metar)
     {
@@ -52,6 +85,12 @@ public sealed class VmcChecker
     {
         var wind = CrosswindCalculator.Calculate(metar.WindDirectionDegrees ?? 0,
             metar.WindGustKnots ?? metar.WindSpeedKnots, heading);
+        return new RunwayWindComponent(runway, heading, wind.CrosswindKnots, wind.HeadwindKnots);
+    }
+
+    private static RunwayWindComponent Component(string runway, double heading, int? direction, int? speed, int? gust)
+    {
+        var wind = CrosswindCalculator.Calculate(direction ?? 0, gust ?? speed ?? 0, heading);
         return new RunwayWindComponent(runway, heading, wind.CrosswindKnots, wind.HeadwindKnots);
     }
 }

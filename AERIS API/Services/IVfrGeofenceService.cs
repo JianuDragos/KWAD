@@ -12,5 +12,5 @@ public interface IVfrGeofenceService
     IReadOnlyList<VfrFlightPlan> FlightPlans { get; }
     bool TryCorrelate(string trackId, string flightPlanId, string callsign);
     IReadOnlyList<VfrTrackState> Tracks { get; }
-    IReadOnlyList<VfrTrackingState> Evaluate(LivePositionsResponse positions, MetarDecoded metar, string runway);
+    IReadOnlyList<VfrTrackingState> Evaluate(LivePositionsResponse positions, MetarData metar, string runway);
 }
