@@ -1,8 +1,13 @@
 import { useEffect } from 'react';
 import { DetailsPanel } from './components/DetailsPanel';
-import { MapView } from './components/MapView';
+import { LivePanel } from './components/LivePanel';
+import { LiveTraffic } from './components/LiveTraffic';
+import { MapView, SimTraffic } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { TopBar } from './components/TopBar';
+import { runwayForWind } from './sim/live';
+import { useLive } from './state/live';
+import { useMode } from './state/mode';
 import { useApp } from './state/store';
 
 export default function App() {
@@ -10,9 +15,17 @@ export default function App() {
   const basemap = useApp((s) => s.basemap);
   const { setView, setBasemap } = useApp.getState();
 
+  const mode = useMode();
+  const simRunway = useApp((s) => s.evaluation?.traffic.runway ?? null);
+  const metar = useLive((s) => s.metar);
+  const liveRunway = metar ? runwayForWind(metar.windDirectionDegrees, metar.windSpeedKnots) : null;
+
   useEffect(() => {
     void useApp.getState().load();
   }, []);
+
+  // Datele reale se cer doar cât e deschisă pagina Live (cota OpenSky e mică).
+  useEffect(() => (mode === 'live' ? useLive.getState().start() : undefined), [mode]);
 
   // O singură buclă de ceas pentru toată aplicația.
   useEffect(() => {
@@ -33,10 +46,13 @@ export default function App() {
       const s = useApp.getState();
       if (e.code === 'Space') {
         // Pe un buton focusat, Space trebuie să apese butonul, nu să pornească redarea.
-        if (target.closest('button, a[href], [role="button"]')) return;
+        if (target.closest('button, a[href], [role="button"]') || window.location.hash !== '#/demo') return;
         e.preventDefault();
         if (s.evaluation) s.togglePlay();
-      } else if (e.key === 'Escape') s.select(null);
+      } else if (e.key === 'Escape') {
+        s.select(null);
+        useLive.getState().select(null);
+      }
       else if (e.key === '1') s.setView('wide');
       else if (e.key === '2') s.setView('close');
     };
@@ -45,11 +61,23 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
-      <TopBar />
+    <div className={`app app--${mode}`}>
+      <TopBar mode={mode} />
       <main className="map-area">
-        <MapView />
-        <p className="map-banner">Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.</p>
+        {mode === 'demo' ? (
+          <MapView runway={simRunway} onBackgroundClick={() => useApp.getState().select(null)}>
+            <SimTraffic />
+          </MapView>
+        ) : (
+          <MapView runway={liveRunway} onBackgroundClick={() => useLive.getState().select(null)}>
+            <LiveTraffic />
+          </MapView>
+        )}
+        <p className={`map-banner ${mode === 'live' ? 'map-banner--live' : ''}`}>
+          {mode === 'demo'
+            ? 'Simulare, nu pentru uz operațional. Poziții sintetice pe traseele AIP în vigoare de la 1 octombrie 2026.'
+            : 'Date reale OpenSky, cu întârziere de câteva secunde. Doar pentru informare, nu pentru uz operațional.'}
+        </p>
         <div className="map-controls">
           <div className="seg" role="group" aria-label="Vedere hartă">
             <button className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`} onClick={() => setView('wide')} aria-pressed={view === 'wide'} aria-keyshortcuts="1">
@@ -69,8 +97,14 @@ export default function App() {
           </button>
         </div>
       </main>
-      <DetailsPanel />
-      <Timeline />
+      {mode === 'demo' ? (
+        <>
+          <DetailsPanel />
+          <Timeline />
+        </>
+      ) : (
+        <LivePanel />
+      )}
     </div>
   );
 }

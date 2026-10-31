@@ -260,3 +260,20 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   .tl-nowlayer { left: 120px; }
   .map-banner { max-width: calc(100% - 24px); bottom: 34px; }
 }
+
+/* ---------- Live / Demo ---------- */
+.seg--mode .seg__btn { padding: 5px 14px; font-weight: 600; }
+.seg--mode .seg__btn.is-demo { background: var(--synthetic); }
+.clock { display: flex; align-items: baseline; gap: 6px; }
+.clock__zone { color: var(--muted); font-size: 13px; }
+.map-banner--live { color: var(--ifr); border-left-color: var(--ifr); }
+.ac--live .ac__glyph path { fill: var(--text); }
+.strip--live { border-left-color: var(--faint); }
+.metar { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.metar__raw { font: 13px/1.4 var(--mono); background: var(--raised); padding: 6px 8px; border-radius: 3px; overflow-wrap: anywhere; }
+/* Culorile standard ale categoriilor de zbor din meteo aviatică. */
+.fltcat { font: 600 12px/1 var(--mono); padding: 2px 6px; border-radius: 2px; color: var(--scope); background: var(--muted); }
+.fltcat--vfr { background: var(--cleared); }
+.fltcat--mvfr { background: #7fb3ff; }
+.fltcat--ifr { background: var(--divert); }
+.fltcat--lifr { background: #e58ad6; }

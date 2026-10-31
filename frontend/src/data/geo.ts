@@ -2,7 +2,7 @@
 import raw from './lrcv-geo.json';
 import { destination, type LatLon } from '../sim/geomath';
 
-export type RunwayId = '08' | '26';
+export type RunwayId = '09' | '27';
 
 export type NamedPoint = LatLon & { id: string; role: string; synthetic?: boolean };
 
@@ -23,8 +23,8 @@ export function runwayTrueBearing(rwy: RunwayId): number {
 }
 
 export const RUNWAY_LINE: [number, number][] = [
-  [threshold('08').lat, threshold('08').lon],
-  [threshold('26').lat, threshold('26').lon],
+  [threshold('09').lat, threshold('09').lon],
+  [threshold('27').lat, threshold('27').lon],
 ];
 
 export const WAYPOINTS: Record<string, NamedPoint> = Object.fromEntries(
@@ -37,8 +37,8 @@ export const IAF_IDS = ['TITEK', 'PEMOK', 'PANZU'] as const;
 export type IafId = (typeof IAF_IDS)[number];
 
 export function pointById(id: string): NamedPoint {
-  if (id === 'THR08') return threshold('08');
-  if (id === 'THR26') return threshold('26');
+  if (id === 'THR09') return threshold('09');
+  if (id === 'THR27') return threshold('27');
   const p = WAYPOINTS[id];
   if (!p) throw new Error(`Punct necunoscut în lrcv-geo.json: ${id}`);
   return p;
@@ -77,9 +77,9 @@ export function allArrivalRoutes(rwy: RunwayId): { iaf: IafId; points: [number, 
   return IAF_IDS.map((iaf) => ({ iaf, points: arrivalRoute(rwy, iaf).map((p) => [p.lat, p.lon] as [number, number]) }));
 }
 
-/** Backendul folosește încă denumirea veche 09/27; în AIP-ul curent pista este 08/26. */
-export function aipRunwayFromBackend(backendRunway: string): RunwayId {
-  return backendRunway === '27' || backendRunway === '26' ? '26' : '08';
+/** Backendul trimite pista activă ca "09" sau "27", aceeași denumire ca pe hartă. */
+export function runwayFromBackend(backendRunway: string): RunwayId {
+  return backendRunway === '27' ? '27' : '09';
 }
 
 // ---------- Puncte sintetice (nu există în AIP) ----------

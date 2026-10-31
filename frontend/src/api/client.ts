@@ -7,7 +7,9 @@ import type {
 } from '../contracts/backend';
 import type { z } from 'zod';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from '../contracts/schemas';
+import { livePositionsSchema, metarSchema, type LivePositions, type Metar } from '../contracts/live';
 import * as mock from './mockBackend';
+import * as mockLive from './mockLive';
 
 export const API_MOCK = import.meta.env.VITE_API_MOCK === '1';
 
@@ -103,4 +105,20 @@ export function evaluatePlanning(body: EvaluationRequest, signal?: AbortSignal):
   const path = '/api/planning/evaluate';
   if (API_MOCK) return mockDelay(() => parseResponse(path, planningResponseSchema, mock.evaluatePlanning(body.aircrafts, body.rules)), signal);
   return request(path, planningResponseSchema, { method: 'POST', body: JSON.stringify(body), signal });
+}
+
+// ---------- Date reale (pagina Live) ----------
+
+/** Pozițiile reale din OpenSky, prin backend (fără cache: fiecare apel consumă din cota OpenSky). */
+export function fetchLivePositions(signal?: AbortSignal): Promise<LivePositions> {
+  const path = '/api/craiova/live-positions';
+  if (API_MOCK) return mockDelay(() => parseResponse(path, livePositionsSchema, mockLive.livePositions()), signal);
+  return request(path, livePositionsSchema, { signal });
+}
+
+/** METAR-ul curent LRCV, decodat de backend (sursa: aviationweather.gov). */
+export function fetchMetar(signal?: AbortSignal): Promise<Metar> {
+  const path = '/api/weather/metar/decoded';
+  if (API_MOCK) return mockDelay(() => parseResponse(path, metarSchema, mockLive.metar()), signal);
+  return request(path, metarSchema, { signal });
 }

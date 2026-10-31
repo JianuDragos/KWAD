@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import L from 'leaflet';
 import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import {
@@ -22,11 +22,9 @@ import { M_PER_NM, altitudeLabel, clockLabel } from '../sim/units';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 
-export function MapView() {
+/** Harta comună ambelor pagini; traficul (simulat sau real) vine ca copii. */
+export function MapView({ runway, onBackgroundClick, children }: { runway: RunwayId | null; onBackgroundClick: () => void; children: ReactNode }) {
   const basemap = useApp((s) => s.basemap);
-  const runway = useApp((s) => s.evaluation?.traffic.runway ?? null);
-  const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
-  const select = useApp((s) => s.select);
 
   return (
     <MapContainer bounds={MAP_BOUNDS_WIDE} className="map" zoomSnap={0} zoomDelta={0.5} scrollWheelZoom={false} minZoom={7} maxZoom={16} attributionControl>
@@ -39,11 +37,17 @@ export function MapView() {
         />
       )}
       <ViewController />
-      <BackgroundClick onClick={() => select(null)} />
+      <BackgroundClick onClick={onBackgroundClick} />
       <StaticLayers runway={runway} />
-      {flights?.map((f) => <AircraftMarker key={f.id} flight={f} />)}
+      {children}
     </MapContainer>
   );
+}
+
+/** Traficul simulat (pagina Demo). */
+export function SimTraffic() {
+  const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
+  return flights?.map((f) => <AircraftMarker key={f.id} flight={f} />);
 }
 
 function applyView(map: L.Map, view: 'wide' | 'close', animate: boolean) {
@@ -163,11 +167,11 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
         <Polyline key={r.iaf} positions={r.points} pathOptions={{ className: 'route' }} interactive={false} />
       ))}
       <Polyline positions={RUNWAY_LINE} pathOptions={{ className: 'runway' }} interactive={false} />
-      {(['08', '26'] as RunwayId[]).map((r) => {
+      {(['09', '27'] as RunwayId[]).map((r) => {
         const t = threshold(r);
         return (
           <CircleMarker key={r} center={[t.lat, t.lon]} radius={2} pathOptions={{ className: r === runway ? 'thr thr--active' : 'thr' }} interactive={false}>
-            <Tooltip permanent direction={r === '08' ? 'left' : 'right'} className="lbl lbl--rwy" offset={[r === '08' ? -4 : 4, 0]}>
+            <Tooltip permanent direction={r === '09' ? 'left' : 'right'} className="lbl lbl--rwy" offset={[r === '09' ? -4 : 4, 0]}>
               {r}
             </Tooltip>
           </CircleMarker>
@@ -205,7 +209,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
   );
 }
 
-const GLYPH_IFR = '<path d="M12 2 L19 20 L12 16 L5 20 Z"/>';
+export const GLYPH_IFR = '<path d="M12 2 L19 20 L12 16 L5 20 Z"/>';
 const GLYPH_VFR = '<path d="M12 4 L17 18 L12 15 L7 18 Z"/><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/>';
 
 function AircraftMarker({ flight }: { flight: FlightView }) {

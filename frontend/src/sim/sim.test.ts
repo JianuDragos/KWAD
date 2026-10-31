@@ -49,9 +49,9 @@ describe('geometria AIP', () => {
     expect(publishedAltitudeFt('@2500ft -185kt')).toBe(2500);
     expect(publishedAltitudeFt(undefined)).toBeNull();
   });
-  it('tranziția TITEK → RWY 26 are lungimile din AIP', () => {
-    const r = arrivalRoute('26', 'TITEK');
-    expect(r.map((p) => p.id)).toEqual(['TITEK', 'CV520', 'CV514', 'OZZET', 'CV508', 'THR26']);
+  it('tranziția TITEK → RWY 27 are lungimile din AIP', () => {
+    const r = arrivalRoute('27', 'TITEK');
+    expect(r.map((p) => p.id)).toEqual(['TITEK', 'CV520', 'CV514', 'OZZET', 'CV508', 'THR27']);
     const legs = r.slice(1).map((p, i) => Number(distanceNm(r[i], p).toFixed(1)));
     expect(legs).toEqual([15.5, 10.9, 6.0, 6.0, 5.7]);
   });
@@ -187,10 +187,10 @@ describe('buildTraffic', () => {
     expect(m.endSeconds).toBeGreaterThan(m.startSeconds);
   });
 
-  it('pista din backend 09/27 devine 08/26 pe hartă', () => {
+  it('harta folosește pista dată de backend (09/27)', () => {
     const west = mock.evaluateSimulation(aircrafts, WEATHER_PRESETS.find((p) => p.id === 'west')!.weather, 'test');
     expect(west.activeRunway).toBe('27');
-    expect(buildTraffic(aircrafts, west).runway).toBe('26');
+    expect(buildTraffic(aircrafts, west).runway).toBe('27');
   });
 });
 

@@ -1,9 +1,91 @@
+import { useEffect, useState } from 'react';
 import { API_MOCK } from '../api/client';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
+import { runwayForWind, windComponents } from '../sim/live';
 import { clockLabel } from '../sim/units';
+import { useLive } from '../state/live';
+import { setMode, type Mode } from '../state/mode';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 
-export function TopBar() {
+export function TopBar({ mode }: { mode: Mode }) {
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <span className="brand__name">AERIS</span>
+        <span className="brand__apt">Craiova LRCV</span>
+      </div>
+      {/* Comutator vizibil: controlorul trebuie să știe mereu dacă vede date reale sau simulare. */}
+      <div className="seg seg--mode" role="group" aria-label="Sursa datelor">
+        <button className={`seg__btn ${mode === 'live' ? 'is-on' : ''}`} onClick={() => setMode('live')} aria-pressed={mode === 'live'}>
+          Live
+        </button>
+        <button className={`seg__btn ${mode === 'demo' ? 'is-on is-demo' : ''}`} onClick={() => setMode('demo')} aria-pressed={mode === 'demo'}>
+          Demo
+        </button>
+      </div>
+      {mode === 'demo' ? <DemoControls /> : <LiveControls />}
+    </header>
+  );
+}
+
+function LiveControls() {
+  const metar = useLive((s) => s.metar);
+  const updatedAtMs = useLive((s) => s.updatedAtMs);
+  const error = useLive((s) => s.positionsError);
+  const runway = metar ? runwayForWind(metar.windDirectionDegrees, metar.windSpeedKnots) : null;
+  const xw = metar && runway && metar.windDirectionDegrees != null ? windComponents(metar.windDirectionDegrees, metar.windGustKnots ?? metar.windSpeedKnots, runway).crosswind : null;
+  return (
+    <>
+      <UtcClock />
+      {metar && runway && (
+        <div className="atis">
+          <span className="atis__rwy" title="Pista cu vânt de față, după METAR">
+            RWY {runway}
+          </span>
+          {metar.windDirectionDegrees != null && <WindArrow direction={metar.windDirectionDegrees} />}
+          <span className="atis__wind">
+            {metar.isWindVariable || metar.windDirectionDegrees == null ? 'VRB' : `${String(metar.windDirectionDegrees).padStart(3, '0')}°`} {metar.windSpeedKnots}
+            {metar.windGustKnots ? `G${metar.windGustKnots}` : ''} kt
+          </span>
+          <span className="atis__xw">QNH {metar.qnhHpa}</span>
+          {xw != null && <span className={`atis__xw ${xw > 12 ? 'is-critical' : ''}`}>lateral {xw} kt</span>}
+        </div>
+      )}
+      <div className="spacer" />
+      <div className="pills" aria-live="polite">
+        {error && <span className="pill pill--err">Fără date noi</span>}
+        {updatedAtMs && <UpdatedAgo at={updatedAtMs} />}
+        {API_MOCK && <span className="pill pill--mock">Date de exemplu</span>}
+      </div>
+    </>
+  );
+}
+
+function UtcClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="clock" title="Ora reală, UTC">
+      <span className="clock__time">{now.toISOString().slice(11, 19)}</span>
+      <span className="clock__zone">UTC</span>
+    </div>
+  );
+}
+
+function UpdatedAgo({ at }: { at: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const s = Math.max(0, Math.round((now - at) / 1000));
+  return <span className={`pill ${s > 45 ? 'pill--warn' : ''}`}>actualizat acum {s} s</span>;
+}
+
+function DemoControls() {
   const playing = useApp((s) => s.playing);
   const speed = useApp((s) => s.speed);
   const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
@@ -14,12 +96,7 @@ export function TopBar() {
   const stale = useIsStale();
 
   return (
-    <header className="topbar">
-      <div className="brand">
-        <span className="brand__name">AERIS</span>
-        <span className="brand__apt">Craiova LRCV</span>
-      </div>
-
+    <>
       <Clock />
 
       <div className="group" role="group" aria-label="Redare">
@@ -60,7 +137,7 @@ export function TopBar() {
         <span className="pill" title="Revizia scenariului; crește la fiecare modificare">rev {revision}</span>
         {API_MOCK && <span className="pill pill--mock">Date de exemplu</span>}
       </div>
-    </header>
+    </>
   );
 }
 

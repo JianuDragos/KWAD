@@ -13,7 +13,7 @@ import {
   IAF_IDS,
   LRCW,
   VFR_ENTRY_POINTS,
-  aipRunwayFromBackend,
+  runwayFromBackend,
   arrivalRoute,
   runwayTrueBearing,
   threshold,
@@ -56,7 +56,7 @@ const ROLLOUT_NM = 0.7;
 const EMPTY_WINDOW_SECONDS = 600;
 
 export function buildTraffic(aircrafts: CraiovaAircraft[], result: CraiovaSimulationResult): TrafficModel {
-  const runway = aipRunwayFromBackend(result.activeRunway);
+  const runway = runwayFromBackend(result.activeRunway);
   if (aircrafts.length === 0) return { runway, flights: [], startSeconds: 0, endSeconds: EMPTY_WINDOW_SECONDS };
   const advisories = new Map(result.advisories.map((a) => [a.aircraftId, a]));
 
