@@ -69,27 +69,46 @@ function ViewController() {
   // Zoom propriu pe touchpad/rotiță: gesturile mută o țintă, iar harta alunecă lin spre ea la fiecare cadru,
   // deci zoom-ul e progresiv, fără trepte, și nu se redesenează de zeci de ori pe secundă.
   useEffect(() => {
+    // setZoomAround resetează harta la fiecare cadru și Leaflet șterge toate tile-urile (OSM dispare).
+    // Folosim mecanismul intern al pinch-zoom-ului din Leaflet: păstrează tile-urile și le scalează.
+    // shortcut: API privat Leaflet 1.9 (_move/_moveStart/_moveEnd), de reverificat la upgrade.
+    const m = map as L.Map & {
+      _move(center: L.LatLng, zoom: number, data?: { pinch?: boolean; round?: boolean }): void;
+      _moveStart(zoomChanged: boolean, noMoveStart: boolean): void;
+      _moveEnd(zoomChanged: boolean): void;
+      _stop(): void;
+    };
     const el = map.getContainer();
     let target: number | null = null;
-    let point: L.Point | null = null;
+    let anchorPoint: L.Point | null = null; // punctul de sub cursor rămâne fix pe ecran
+    let anchorLatLng: L.LatLng | null = null;
     let frame = 0;
+    const centerFor = (zoom: number) =>
+      map.unproject(map.project(anchorLatLng!, zoom).subtract(anchorPoint!.subtract(map.getSize().divideBy(2))), zoom);
     const step = () => {
-      if (target === null || !point) return void (frame = 0);
+      if (target === null) return void (frame = 0);
       const diff = target - map.getZoom();
       const done = Math.abs(diff) < 0.002;
-      map.setZoomAround(point, done ? target : map.getZoom() + diff * ZOOM_EASING, { animate: false });
+      const zoom = done ? target : map.getZoom() + diff * ZOOM_EASING;
+      m._move(centerFor(zoom), zoom, { pinch: true, round: false });
       if (done) {
         target = null;
         frame = 0;
+        m._moveEnd(true); // abia acum se încarcă tile-urile pentru zoom-ul final
       } else frame = requestAnimationFrame(step);
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // Firefox raportează în linii
       const speed = e.ctrlKey ? PINCH_ZOOM_PER_PX : WHEEL_ZOOM_PER_PX; // ctrlKey = pinch pe touchpad
+      if (target === null) {
+        m._stop();
+        m._moveStart(true, false);
+      }
       const next = (target ?? map.getZoom()) - px * speed;
       target = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), next));
-      point = map.mouseEventToContainerPoint(e);
+      anchorPoint = map.mouseEventToContainerPoint(e);
+      anchorLatLng = map.containerPointToLatLng(anchorPoint);
       if (!frame) frame = requestAnimationFrame(step);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
