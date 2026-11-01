@@ -1,4 +1,4 @@
-// Tab-ul dedicat „Asistent”: spațiu de conversație tactică ATC (Qwen3-4B + verificare matematică C#)
+// Tab-ul dedicat „Asistent”: spațiu de conversație tactică ATC (model AI local + verificarea cifrelor în backend)
 // și panou interactiv de analiză & decizie pentru problemele operaționale (VFR Așteptare Rând vs. Redirecționare Alternativă).
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
@@ -7,6 +7,7 @@ import { useAssistant, type AssistantMessage } from '../state/assistant';
 import { useLive } from '../state/live';
 import { setMode } from '../state/mode';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
+import { useDistance, useSpeed, useUnitText } from '../state/units';
 
 interface TacticalCategory {
   id: string;
@@ -18,7 +19,7 @@ interface TacticalCategory {
 const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
   {
     id: 'vfr-decision',
-    title: '1. Decizie VFR: Așteptare Rând vs. Alternativă',
+    title: 'Decizie VFR',
     roleNote: 'Evaluează PNR, combustibilul și plafonul de vânt lateral pe LRCV față de Aerodromul Balta Verde (LRCW — Aeroclubul României) și Slatina.',
     prompts: [
       'Analizează aeronavele VFR în așteptare: care pot ateriza pe LRCV după IFR și care trebuie redirecționate?',
@@ -28,17 +29,17 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
   },
   {
     id: 'sequencing',
-    title: '2. Secvențiere Pistă & Separare 4D',
+    title: 'Secvențiere',
     roleNote: 'Ordinea cronologică la prag, întârzierile alocate și protecția la turbulența de siaj EASA.',
     prompts: [
       'Care este ordinea programată la aterizare pe pista activă și ce întârzieri apar?',
-      'Există conflicte de separare 4D sau restricții de turbulență de siaj între zborurile active?',
+      'Există conflicte de separare sau restricții de turbulență de siaj între zborurile active?',
       'Care este situația generală a sectorului LRCV și câte aeronave sunt în holding?',
     ],
   },
   {
     id: 'weather-window',
-    title: '3. Limite Vânt & Fereastră Meteo (T+0..T+45m)',
+    title: 'Vânt & meteo',
     roleNote: 'Evoluția forfecării vântului (2000/5000 ft), altitudinea de densitate și fereastra optimă VFR.',
     prompts: [
       'Când apare o fereastră meteo sigură pentru aterizarea VFR pe LRCV în următoarele 45 de minute?',
@@ -47,7 +48,7 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
   },
   {
     id: 'kinematics',
-    title: '4. Profil Coborâre (TOD) & Ocupare Pistă (LDR/ROT)',
+    title: 'Coborâre & pistă',
     roleNote: 'Punctul Top of Descent, rata de coborâre pe glisada de 3°, distanța de frânare și ROT.',
     prompts: [
       'Care sunt distanța TOD, distanța de aterizare LDR și timpul de ocupare a pistei pentru WZZ3751?',
@@ -59,7 +60,7 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
 const LIVE_TACTICAL_CATEGORIES: TacticalCategory[] = [
   {
     id: 'live-wx',
-    title: '1. Analiză METAR & Pistă Activă LRCV',
+    title: 'METAR & pistă',
     roleNote: ' Evaluează vântul real, vizibilitatea, plafonul și eligibilitatea VMC/IMC pe Craiova.',
     prompts: [
       'Care este starea meteo actuală pe LRCV conform METAR și ce pistă este activă?',
@@ -68,7 +69,7 @@ const LIVE_TACTICAL_CATEGORIES: TacticalCategory[] = [
   },
   {
     id: 'live-radar',
-    title: '2. Trafic Radar Activ & Secvențiere',
+    title: 'Trafic radar',
     roleNote: 'Aeronave detectate în timp real în sectorul Craiova și estimările de sosire.',
     prompts: [
       'Câte aeronave sunt în zbor acum în zona Craiova și ce reguli de zbor au?',
@@ -76,16 +77,6 @@ const LIVE_TACTICAL_CATEGORIES: TacticalCategory[] = [
     ],
   },
 ];
-
-const FALLBACK_LABELS: Record<string, string> = {
-  inference_unavailable: 'serverul LLM local este oprit — a răspuns motorul determinist C#',
-  timeout: 'modelul 4B a depășit timpul limită — s-a folosit sinteza deterministă C#',
-  no_matching_statement: 'nicio regulă selectată — s-a folosit sinteza deterministă C#',
-  invalid_selection: 'format JSON invalid — s-a folosit sinteza deterministă C#',
-  invalid_response: 'răspuns invalid — s-a folosit sinteza deterministă C#',
-  incomplete_response: 'răspuns incomplet — s-a folosit sinteza deterministă C#',
-  response_too_large: 'răspuns prea amplu — s-a folosit sinteza deterministă C#',
-};
 
 const clock = (s: number) => clockLabel(BASE_TIME_OFFSET_SECONDS + s, false);
 
@@ -123,7 +114,7 @@ export function AssistantView() {
           <div>
             <h1 className="assistant-chat__title">Asistent Tactic ATC · Suport Decizional Craiova (LRCV)</h1>
             <p className="muted small">
-               Analiză conversațională în limba română ancorată strict în calculele fizice AERIS (zero cifre inventate, verificare C# la fiecare răspuns).
+               Analiză conversațională în limba română ancorată strict în calculele fizice AERIS (fiecare cifră din răspuns e verificată în calcule).
             </p>
           </div>
         </header>
@@ -168,7 +159,7 @@ export function AssistantView() {
             <div className="chat-empty">
               <h2 className="chat-empty__title">Consolă gata pentru consultare operațională</h2>
               <p className="muted">
-                Selectează o analiză tactică din categoriile de mai sus, folosește cardurile de rezoluție VFR din dreapta sau adresează o problemă operațională concretă (secvențiere, vânt lateral, PNR/combustibil, conflict 4D, aerodromuri de rezervă).
+                Selectează o analiză tactică din categoriile de mai sus, folosește cardurile de rezoluție VFR din dreapta sau adresează o problemă operațională concretă (secvențiere, vânt lateral, PNR/combustibil, conflicte de separare, aerodromuri de rezervă).
               </p>
             </div>
           )}
@@ -180,7 +171,7 @@ export function AssistantView() {
           {busy && (
             <div className="chat-msg chat-msg--assistant is-thinking">
               <div className="chat-msg__meta">
-                <span className="chat-msg__author">Asistent AERIS (Qwen3-4B)</span>
+                <span className="chat-msg__author">Asistent AERIS</span>
                 <span className="muted small">analizează telemetria &amp; verifică cifrele…</span>
               </div>
               <div className="chat-msg__body muted">
@@ -201,7 +192,7 @@ export function AssistantView() {
             className="chat-composer__input"
             value={draft}
             maxLength={1200}
-            placeholder="Solicită analiză tactică ATC (ex: secvențiere RWY, marjă PNR YR-5123, conflict 4D, decizie holding vs. Podari)…"
+            placeholder="Solicită analiză tactică ATC (ex: secvențiere RWY, marjă PNR YR-5123, conflicte de separare, decizie holding vs. Balta Verde)…"
             onChange={(e) => setDraft(e.target.value)}
           />
           <button className="btn btn--primary chat-composer__btn" type="submit" disabled={busy || !draft.trim()}>
@@ -220,6 +211,7 @@ export function AssistantView() {
 
 function ChatBubble({ msg }: { msg: AssistantMessage }) {
   const [showProof, setShowProof] = useState(false);
+  const unitText = useUnitText();
 
   if (msg.role === 'controller') {
     return (
@@ -255,31 +247,11 @@ function ChatBubble({ msg }: { msg: AssistantMessage }) {
       <div className="chat-msg__meta">
         <span className="chat-msg__author">Asistent AERIS</span>
         <div className="chat-msg__badges">
-          {ver && (
-            <span className={`ai__mode-pill ${ans.mode === 'grounded_selection' ? 'is-llm' : 'is-det'}`}>
-              {ans.mode === 'grounded_selection' ? '● Qwen3-4B Activ' : '○ Q&A Determinist'}
-            </span>
-          )}
           <span className="muted small">{msg.createdAtLabel}</span>
         </div>
       </div>
 
-      <div className="ai__direct">{msg.text}</div>
-
-      {ver && (
-        <div className="ai__verify-bar">
-          <span className={`ai__verify-badge ${ver.hallucinationBlocked ? 'is-blocked' : 'is-ok'}`}>
-            {ver.hallucinationBlocked
-              ? '🛡 Cifre neconfirmate interceptate — răspuns reconstruit matematic'
-              : `✓ Verificat fără halucinații (${ver.verifiedNumbers.length}/${ver.totalNumbersInAnswer} cifre confirmate)`}
-          </span>
-          <span className="muted small num">{ver.latencyMs} ms</span>
-        </div>
-      )}
-
-      {ans.fallbackReason && (
-        <p className="muted small">Notă: {FALLBACK_LABELS[ans.fallbackReason] ?? ans.fallbackReason}.</p>
-      )}
+      <div className="ai__direct">{unitText(msg.text)}</div>
 
       <button
         type="button"
@@ -287,39 +259,25 @@ function ChatBubble({ msg }: { msg: AssistantMessage }) {
         onClick={() => setShowProof((v) => !v)}
         aria-expanded={showProof}
       >
-        {showProof ? '▾ Ascunde dovada matematică' : `▸ Verifică răspunsul (${ans.sourceIds.length} surse AERIS)`}
+        {showProof ? '▾ Ascunde datele folosite' : '▸ Vezi datele folosite'}
       </button>
 
       {showProof && (
         <div className="ai__proof">
-          {ver && (
-            <>
-              <p className="small">
-                <strong>Motor:</strong> <span className="num">{ver.engineUsed}</span>
-                {ver.runtimeEndpoint ? <span className="muted"> ({ver.runtimeEndpoint})</span> : null}
-              </p>
-              <p className="small muted">{ver.verificationSummary}</p>
-              {ver.verifiedNumbers.length > 0 && (
-                <div>
-                  <span className="ai__proof-lbl">Valori numerice confirmate din motorul AERIS:</span>
-                  <div className="ai__num-list">
-                    {ver.verifiedNumbers.map((n) => (
-                      <span key={n} className="ai__num-chip num">
-                        ✓ {n}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <p className="small muted">
+            {ans.fallbackReason || ver?.hallucinationBlocked
+              ? 'Răspuns construit direct din datele de mai jos.'
+              : ver && ver.totalNumbersInAnswer > 0
+                ? `✓ Toate cifrele din răspuns (${ver.totalNumbersInAnswer}) se regăsesc în datele de mai jos.`
+                : '✓ Răspunsul se bazează pe datele de mai jos.'}
+          </p>
           <div>
-            <span className="ai__proof-lbl">Fapte sursă citate din backend (ground-truth):</span>
+            <span className="ai__proof-lbl">Date din calcule pe care se bazează răspunsul:</span>
             <ul className="ai__citation-list">
               {(ver?.citations ?? ans.sentences.map((t, i) => ({ id: ans.statementIds[i] ?? `s${i}`, sourceId: ans.sourceIds[0] ?? 'AERIS', text: t }))).map(
                 (c) => (
                   <li key={c.id} className="ai__citation">
-                    <span className="ai__citation-tag num">[{c.id}]</span> {c.text}
+                    {unitText(c.text)}
                   </li>
                 ),
               )}
@@ -335,38 +293,55 @@ function DemoTacticalProblemsPanel() {
   const evaluation = useApp((s) => s.evaluation);
   const scenario = useApp((s) => s.scenario);
   const plan = useApp((s) => s.vfrPlan);
+  const status = useApp((s) => s.status);
+  const error = useApp((s) => s.error);
+  const d = useDistance().label;
   const { setWeatherPreset, select } = useApp.getState();
-  if (!evaluation || !scenario) return <p className="muted">Se încarcă datele scenariului…</p>;
+  if (!evaluation || !scenario) {
+    return status === 'error' ? (
+      <div className="notice notice--err">
+        <p>Datele scenariului nu s-au putut încărca: {error}</p>
+        <button type="button" className="btn btn--outline btn--xs" onClick={() => void useApp.getState().load()}>
+          Reîncearcă
+        </button>
+      </div>
+    ) : (
+      <p className="muted">Se încarcă datele scenariului…</p>
+    );
+  }
   const locked = plan.status === 'accepted' || plan.status === 'rejected';
   const vfr = evaluation.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR');
 
   return (
     <div className="ops-stack">
-      <h2 className="panel__title">Plan integrat IFR + VFR · RWY {evaluation.traffic.runway}</h2>
+      <h2 className="panel__title">Plan de aterizare · RWY {evaluation.traffic.runway}</h2>
       <p className="muted small">
-        O singură decizie pentru întregul grup. Pragurile 30–20 NM urmăresc prima sosire IFR;
-        VFR-urile din holding așteaptă acceptarea planului.
+        Asistentul propune ordinea de aterizare pentru tot traficul: întâi avioanele IFR, apoi cele VFR care așteaptă
+        în holding la Cârcea.
       </p>
       <div className="ops-weather-bar">
-        <span className="ops-weather-bar__lbl">Condiții scenariu:</span>
-        <div className="ops-weather-pills">
+        <span className="ops-weather-bar__lbl">Vreme în scenariu</span>
+        <div className="seg ops-weather-seg" role="group" aria-label="Vreme în scenariu">
           {WEATHER_PRESETS.map((p) => (
             <button key={p.id} type="button" disabled={locked}
-              className={`ai__chip ${scenario.weatherPresetId === p.id ? 'is-selected-chip' : ''}`}
+              className={`seg__btn ${scenario.weatherPresetId === p.id ? 'is-on' : ''}`}
+              aria-pressed={scenario.weatherPresetId === p.id}
               title={locked ? 'Reset în Demo pentru un nou scenariu meteo' : undefined}
               onClick={() => setWeatherPreset(p.id)}>{p.label}</button>
           ))}
         </div>
       </div>
       <p className="notice">
-        {plan.status === 'accepted' ? 'Plan aplicat: IFR la minimum 5.0 NM, apoi VFR la minimum 4.0 NM pe finală.' :
-          plan.status === 'rejected' ? 'Aplicare automată blocată. Holding extins și coordonare exclusiv radio TWR.' :
-            'Propunerea apare la 30 NM. Acceptă înainte de 20 NM pentru aterizarea integrată; fără acceptare, VFR-urile continuă holdingul.'}
+        {plan.status === 'accepted'
+          ? `Plan acceptat. Avioanele IFR aterizează la cel puțin ${d(5)} unul de altul, apoi VFR-urile, la cel puțin ${d(4)} pe finală.`
+          : plan.status === 'rejected'
+            ? 'Plan refuzat. VFR-urile rămân în holding și le coordonezi tu prin radio.'
+            : `Propunerea apare când primul IFR e la ${d(30)} de aeroport. O poți accepta până ajunge la ${d(20)}; după aceea se refuză singură, iar VFR-urile rămân în holding.`}
       </p>
       {vfr.map((f) => (
         <article key={f.id} className="vfr-card vfr-card--wait">
           <div className="vfr-card__head"><strong>{f.callsign}</strong><span className="muted small">{f.aircraft.modelName}</span></div>
-          <p>{f.slot ? `Aterizare RWY ${evaluation.traffic.runway}: ${clock(f.slot.calculatedTimeSeconds)}` : 'Holding Cârcea · fără autorizare automată de aterizare'}</p>
+          <p>{f.slot ? `Aterizează pe RWY ${evaluation.traffic.runway} la ${clock(f.slot.calculatedTimeSeconds)}` : 'În holding la Cârcea · așteaptă planul de aterizare'}</p>
           <button type="button" className="btn-link" onClick={() => { select(f.id); setMode('demo'); }}>Urmărește pe hartă →</button>
         </article>
       ))}
@@ -379,6 +354,8 @@ function LiveOperationalSummaryPanel() {
   const positions = useLive((s) => s.positions);
   const vfrTracking = useLive((s) => s.vfrTracking);
   const airborne = positions?.flights.filter((f) => !f.onGround) ?? [];
+  const distance = useDistance();
+  const speed = useSpeed();
 
   return (
     <div className="ops-stack">
@@ -408,14 +385,14 @@ function LiveOperationalSummaryPanel() {
           <ul className="ai__citation-list">
             {airborne.slice(0, 8).map((f) => (
               <li key={f.icao24} className="ai__citation">
-                <strong className="num">{f.callsign}</strong> ({f.flightRules}) · {f.distanceFromLrcvKm?.toFixed(1) ?? '—'} km de LRCV
+                <strong className="num">{f.callsign}</strong> ({f.flightRules}) · {f.distanceFromLrcvKm == null ? '—' : distance.label(f.distanceFromLrcvKm / 1.852)} de LRCV
               </li>
             ))}
           </ul>
         )}
         {vfrTracking && (
           <p className="small muted">
-            Status VMC: {vfrTracking.vmc.status} — vizibilitate {(vfrTracking.vmc.visibilityMeters / 1000).toFixed(1)} km, vânt {vfrTracking.vmc.windSpeedKnots} kt
+            Status VMC: {vfrTracking.vmc.status} — vizibilitate {(vfrTracking.vmc.visibilityMeters / 1000).toFixed(1)} km, vânt {speed.label(vfrTracking.vmc.windSpeedKnots)}
           </p>
         )}
       </div>

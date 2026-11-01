@@ -17,7 +17,7 @@ public static class RacetrackGenerator
     private const double TurnDurationSeconds = 60.0;
 
     /// <summary>
-    /// Generează o listă de puncte 4D corespunzătoare circuitului de hipodrom.
+    /// Generează o listă de puncte de traiectorie corespunzătoare circuitului de hipodrom.
     /// </summary>
     public static List<TrajectoryPoint> Generate(HoldingRacetrackConfig config, double samplingIntervalSeconds = 2.0)
     {

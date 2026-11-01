@@ -1,4 +1,4 @@
-// Timeline de sosiri și traiectorii 4D (Apropiere LRCV vs. De la Decolare).
+// Timeline de sosiri și traiectorii (Apropiere LRCV vs. De la Decolare).
 import { useState, type PointerEvent } from 'react';
 import type { FlightView } from '../sim/traffic';
 import { clockLabel } from '../sim/units';
@@ -51,6 +51,7 @@ export function Timeline() {
 
   return (
     <section className={`timeline ${collapsed ? 'timeline--collapsed' : ''}`} aria-label="Cronologia sosirilor">
+      <div className="tl-main">
       <div className="tl-row tl-row--axis">
         <div className="tl-label tl-label--hdr">
           <button className="tl-toggle" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed} aria-label="Cronologie">
@@ -62,19 +63,19 @@ export function Timeline() {
           <div className="tl-scope" role="group" aria-label="Domeniu cronologie">
             <button
               type="button"
-              className={`tl-scope__btn ${timelineScope === 'approach' ? 'is-on' : ''}`}
-              onClick={() => setTimelineScope('approach')}
-              title="Fereastra terminală de apropiere LRCV"
-            >
-              Apropiere
-            </button>
-            <button
-              type="button"
               className={`tl-scope__btn ${timelineScope === 'mission' ? 'is-on' : ''}`}
               onClick={() => setTimelineScope('mission')}
               title="Întregul zbor de la prima decolare până la aterizare"
             >
               Decolare
+            </button>
+            <button
+              type="button"
+              className={`tl-scope__btn ${timelineScope === 'approach' ? 'is-on' : ''}`}
+              onClick={() => setTimelineScope('approach')}
+              title="Fereastra terminală de apropiere LRCV"
+            >
+              Apropiere
             </button>
           </div>
         </div>
@@ -97,7 +98,6 @@ export function Timeline() {
               ◆
             </span>
           )}
-          <NowLine t0={t0} span={span} />
         </div>
       </div>
       <div className="tl-body">
@@ -155,10 +155,15 @@ export function Timeline() {
               </div>
             );
           })}
-          <div className="tl-nowlayer" aria-hidden="true">
-            <NowLine t0={t0} span={span} />
-          </div>
         </div>
+      </div>
+      {/* O singură linie „acum” peste axă și toate rândurile; grila copiază coloanele rândurilor (etichetă + pistă). */}
+      <div className="tl-nowlayer" aria-hidden="true">
+        <span />
+        <div className="tl-nowtrack">
+          <NowLine t0={t0} span={span} />
+        </div>
+      </div>
       </div>
       <div className="tl-legend muted small">
         {showNotification && (

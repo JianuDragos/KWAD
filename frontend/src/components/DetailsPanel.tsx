@@ -1,4 +1,4 @@
-// Raftul de benzi de zbor + motorul de predicție matematică 4D:
+// Raftul de benzi de zbor + motorul de predicție matematică:
 // 1. Predicția Viitorului (T+0 .. T+45 min, forfecare vânt Hellmann-Ekman, altitudine densitate)
 // 2. Doi Pași Înaintea Avionului (T0 → Pasul +1 → Pasul +2)
 // 3. Analiză De-la-Decolare-la-Aterizare (6 faze, TOD, ROD 3.0°, WCA, LDR vs 2500m, Sectoare FIR)
@@ -241,7 +241,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 </span>
                 <span className="step-node__fix">{st.fixOrLocation}</span>
                 <span className="step-node__kin num">
-                  {feetLabel(st.altitudeFeet)} · GS {st.groundSpeedKnots} kt · HDG {st.headingDegrees}°
+                  {feetLabel(st.altitudeFeet)} · GS {speed.label(st.groundSpeedKnots)} · HDG {st.headingDegrees}°
                 </span>
                 <span className="step-node__act">{st.controllerAction}</span>
               </button>
@@ -295,7 +295,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={p.phaseCode} className="phase-item">
                   <span className="phase-item__name">{p.phaseName}</span>
                   <span className="num muted">
-                    {distance.label(p.distanceNm)} · {feetLabel(p.endAltitudeFeet)} · GS {p.groundSpeedKnots} kt · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
+                    {distance.label(p.distanceNm)} · {feetLabel(p.endAltitudeFeet)} · GS {speed.label(p.groundSpeedKnots)} · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
                   </span>
                 </li>
               ))}
@@ -355,7 +355,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={a.code} className={flight.alternate?.code === a.code || a.isRecommendedBestSpot ? 'is-chosen' : ''}>
                   <div className="alts__row">
                     <span>
-                      {a.code === 'LRBV' ? 'Craiova-Sud (LRCW)' : a.name}
+                      {a.code === 'LRBV' ? 'Aerodrom Balta Verde Craiova (LRCW)' : a.name}
                       {a.isRecommendedBestSpot && <span className="alts__best"> ★ OPTIM</span>}
                     </span>
                     {a.safetyScore != null && <span className="alts__score num">{a.safetyScore}/100</span>}

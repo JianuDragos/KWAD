@@ -7,8 +7,6 @@ export const HINT = {
   VMC: 'Condițiile meteo pentru zborul la vedere (VFR): VMC = vizibilitate și plafon suficiente; MARGINAL = la limită; VFR SUSPENDAT = sub minime, doar zbor instrumental.',
   UTC: 'Ora UTC (timpul universal), folosită în toată aviația. Ora României = UTC + 2 (iarna) sau + 3 (vara).',
   SCENARIO_CLOCK: 'Ora din scenariul simulat. Pornește/oprește cu „Redă”, iar ×5, ×10… accelerează timpul.',
-  CONFLICTS: 'Perechi de avioane care, pe traiectoriile calculate, ajung mai aproape decât separarea minimă (3–5 NM pe orizontală și 300 m pe verticală).',
-  SAFE: 'Toate avioanele cu slot păstrează separarea minimă pe traiectoriile calculate.',
   UPDATED: 'Cât de vechi sunt pozițiile avioanelor. Datele reale se reîmprospătează la 15 secunde.',
   SPEED_UNIT: 'Unitatea vitezelor: km/h sau noduri (kt = mile marine pe oră, 1 kt = 1,852 km/h).',
   IFR: 'IFR: zbor după instrumente, controlat complet de controlorul de trafic, pe proceduri publicate.',

@@ -366,8 +366,8 @@ public class CraiovaController : ControllerBase
         {
             statements.Add(new ApprovedStatement(
                 "future_prediction",
-                Clip($"Predicția Viitorului (Nowcasting 4D T+0..T+45m, altitudine densitate {fp.DensityAltitudeFeet} ft, vânt 2000ft {fp.WindAt2000FtDegrees}°/{fp.WindAt2000FtKnots} kt, 5000ft {fp.WindAt5000FtDegrees}°/{fp.WindAt5000FtKnots} kt): {fp.TrendSummary} Fereastra optimă VFR pe LRCV: {fp.OptimalVfrLandingWindow}.", 800),
-                $"FORECAST-4D-{revision}"));
+                Clip($"Prognoză Meteo pe 45 de minute (T+0..T+45m, altitudine densitate {fp.DensityAltitudeFeet} ft, vânt 2000ft {fp.WindAt2000FtDegrees}°/{fp.WindAt2000FtKnots} kt, 5000ft {fp.WindAt5000FtDegrees}°/{fp.WindAt5000FtKnots} kt): {fp.TrendSummary} Fereastra optimă VFR pe LRCV: {fp.OptimalVfrLandingWindow}.", 800),
+                $"FORECAST-{revision}"));
         }
 
         var stepTexts = simulation.Advisories
@@ -421,9 +421,12 @@ public class CraiovaController : ControllerBase
         if (simulation.SafetyAssessment is { } sa)
         {
             statements.Add(new ApprovedStatement(
-                "separation_4d",
-                Clip($"Verificare Separare 4D & Siaj: Status {sa.Status} ({sa.Summary}). Perechi evaluate: {sa.TotalEvaluatedPairs}, puncte 4D: {sa.TotalTrajectoryPoints}, conflicte active: {sa.Conflicts.Count}.", 800),
-                $"SEP-4D-{revision}"));
+                "trajectory_separation",
+                // Numărul de conflicte stă primul și separat de numărul de perechi verificate: modelul mic le confunda („perechile 6”).
+                Clip(sa.Conflicts.Count > 0
+                    ? $"Separare traiectorii & siaj: {sa.Conflicts.Count} conflicte active (status {sa.Status}). {sa.Summary} Total perechi de avioane verificate: {sa.TotalEvaluatedPairs}."
+                    : $"Separare traiectorii & siaj: niciun conflict (status {sa.Status}). {sa.Summary} Total perechi de avioane verificate: {sa.TotalEvaluatedPairs}.", 800),
+                $"SEP-{revision}"));
         }
 
         foreach (var advisory in simulation.Advisories.Take(20))

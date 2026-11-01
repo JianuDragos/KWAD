@@ -16,7 +16,7 @@ public enum SeparationConflictType
 }
 
 /// <summary>
-/// Înregistrarea detaliată a unui conflict sau incident de proximitate detectat în spațiul 4D.
+/// Înregistrarea detaliată a unui conflict sau incident de proximitate detectat pe traiectorie.
 /// </summary>
 public record SeparationConflict(
     SeparationConflictType Type,
