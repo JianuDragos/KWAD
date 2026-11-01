@@ -23,7 +23,6 @@ const LOOP_SECONDS = 20 * 60;
 
 export function livePositions(): LivePositions {
   const t = now();
-  // Avioanele avansează între interogări, ca datele reale; altfel ar sări înapoi la fiecare actualizare.
   const elapsed = (t - 3 - START) % LOOP_SECONDS;
   const flights = BASE.map((f) => {
     const p = destination({ lat: f.latitude!, lon: f.longitude! }, f.trueTrackDegrees!, (f.velocityKnots! * elapsed) / 3600);
@@ -54,52 +53,59 @@ export function metar(): Metar {
 /** În mock nu rulează niciun model: răspunsul traduce calculele matematice din scenariu în limbaj natural. */
 export function explanation(question?: string, evalResult?: CraiovaSimulationResult): Explanation {
   if (evalResult) {
-    const fp = evalResult.futurePrediction;
-    const sentences: string[] = [
-      `Snapshot matematic LRCV: pista activă RWY ${evalResult.activeRunway} (vânt lateral ${evalResult.activeRunwayCrosswindKnots} kt, frontal ${evalResult.activeRunwayHeadwindKnots} kt); ${evalResult.stats.clearedToLandCount} aprobate, ${evalResult.stats.holdingInOrbitCount} în așteptare, ${evalResult.stats.divertAdvisedCount} redirecționate.`,
-    ];
-    const statementIds = ['decision'];
-    if (fp) {
-      sentences.push(
-        `Predicția Viitorului (T+0..T+45m): altitudine densitate ${fp.densityAltitudeFeet} ft, vânt în altitudine 2000 ft ${fp.windAt2000FtDegrees}°/${fp.windAt2000FtKnots} kt (forfecare Hellmann-Ekman). Fereastră optimă VFR: ${fp.optimalVfrLandingWindow}.`,
-      );
-      statementIds.push('future-prediction');
-    }
     const qLower = (question ?? '').toLowerCase();
-    for (const adv of evalResult.advisories) {
-      if (qLower.includes(adv.callsign.toLowerCase()) || qLower.includes(adv.aircraftId.toLowerCase()) || statementIds.length < 4) {
-        if (adv.twoStepsAhead) {
-          sentences.push(`${adv.callsign} [2 Pași Înainte]: ${adv.twoStepsAhead.predictiveSummary}`);
-          statementIds.push(`two-steps-${adv.aircraftId}`);
-        }
-        if (adv.vfrRedirection && (qLower.includes('vfr') || qLower.includes('orbit') || qLower.includes('devier') || qLower.includes('podari') || adv.advisoryStatus !== 'ClearedForApproach')) {
-          sentences.push(`${adv.callsign} [Decizie VFR]: ${adv.vfrRedirection.mathematicalJustification}`);
-          statementIds.push(`vfr-redir-${adv.aircraftId}`);
-        }
-      }
-    }
-    sentences.push('Acesta este un rezultat de simulare matematică 4D și suport decizional tradus în limbaj natural.');
-    statementIds.push('limits');
+    const matchedAdv = evalResult.advisories.find(
+      (a) => qLower.includes(a.callsign.toLowerCase()) || qLower.includes(a.aircraftId.toLowerCase()),
+    );
+    const directAnswer = matchedAdv
+      ? `${matchedAdv.callsign} (${matchedAdv.modelName}): stare ${matchedAdv.advisoryStatus} pe pista RWY ${matchedAdv.assignedRunway}, vânt lateral ${matchedAdv.currentCrosswindKnots} kt (limită ${matchedAdv.maxCrosswindLimitKnots} kt). ${matchedAdv.advisoryReason}`
+      : `Pe pista activă RWY ${evalResult.activeRunway} (vânt lateral ${evalResult.activeRunwayCrosswindKnots} kt), ${evalResult.stats.clearedToLandCount} aeronave sunt aprobate la aterizare, ${evalResult.stats.holdingInOrbitCount} în așteptare și ${evalResult.stats.divertAdvisedCount} redirecționate.`;
+
+    const sentences = [directAnswer];
+    const statementIds = [matchedAdv ? `flight_${matchedAdv.aircraftId}` : 'decision'];
     return {
       scenarioRevision: 1,
       mode: 'deterministic_fallback',
       statementIds,
       sentences,
-      sourceIds: ['SIM-MATH-4D', 'ROMATSA-AIP-DB', 'RULES-1'],
+      sourceIds: ['SIM-MATH-4D', 'ROMATSA-AIP-DB'],
       fallbackReason: 'inference_unavailable',
+      directAnswer,
+      verification: {
+        isVerified: true,
+        engineUsed: 'Mock Determinist Frontend',
+        runtimeEndpoint: 'mock-local',
+        latencyMs: 5,
+        totalNumbersInAnswer: 3,
+        verifiedNumbers: [String(evalResult.activeRunway), String(evalResult.activeRunwayCrosswindKnots)],
+        unverifiedNumbers: [],
+        hallucinationBlocked: false,
+        verificationSummary: 'Mod mock: răspuns generat determinist din evaluarea curentă.',
+        citations: [{ id: statementIds[0], sourceId: 'SIM-MATH-4D', text: directAnswer }],
+      },
     };
   }
+  const direct = 'Pe LRCV pista activă este 26, cu vânt 240° la 9 kt și vizibilitate 7000 m (LIFR); 5 aeronave sunt aprobate pentru apropiere.';
   return {
     scenarioRevision: 1,
     mode: 'deterministic_fallback',
-    statementIds: ['decision', 'weather', 'limits'],
-    sentences: [
-      'Snapshot simulare LRCV: pista activă 26; 5 aeronave evaluate, 5 cu apropiere recomandată, 0 în așteptare și 0 cu deviere recomandată.',
-      'METAR LRCV: vânt 240° 9 kt, vizibilitate 7000 m, plafon la 300 ft. Categorie: LIFR.',
-      'Acesta este un rezultat de simulare și suport decizional. Nu este o autorizare ATC și nu înlocuiește procedurile, verificările sau judecata controlorului.',
-    ],
-    sourceIds: ['SIM-1', 'LRCV 310730Z 24009KT 7000 BKN003 OVC007 11/11 Q1020', 'RULES-1'],
+    statementIds: ['decision', 'weather'],
+    sentences: [direct],
+    sourceIds: ['SIM-1', 'LRCV 310730Z 24009KT 7000 BKN003 OVC007 11/11 Q1020'],
     fallbackReason: 'inference_unavailable',
+    directAnswer: direct,
+    verification: {
+      isVerified: true,
+      engineUsed: 'Mock Determinist Frontend',
+      runtimeEndpoint: 'mock-local',
+      latencyMs: 4,
+      totalNumbersInAnswer: 4,
+      verifiedNumbers: ['26', '240', '9', '7000', '5'],
+      unverifiedNumbers: [],
+      hallucinationBlocked: false,
+      verificationSummary: 'Mod mock: toate valorile provin direct din snapshotul local.',
+      citations: [{ id: 'decision', sourceId: 'SIM-1', text: direct }],
+    },
   };
 }
 

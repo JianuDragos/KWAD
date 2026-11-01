@@ -67,7 +67,7 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
   );
 }
 
-/** Traficul simulat (pagina Demo): aeroporturi de origine + rute complete + aeronave 4D. */
+/** Traficul simulat (pagina Demo): aeroporturi de origine + aerodromuri alternative active + rute 4D. */
 export function SimTraffic() {
   const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
   const origins = useMemo(() => {
@@ -77,6 +77,15 @@ export function SimTraffic() {
       if (f.origin.icao !== 'LRCV') byIcao.set(f.origin.icao, f.origin);
     }
     return [...byIcao.values()];
+  }, [flights]);
+
+  const activeAlternates = useMemo(() => {
+    if (!flights) return [];
+    const byCode = new Map<string, NonNullable<FlightView['alternate']>>();
+    for (const f of flights) {
+      if (f.alternate) byCode.set(f.alternate.code, f.alternate);
+    }
+    return [...byCode.values()];
   }, [flights]);
 
   if (!flights) return null;
@@ -93,6 +102,19 @@ export function SimTraffic() {
         >
           <Tooltip permanent direction="top" className="lbl lbl--apt" offset={[0, -5]}>
             {apt.icao} · {apt.city}
+          </Tooltip>
+        </CircleMarker>
+      ))}
+      {activeAlternates.map((alt) => (
+        <CircleMarker
+          key={`alt-${alt.code}`}
+          center={[alt.point.lat, alt.point.lon]}
+          radius={5}
+          pathOptions={{ className: 'alt-apt' }}
+          interactive={false}
+        >
+          <Tooltip permanent direction="bottom" className="lbl lbl--alt-apt" offset={[0, 6]}>
+            ALT {alt.code === 'LRBV' ? 'LRCW' : alt.code} · RWY {alt.bestRunway.split(' ')[0]}
           </Tooltip>
         </CircleMarker>
       ))}
@@ -149,7 +171,6 @@ function ViewController() {
     applyView(map, view, flights, true);
   }, [map, view, viewNonce]);
 
-  // La redimensionarea ferestrei/panoului doar invalidăm dimensiunea containerului fără a reseta camera utilizatorului!
   useEffect(() => {
     let initialized = false;
     const ro = new ResizeObserver((entries) => {
@@ -165,7 +186,6 @@ function ViewController() {
     return () => ro.disconnect();
   }, [map]);
 
-  // Zoom progresiv pe touchpad / rotiță în intervalul [minZoom=3, maxZoom=16].
   useEffect(() => {
     const m = map as L.Map & {
       _move(center: L.LatLng, zoom: number, data?: { pinch?: boolean; round?: boolean }): void;
@@ -273,7 +293,7 @@ function useMapViewport(): ViewportState {
   return vp;
 }
 
-/** Grilă de orientare lat/lon + Sectoare FIR / ACC / TMA Craiova / Căi Aeriene ATS (Rank 2). */
+/** Grilă de orientare lat/lon + Sectoare FIR / ACC / TMA Craiova / Căi Aeriene ATS. */
 function AirspaceAndGridLayers() {
   const vp = useMapViewport();
   const showSectors = useApp((s) => s.showSectors);
@@ -336,7 +356,6 @@ function AirspaceAndGridLayers() {
 
   return (
     <>
-      {/* 1. Linii de orientare geografică (meridiane & paralele) când camera e depărtată */}
       {graticule &&
         graticule.parallels.map((p) => (
           <Polyline key={`lat-${p.lat}`} positions={p.line} pathOptions={{ className: 'nav-grid' }} interactive={false} />
@@ -346,7 +365,6 @@ function AirspaceAndGridLayers() {
           <Polyline key={`lon-${m.lon}`} positions={m.line} pathOptions={{ className: 'nav-grid' }} interactive={false} />
         ))}
 
-      {/* 2. Sectoare FIR / ACC (184 sectoare Europa–Asia + evidențiere LRBB și coridor zbor selectat) */}
       {showSectors &&
         visibleFirs.map((fir) => {
           const isRomania = fir.id === 'LRBB';
@@ -378,7 +396,6 @@ function AirspaceAndGridLayers() {
           );
         })}
 
-      {/* 3. TMA Craiova (2500 ft – FL145) + Căi aeriene ATS (L605, N133, M747, W85) */}
       {showSectors && vp.zoom >= 6.2 && (
         <Polygon positions={TMA_CRAIOVA_POLYGON} pathOptions={{ className: 'tma-poly' }} interactive={false}>
           {vp.zoom >= 7.2 && vp.zoom <= 10.5 && (
@@ -437,7 +454,6 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
           );
         })}
 
-      {/* Pin LRCV vizibil clar la zoom continental/regional */}
       {!showTerminalLabels && (
         <CircleMarker center={[ARP.lat, ARP.lon]} radius={5} pathOptions={{ className: 'hub-apt' }} interactive={false}>
           <Tooltip permanent direction="right" className="lbl lbl--hub" offset={[6, 0]}>
@@ -553,6 +569,38 @@ function AircraftMarker({ flight }: { flight: FlightView }) {
   );
 }
 
+function computeFlightPhaseTag(flight: FlightView, t: number, preTakeoff: boolean, done: boolean, lastTime: number): string {
+  const clk = (sec: number) => clockLabel(BASE_TIME_OFFSET_SECONDS + sec, false);
+  const altCode = flight.alternate ? (flight.alternate.code === 'LRBV' ? 'LRCW' : flight.alternate.code) : null;
+
+  if (preTakeoff) return `DECOLARE ${flight.origin.icao} ${clk(flight.takeoffSeconds)}`;
+  if (done) {
+    if (altCode) return `LA ${altCode} ${clk(flight.resolvedLandingSeconds ?? lastTime)}`;
+    return `ATERIZAT ${clk(flight.landingSeconds ?? flight.resolvedLandingSeconds ?? lastTime)}`;
+  }
+
+  const td = flight.tacticalDecision;
+  if (td && flight.status !== 'ClearedForApproach') {
+    if (td.effectiveAction === 'divert_alternate' && altCode) {
+      if (td.holdExitSeconds != null && t < td.holdExitSeconds) {
+        return `EVALUARE → ${altCode}`;
+      }
+      return `SPRE ${altCode} ${clk(td.estimatedLandingSeconds)}`;
+    }
+    if (td.effectiveAction === 'wait_and_land_lrcv') {
+      if (td.holdExitSeconds != null && t < td.holdExitSeconds) {
+        return `AȘTEAPTĂ → RWY ${td.assignedVfrRunway} ${clk(td.estimatedLandingSeconds)}`;
+      }
+      return `FINAL RWY ${td.assignedVfrRunway} ${clk(td.estimatedLandingSeconds)}`;
+    }
+  }
+
+  if (flight.status === 'ClearedForApproach') {
+    return flight.slot ? `SLOT ${clk(flight.slot.calculatedTimeSeconds)}` : 'FĂRĂ SLOT';
+  }
+  return STATUS_SHORT[flight.status];
+}
+
 function AircraftMarkerView({
   flight,
   t,
@@ -579,7 +627,8 @@ function AircraftMarkerView({
   onSelect: (id: string) => void;
 }) {
   const rules = flight.aircraft.flightRules.toLowerCase();
-  const statusClass = STATUS_CLASS[flight.status];
+  const visualStatusClass =
+    flight.kind === 'divert' ? 'st-divert' : flight.kind === 'hold' ? 'st-hold' : STATUS_CLASS[flight.status];
   const dimmed = done || preTakeoff;
 
   const icon = useMemo(
@@ -588,32 +637,28 @@ function AircraftMarkerView({
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${band} ${statusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
+        html: `<div class="ac ac--${rules} ${band} ${visualStatusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
       }),
-    [rules, band, statusClass, selected, dimmed, heading],
+    [rules, band, visualStatusClass, selected, dimmed, heading],
   );
 
   const trail = useMemo(() => (preTakeoff ? [] : trailUntil(flight.track, Math.min(t, lastTime))), [flight.track, t, preTakeoff, lastTime]);
-
-  const tag = preTakeoff
-    ? `DECOLARE ${flight.origin.icao} ${clockLabel(BASE_TIME_OFFSET_SECONDS + flight.takeoffSeconds, false)}`
-    : done
-      ? flight.alternate
-        ? `LA ${flight.alternate.code === 'LRBV' ? 'LRCW' : flight.alternate.code}`
-        : `ATERIZAT ${clockLabel(BASE_TIME_OFFSET_SECONDS + (flight.landingSeconds ?? lastTime), false)}`
-      : flight.status === 'ClearedForApproach'
-        ? flight.slot
-          ? `SLOT ${clockLabel(BASE_TIME_OFFSET_SECONDS + flight.slot.calculatedTimeSeconds, false)}`
-          : 'FĂRĂ SLOT'
-        : STATUS_SHORT[flight.status];
+  const tag = computeFlightPhaseTag(flight, t, preTakeoff, done, lastTime);
+  const destCode = flight.alternate ? (flight.alternate.code === 'LRBV' ? 'LRCW' : flight.alternate.code) : 'LRCV';
 
   return (
     <>
-      {/* Traiectoria completă Decolare → Aterizare pentru fiecare avion */}
       {(showAllRoutes || selected) && (
         <Polyline
           positions={flight.fullRoute}
           pathOptions={{ className: selected ? 'planned planned--selected' : `full-route full-route--${rules}` }}
+          interactive={false}
+        />
+      )}
+      {(showAllRoutes || selected) && flight.diversionRoute && (
+        <Polyline
+          positions={flight.diversionRoute}
+          pathOptions={{ className: 'divert-route' }}
           interactive={false}
         />
       )}
@@ -634,7 +679,7 @@ function AircraftMarkerView({
         position={[pos.lat, pos.lon]}
         icon={icon}
         keyboard
-        title={`${flight.callsign} (${flight.origin.icao} → LRCV)`}
+        title={`${flight.callsign} (${flight.origin.icao} → ${destCode})`}
         eventHandlers={{
           click: (e) => {
             L.DomEvent.stopPropagation(e);
@@ -649,11 +694,11 @@ function AircraftMarkerView({
           offset={[12, 0]}
           className={`datablock ${selected ? 'datablock--selected' : ''}`}
         >
-          <span className="db-callsign">{flight.callsign}</span> <span className="db-orig">{flight.origin.icao}→LRCV</span>
+          <span className="db-callsign">{flight.callsign}</span> <span className="db-orig">{flight.origin.icao}→{destCode}</span>
           <br />
           <span className={`db-alt ${band}`}>{altitudeLabel(pos.altitudeMeters)}</span> {flight.aircraft.flightRules}
           <br />
-          <span className={isUnsequenced(flight) ? 'db-warn' : ''}>{tag}</span>
+          <span className={isUnsequenced(flight) && !flight.tacticalDecision ? 'db-warn' : ''}>{tag}</span>
         </Tooltip>
       </Marker>
     </>
