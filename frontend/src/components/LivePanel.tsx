@@ -1,9 +1,9 @@
 // Panoul paginii Live: METAR-ul real și benzile avioanelor detectate, cele mai apropiate primele.
 import { useEffect, useRef } from 'react';
 import type { LiveFlight, Metar } from '../contracts/live';
-import { airlineFor, trendArrow } from '../sim/live';
-import { M_PER_NM, altitudeLabel, verticalRateLabel } from '../sim/units';
-import { useSpeed } from '../state/units';
+import { airlineFor, fromLrcv, trendArrow } from '../sim/live';
+import { altitudeLabel, verticalRateLabel } from '../sim/units';
+import { useDistance, useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { HINT } from '../data/glossary';
 
@@ -17,7 +17,7 @@ export function LivePanel() {
   const selectedIcao = useLive((s) => s.selectedIcao);
   const airborne = (positions?.flights ?? [])
     .filter((f) => !f.onGround && f.latitude != null)
-    .sort((a, b) => (a.distanceFromLrcvKm ?? Infinity) - (b.distanceFromLrcvKm ?? Infinity));
+    .sort((a, b) => (fromLrcv(a)?.nm ?? Infinity) - (fromLrcv(b)?.nm ?? Infinity));
 
   return (
     <aside className="panel" aria-label="Trafic real">
@@ -102,7 +102,8 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
   useEffect(() => {
     if (expanded) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [expanded]);
-  const nm = flight.distanceFromLrcvKm != null ? (flight.distanceFromLrcvKm * 1000) / M_PER_NM : null;
+  const distance = useDistance();
+  const lrcv = fromLrcv(flight);
 
   return (
     <article className={`strip strip--live ${expanded ? 'is-open' : ''}`}>
@@ -113,8 +114,7 @@ function LiveStrip({ flight, expanded }: { flight: LiveFlight; expanded: boolean
         </span>
         <span className="strip__type">{airlineFor(flight.callsign) ?? flight.originCountry ?? 'țară necunoscută'}</span>
         <span className="strip__when">
-          {nm != null ? `${nm.toFixed(0)} NM` : ''}
-          {flight.bearingFromLrcvDegrees != null ? ` la ${String(Math.round(flight.bearingFromLrcvDegrees)).padStart(3, '0')}°` : ''}
+          {lrcv ? `${distance.label(lrcv.nm)} la ${String(Math.round(lrcv.bearing) % 360).padStart(3, '0')}°` : ''}
         </span>
       </button>
       {expanded && (

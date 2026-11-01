@@ -353,13 +353,13 @@ public static class FlightPhysicsAndPredictionEngine
             "W4-3762" => ("LIME", "Milan Bergamo", 640.0, 35000.0, 455.0, 1580.0, 144.0, 139.0, 55.0),
             "CA-841"  => ("ZBAA", "Beijing Capital", 3885.0, 38000.0, 470.0, 1680.0, 142.0, 137.0, 58.0),
             "RO-204"  => ("LROP", "București Otopeni", 98.0, 16000.0, 275.0, 1080.0, 116.0, 111.0, 42.0),
-            "YR-SAV"  => ("PODARI", "Aerodrom Podari", 18.5, 2000.0, 65.0, 95.0, 52.0, 46.0, 24.0),
-            "YR-WILG" => ("LRCW", "Craiova-Sud (LRCW)", 24.0, 2500.0, 75.0, 125.0, 60.0, 54.0, 28.0),
+            "YR-SAV"  => ("LRCW", "Aerodromul Balta Verde Craiova (Aeroclubul României)", 18.5, 2000.0, 65.0, 95.0, 52.0, 46.0, 24.0),
+            "YR-WILG" => ("LRCW", "Aerodromul Balta Verde Craiova (Aeroclubul României)", 24.0, 2500.0, 75.0, 125.0, 60.0, 54.0, 28.0),
             "YR-C172" => ("LRBS", "București Băneasa", 97.0, 4500.0, 115.0, 160.0, 68.0, 61.0, 30.0),
             _ when isJet => ("LROP", "București Otopeni", 98.0, 28000.0, 440.0, 1450.0, 138.0, 133.0, 50.0),
             _ when isTurboprop => ("LROP", "București Otopeni", 98.0, 16000.0, 275.0, 1100.0, 118.0, 113.0, 42.0),
             _ when isGa => ("LRBS", "București Băneasa", 95.0, 4500.0, 110.0, 180.0, 70.0, 62.0, 30.0),
-            _ => ("LRCW", "Craiova-Sud (LRCW)", 20.0, 2000.0, 70.0, 110.0, 55.0, 48.0, 25.0)
+            _ => ("LRCW", "Aerodromul Balta Verde Craiova (Aeroclubul României)", 20.0, 2000.0, 70.0, 110.0, 55.0, 48.0, 25.0)
         };
 
         var (resolvedIcao, resolvedName, depLat, depLon, overrideNm) = ResolveDepartureAerodrome(ac.DepartureIcao ?? depIcao, depName, routeNm);
@@ -622,7 +622,7 @@ public static class FlightPhysicsAndPredictionEngine
             AdvisoryStatus.HoldInOrbitRecommended =>
                 $"Pasul +1: Intrare în circuit de așteptare la {advisory.OrbitAdvice?.Racetrack?.FixId ?? "CARCEA"} ({advisory.OrbitAdvice?.RecommendedAltitudeFeet ?? 1500:F0} ft QNH). Vânt lateral prognozat la sol: {advisory.CurrentCrosswindKnots:F1} kt.",
             _ =>
-                $"Pasul +1: Punct decizional de redirecționare (Point of No Return) la {entryWp.Id}; viraj pe cap {advisory.VfrRedirection?.RedirectionHeadingToFlyDegrees ?? 225:F0}° către {advisory.VfrRedirection?.BestAlternateName ?? "Podari"}."
+                $"Pasul +1: Punct decizional de redirecționare (Point of No Return) la {entryWp.Id}; viraj pe cap {advisory.VfrRedirection?.RedirectionHeadingToFlyDegrees ?? 225:F0}° către {advisory.VfrRedirection?.BestAlternateName ?? "Aerodromul Balta Verde Craiova"}."
         };
 
         var stepOneAhead = new PredictionStepSnapshot(
@@ -691,7 +691,7 @@ public static class FlightPhysicsAndPredictionEngine
 
             string holdStep2Action = xwExit <= ac.MaxCrosswindKnots
                 ? $"Pasul +2: La {Fmt(exitHoldSec)} părăsește holdingul și aterizează pe RWY {rwy} (vânt lateral prognozat {xwExit:F1} kt <= {ac.MaxCrosswindKnots:F0} kt)."
-                : $"Pasul +2: La {Fmt(exitHoldSec)} vântul lateral pe LRCV rămâne {xwExit:F1} kt (> {ac.MaxCrosswindKnots:F0} kt); execută redirecționare înainte de PNR către {bestAlt?.Name ?? "Aerodrom Podari"} (pista {bestAlt?.BestRunway ?? "20"}, lateral doar {bestAlt?.CalculatedCrosswindKnots ?? 7.5:F1} kt).";
+                : $"Pasul +2: La {Fmt(exitHoldSec)} vântul lateral pe LRCV rămâne {xwExit:F1} kt (> {ac.MaxCrosswindKnots:F0} kt); execută redirecționare înainte de PNR către {bestAlt?.Name ?? "Aerodromul Balta Verde Craiova"} (pista {bestAlt?.BestRunway ?? "20"}, lateral doar {bestAlt?.CalculatedCrosswindKnots ?? 7.5:F1} kt).";
 
             stepTwoAhead = new PredictionStepSnapshot(
                 StepIndex: 2,
@@ -699,7 +699,7 @@ public static class FlightPhysicsAndPredictionEngine
                 TimeSeconds: exitHoldSec,
                 FormattedTime: Fmt(exitHoldSec),
                 PhaseName: xwExit <= ac.MaxCrosswindKnots ? "Post-Orbit Approach Clearance" : "PNR Alternate Redirection",
-                FixOrLocation: xwExit <= ac.MaxCrosswindKnots ? $"THR{rwy}" : (bestAlt?.Code ?? "PODARI"),
+                FixOrLocation: xwExit <= ac.MaxCrosswindKnots ? $"THR{rwy}" : (bestAlt?.Code ?? "LRCW"),
                 Latitude: Math.Round(thr.Lat, 5),
                 Longitude: Math.Round(thr.Lon, 5),
                 DistanceToThresholdNm: xwExit <= ac.MaxCrosswindKnots ? 0.0 : Math.Round((bestAlt?.DistanceKm ?? 14.5) / 1.852, 1),
@@ -722,15 +722,15 @@ public static class FlightPhysicsAndPredictionEngine
                           ?? advisory.RecommendedAlternates?.FirstOrDefault();
             double divEtaMin = bestAlt?.EstimatedFlightMinutes ?? 10.0;
             double divTouchdownSec = step1Sec + divEtaMin * 60.0;
-            var (altLat, altLon) = GeoMath.Destination(AipAirwayData.Arp.Lat, AipAirwayData.Arp.Lon, bestAlt?.BearingDegrees ?? 225.0, (bestAlt?.DistanceKm ?? 14.5) / 1.852);
+            var (altLat, altLon) = bestAlt?.Code is "LRCW" or "LRBV" ? (44.286389, 23.791111) : GeoMath.Destination(AipAirwayData.Arp.Lat, AipAirwayData.Arp.Lon, bestAlt?.BearingDegrees ?? 245.0, (bestAlt?.DistanceKm ?? 11.8) / 1.852);
 
             stepTwoAhead = new PredictionStepSnapshot(
                 StepIndex: 2,
-                StepLabel: $"Pasul +2 Înainte — Aterizare Sigură pe Alternativa {bestAlt?.Code ?? "PODARI"}",
+                StepLabel: $"Pasul +2 Înainte — Aterizare Sigură pe Alternativa {bestAlt?.Code ?? "LRCW"}",
                 TimeSeconds: divTouchdownSec,
                 FormattedTime: Fmt(divTouchdownSec),
                 PhaseName: "Alternate Runway Touchdown",
-                FixOrLocation: $"{bestAlt?.Name ?? "Aerodrom Podari"} ({bestAlt?.BestRunway ?? "20"})",
+                FixOrLocation: $"{bestAlt?.Name ?? "Aerodromul Balta Verde Craiova"} ({bestAlt?.BestRunway ?? "13"})",
                 Latitude: Math.Round(altLat, 5),
                 Longitude: Math.Round(altLon, 5),
                 DistanceToThresholdNm: 0.0,
@@ -744,7 +744,7 @@ public static class FlightPhysicsAndPredictionEngine
                 ExpectedCrosswindKnots: bestAlt?.CalculatedCrosswindKnots ?? 7.0,
                 ExpectedHeadwindKnots: bestAlt?.CalculatedHeadwindKnots ?? 20.0,
                 RemainingFuelMinutes: bestAlt?.RemainingFuelAtTouchdownMinutes ?? 20.0,
-                ControllerAction: $"Pasul +2: Aterizare pe {bestAlt?.Name ?? "Podari"} pista {bestAlt?.BestRunway ?? "20"} la {Fmt(divTouchdownSec)} cu vânt lateral redus la {bestAlt?.CalculatedCrosswindKnots ?? 7.0:F1} kt și vânt de față +{bestAlt?.CalculatedHeadwindKnots ?? 20.0:F1} kt."
+                ControllerAction: $"Pasul +2: Aterizare pe {bestAlt?.Name ?? "Aerodromul Balta Verde Craiova"} pista {bestAlt?.BestRunway ?? "13"} la {Fmt(divTouchdownSec)} cu vânt lateral redus la {bestAlt?.CalculatedCrosswindKnots ?? 7.0:F1} kt și vânt de față +{bestAlt?.CalculatedHeadwindKnots ?? 20.0:F1} kt."
             );
         }
 
@@ -776,37 +776,25 @@ public static class FlightPhysicsAndPredictionEngine
         double effectiveWind = Math.Max(weather.WindSpeedKnots, weather.WindGustKnots);
         var (_, _, _, sigma) = CalculateAtmosphere();
 
-        var specs = new List<(string Name, string Code, double DistKm, double BearingDeg, double Rwy1Hdg, string Rwy1Id, double Rwy2Hdg, string Rwy2Id, double LengthM, string Surface, string BaseNote)>
+        var specs = new List<(string Name, string Code, double DistKm, double BearingDeg, (double Hdg, string Id)[] Runways, double LengthM, string Surface, string BaseNote)>
         {
             (
-                "Aerodromul Balta Verde Craiova",
-                "LRBV",
+                "Aerodromul Balta Verde Craiova (Aeroclubul României)",
+                "LRCW",
                 11.8,
                 245.0,
-                130.0, "13 (130°)",
-                310.0, "31 (310°)",
-                600.0, "Iarbă (600m)",
-                "Pistă înierbată 600m (Craiova-Sud LRCW)."
-            ),
-            (
-                "Aerodrom Podari (ULM Field)",
-                "PODARI",
-                14.5,
-                225.0,
-                20.0,  "02 (020°)",
-                200.0, "20 (200°)",
-                550.0, "Iarbă (550m)",
-                "Teren dedicat ULM/Savannah orientat NNE-SSW."
+                new[] { (130.0, "13 (130°)"), (310.0, "31 (310°)"), (20.0, "02 (020°)"), (200.0, "20 (200°)") },
+                920.0, "Iarbă (920m)",
+                "Singurul aerodrom al Craiovei (Craiova-Sud LRCW, Balta Verde), administrat de Aeroclubul României."
             ),
             (
                 "Aerodrom Slatina",
                 "SLATINA",
                 46.0,
                 75.0,
-                80.0,  "08 (080°)",
-                260.0, "26 (260°)",
+                new[] { (80.0, "08 (080°)"), (260.0, "26 (260°)") },
                 700.0, "Iarbă (700m)",
-                "Aerodrom de rezervă estic."
+                "Punct secundar de rezervă VFR estic."
             )
         };
 
@@ -814,14 +802,29 @@ public static class FlightPhysicsAndPredictionEngine
 
         foreach (var s in specs)
         {
-            var (xw1, hw1) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, s.Rwy1Hdg);
-            var (xw2, hw2) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, s.Rwy2Hdg);
+            var evaluatedRwys = s.Runways
+                .Select(r =>
+                {
+                    var (xw, hw) = CrosswindCalculator.Calculate(weather.WindDirectionDegrees, effectiveWind, r.Hdg);
+                    return (r.Id, r.Hdg, Xw: xw, Hw: hw);
+                })
+                .ToList();
 
-            bool useRwy2 = hw2 > hw1;
-            string bestRwy = useRwy2 ? s.Rwy2Id : s.Rwy1Id;
-            double bestHdg = useRwy2 ? s.Rwy2Hdg : s.Rwy1Hdg;
-            double bestXw = useRwy2 ? xw2 : xw1;
-            double bestHw = useRwy2 ? hw2 : hw1;
+            var chosen = evaluatedRwys
+                .Where(r => r.Hw >= -1.0)
+                .OrderBy(r => r.Xw)
+                .ThenByDescending(r => r.Hw)
+                .FirstOrDefault();
+
+            if (string.IsNullOrEmpty(chosen.Id))
+            {
+                chosen = evaluatedRwys.OrderByDescending(r => r.Hw).First();
+            }
+
+            string bestRwy = chosen.Id;
+            double bestHdg = chosen.Hdg;
+            double bestXw = chosen.Xw;
+            double bestHw = chosen.Hw;
 
             // Păstrăm formula de bază a timpului de zbor pentru compatibilitate cu testele existente:
             double timeMinutes = Math.Round((s.DistKm / (speed * 1.852)) * 60.0, 1);
@@ -1031,8 +1034,10 @@ public static class FlightPhysicsAndPredictionEngine
         ["LRTR"] = ("Timișoara Traian Vuia", 45.809833, 21.337872, 140.0),
         ["LRSB"] = ("Sibiu Intl", 45.785800, 24.091183, 89.0),
         ["LRCS"] = ("Caransebeș", 45.420278, 22.252222, 96.0),
-        ["LRCW"] = ("Craiova-Sud (LRCW)", 44.286389, 23.791111, null),
-        ["PODARI"] = ("Aerodrom Podari", 44.225800, 23.765400, null)
+        ["LRCW"] = ("Aerodromul Balta Verde Craiova (Aeroclubul României)", 44.286389, 23.791111, null),
+        ["LRBV"] = ("Aerodromul Balta Verde Craiova (Aeroclubul României)", 44.286389, 23.791111, null),
+        ["PODARI"] = ("Aerodromul Balta Verde Craiova (Aeroclubul României)", 44.286389, 23.791111, null),
+        ["SLATINA"] = ("Aerodrom Slatina", 44.424000, 24.442000, 25.0)
     };
 
     private static (string Icao, string Name, double Lat, double Lon, double RouteNm) ResolveDepartureAerodrome(

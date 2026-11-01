@@ -1,7 +1,7 @@
 // Calcule mici pentru pagina cu date reale. Funcții pure, testate în live.test.ts.
 import type { LiveFlight } from '../contracts/live';
-import { runwayTrueBearing, type RunwayId } from '../data/geo';
-import { destination, type LatLon } from './geomath';
+import { ARP, runwayTrueBearing, type RunwayId } from '../data/geo';
+import { bearingDeg, destination, distanceNm, type LatLon } from './geomath';
 
 /** Cât de mult avansăm cel mult o poziție OpenSky; peste asta avionul se oprește acolo (date vechi), nu sare înapoi. */
 export const MAX_EXTRAPOLATION_SECONDS = 30;
@@ -17,6 +17,13 @@ export function extrapolate(f: LiveFlight, nowUnixSeconds: number): (LatLon & { 
   if (f.onGround || f.velocityKnots == null || f.trueTrackDegrees == null || age <= 0) return { ...from, extrapolatedSeconds: 0 };
   const seconds = Math.min(age, MAX_EXTRAPOLATION_SECONDS);
   return { ...destination(from, f.trueTrackDegrees, (f.velocityKnots * seconds) / 3600), extrapolatedSeconds: seconds };
+}
+
+/** Distanța (NM) și direcția (°) de la LRCV la ultima poziție raportată; null fără coordonate. */
+export function fromLrcv(f: LiveFlight): { nm: number; bearing: number } | null {
+  if (f.latitude == null || f.longitude == null) return null;
+  const p = { lat: f.latitude, lon: f.longitude };
+  return { nm: distanceNm(ARP, p), bearing: bearingDeg(ARP, p) };
 }
 
 /** Pista cu cel mai mult vânt de față (METAR raportează direcția adevărată). Fără vânt definit: 26, pista cu ILS. */

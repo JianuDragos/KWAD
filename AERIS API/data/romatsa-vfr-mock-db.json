@@ -27,8 +27,27 @@
       "radioFailureSquawk": "7600",
       "unlawfulInterferenceSquawk": "7500",
       "semicircularCruisingLevels": {
-        "eastboundTrackDegrees_000_179": ["FL035", "FL055", "FL075", "FL095", "FL115", "FL135", "FL155", "FL175", "FL195"],
-        "westboundTrackDegrees_180_359": ["FL045", "FL065", "FL085", "FL105", "FL125", "FL145", "FL165", "FL185"]
+        "eastboundTrackDegrees_000_179": [
+          "FL035",
+          "FL055",
+          "FL075",
+          "FL095",
+          "FL115",
+          "FL135",
+          "FL155",
+          "FL175",
+          "FL195"
+        ],
+        "westboundTrackDegrees_180_359": [
+          "FL045",
+          "FL065",
+          "FL085",
+          "FL105",
+          "FL125",
+          "FL145",
+          "FL165",
+          "FL185"
+        ]
       }
     }
   },
@@ -37,7 +56,9 @@
       "class": "A",
       "statusInRomania": "Activ",
       "serviceProvided": "Control al traficului aerian (ATC)",
-      "allowedFlights": ["IFR"],
+      "allowedFlights": [
+        "IFR"
+      ],
       "vfrPermitted": false,
       "description": "Spatiu aerian controlat superior (de la FL195 pana la FL660). Zborurile VFR sunt strict interzise.",
       "speedLimitKnots": null,
@@ -48,7 +69,10 @@
       "class": "C",
       "statusInRomania": "Activ",
       "serviceProvided": "Control al traficului aerian (ATC) pentru separarea IFR de IFR si IFR de VFR. Pentru zborurile VFR de VFR se asigura informare de trafic si consiliere la cerere.",
-      "allowedFlights": ["IFR", "VFR"],
+      "allowedFlights": [
+        "IFR",
+        "VFR"
+      ],
       "vfrPermitted": true,
       "description": "Spatiu aerian controlat (TMA si CTR ale aerodromurilor civile). Toate zborurile sunt supuse autorizarii ATC.",
       "speedLimitKnots": 250,
@@ -67,7 +91,10 @@
       "class": "G",
       "statusInRomania": "Activ",
       "serviceProvided": "Serviciul de informare a zborurilor (FIS) si Serviciul de alarmare (Alerting service). Nu se asigura esalonare ATC.",
-      "allowedFlights": ["IFR", "VFR"],
+      "allowedFlights": [
+        "IFR",
+        "VFR"
+      ],
       "vfrPermitted": true,
       "description": "Spatiu aerian necontrolat (de la sol GND pana la baza spatiului controlat C sau FL105). Pilotul la comanda este responsabil de separare si navigatie vizuala.",
       "speedLimitKnots": 250,
@@ -98,11 +125,13 @@
         "code": "LRBB-ACC",
         "name": "ACC Bucuresti (Area Control Center)",
         "role": "Control regional in regiuni de control si Serviciu de Informare a Zborurilor (FIS)",
-        "ratingsRequired": ["ACS"],
+        "ratingsRequired": [
+          "ACS"
+        ],
         "fisOperationalPositions": [
           {
             "sector": "FIS Bucuresti Nord",
-            "frequencyMhz": 129.400,
+            "frequencyMhz": 129.4,
             "callsign": "BUCURESTI INFORMATION",
             "airspaceClassServed": "G",
             "purpose": "Furnizare informatii utile de zbor (meteo, NOTAM, trafic raportat) si primire pozitii VFR"
@@ -120,20 +149,38 @@
     "approachUnits": [
       {
         "unit": "APP Bucuresti",
-        "primaryAirports": ["LROP", "LRBS"],
-        "ratingsRequired": ["APS", "TCL"],
+        "primaryAirports": [
+          "LROP",
+          "LRBS"
+        ],
+        "ratingsRequired": [
+          "APS",
+          "TCL"
+        ],
         "description": "Unitate dedicata de control al apropierii pentru zona terminala a Capitalei"
       },
       {
         "unit": "APP Arad",
-        "primaryAirports": ["LRAR", "LRTR"],
-        "ratingsRequired": ["APS", "TCL"],
+        "primaryAirports": [
+          "LRAR",
+          "LRTR"
+        ],
+        "ratingsRequired": [
+          "APS",
+          "TCL"
+        ],
         "description": "Unitate dedicata de control al apropierii pentru vestul Romaniei"
       },
       {
         "unit": "APP Constanta",
-        "primaryAirports": ["LRCK", "LRTC"],
-        "ratingsRequired": ["APS", "TCL"],
+        "primaryAirports": [
+          "LRCK",
+          "LRTC"
+        ],
+        "ratingsRequired": [
+          "APS",
+          "TCL"
+        ],
         "description": "Unitate de control de apropiere pentru zona litorala si Marea Neagra"
       }
     ],
@@ -142,25 +189,41 @@
         "code": "LROP",
         "name": "TWR Otopeni (Henri Coanda)",
         "type": "TWR_ONLY",
-        "atcPositions": ["AIR", "GMC", "GMS"],
-        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC", "ADI/GMS"],
+        "atcPositions": [
+          "AIR",
+          "GMC",
+          "GMS"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "ADI/AIR",
+          "ADI/GMC",
+          "ADI/GMS"
+        ],
         "supportsVfr": true,
         "vfrRestrictions": "Permis doar cu plan de zbor aprobat si slot ATFM; prioritate trafic comercial IFR",
         "twrFrequencyMhz": 118.805,
         "gndFrequencyMhz": 121.855,
-        "atisFrequencyMhz": 118.080,
+        "atisFrequencyMhz": 118.08,
         "elevationFeet": 314
       },
       {
         "code": "LRBS",
         "name": "TWR Baneasa (Aurel Vlaicu)",
         "type": "TWR_ONLY",
-        "atcPositions": ["AIR", "GMC"],
-        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC"],
+        "atcPositions": [
+          "AIR",
+          "GMC"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "ADI/AIR",
+          "ADI/GMC"
+        ],
         "supportsVfr": true,
         "vfrRestrictions": "Hub major pentru aviatia generala, scoli de zbor si operatiuni VFR private",
-        "twrFrequencyMhz": 120.800,
-        "gndFrequencyMhz": 129.950,
+        "twrFrequencyMhz": 120.8,
+        "gndFrequencyMhz": 129.95,
         "atisFrequencyMhz": 126.125,
         "elevationFeet": 305
       },
@@ -168,10 +231,14 @@
         "code": "LRCL",
         "name": "TWR Cluj-Napoca (Avram Iancu)",
         "type": "TWR_ONLY",
-        "atcPositions": ["TWR"],
-        "ratingsRequired": ["ADI/TWR"],
+        "atcPositions": [
+          "TWR"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 118.700,
+        "twrFrequencyMhz": 118.7,
         "atisFrequencyMhz": 127.275,
         "elevationFeet": 1036
       },
@@ -179,11 +246,18 @@
         "code": "LRTR",
         "name": "TWR Timisoara (Traian Vuia)",
         "type": "TWR_ONLY",
-        "atcPositions": ["AIR", "GMC"],
-        "ratingsRequired": ["ADI/TWR", "ADI/AIR", "ADI/GMC"],
+        "atcPositions": [
+          "AIR",
+          "GMC"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "ADI/AIR",
+          "ADI/GMC"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 120.100,
-        "gndFrequencyMhz": 121.600,
+        "twrFrequencyMhz": 120.1,
+        "gndFrequencyMhz": 121.6,
         "atisFrequencyMhz": 128.625,
         "elevationFeet": 348
       },
@@ -191,134 +265,204 @@
         "code": "LRAR",
         "name": "TWR Arad",
         "type": "TWR_ONLY",
-        "atcPositions": ["TWR"],
-        "ratingsRequired": ["ADI/TWR"],
+        "atcPositions": [
+          "TWR"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 118.000,
+        "twrFrequencyMhz": 118,
         "elevationFeet": 353
       },
       {
         "code": "LRCK",
         "name": "TWR Constanta (Mihail Kogalniceanu)",
         "type": "TWR_ONLY",
-        "atcPositions": ["TWR"],
-        "ratingsRequired": ["ADI/TWR"],
+        "atcPositions": [
+          "TWR"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 120.450,
+        "twrFrequencyMhz": 120.45,
         "elevationFeet": 353
       },
       {
         "code": "LRTM",
         "name": "TWR Targu Mures (Transilvania)",
         "type": "TWR_ONLY",
-        "atcPositions": ["TWR"],
-        "ratingsRequired": ["ADI/TWR"],
+        "atcPositions": [
+          "TWR"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 119.650,
+        "twrFrequencyMhz": 119.65,
         "elevationFeet": 965
       },
       {
         "code": "LRSB",
         "name": "TWR Sibiu",
         "type": "TWR_ONLY",
-        "atcPositions": ["TWR"],
-        "ratingsRequired": ["ADI/TWR"],
+        "atcPositions": [
+          "TWR"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 121.300,
+        "twrFrequencyMhz": 121.3,
         "elevationFeet": 1496
       },
       {
         "code": "LRCV",
         "name": "TWR Craiova",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
         "vfrRestrictions": "Coordoneaza traficul VFR in CTR Craiova Clasa C prin punctele vizuale VFR-N, VFR-S, VFR-W",
-        "twrFrequencyMhz": 124.300,
-        "appFrequencyMhz": 124.300,
-        "atisFrequencyMhz": 126.850,
+        "twrFrequencyMhz": 124.3,
+        "appFrequencyMhz": 124.3,
+        "atisFrequencyMhz": 126.85,
         "elevationFeet": 626
       },
       {
         "code": "LRBC",
         "name": "TWR Bacau (George Enescu)",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 120.150,
+        "twrFrequencyMhz": 120.15,
         "elevationFeet": 607
       },
       {
         "code": "LRBM",
         "name": "TWR Baia Mare (Maramures)",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 118.150,
+        "twrFrequencyMhz": 118.15,
         "elevationFeet": 604
       },
       {
         "code": "LRIA",
         "name": "TWR Iasi",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 119.950,
+        "twrFrequencyMhz": 119.95,
         "elevationFeet": 397
       },
       {
         "code": "LROD",
         "name": "TWR Oradea",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 128.300,
+        "twrFrequencyMhz": 128.3,
         "elevationFeet": 465
       },
       {
         "code": "LRSV",
         "name": "TWR Suceava (Stefan cel Mare)",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 129.950,
+        "twrFrequencyMhz": 129.95,
         "elevationFeet": 1375
       },
       {
         "code": "LRSM",
         "name": "TWR Satu Mare",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 119.750,
+        "twrFrequencyMhz": 119.75,
         "elevationFeet": 414
       },
       {
         "code": "LRTC",
         "name": "TWR Tulcea (Delta Dunarii)",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
-        "twrFrequencyMhz": 119.550,
+        "twrFrequencyMhz": 119.55,
         "elevationFeet": 200
       },
       {
         "code": "LRGB",
         "name": "TWR Brasov (Brasov-Ghimbav)",
         "type": "TWR_AND_APP_COMBINED",
-        "atcPositions": ["TWR_REMOTE", "APP_PROCEDURAL"],
-        "ratingsRequired": ["ADI/TWR", "APP"],
+        "atcPositions": [
+          "TWR_REMOTE",
+          "APP_PROCEDURAL"
+        ],
+        "ratingsRequired": [
+          "ADI/TWR",
+          "APP"
+        ],
         "supportsVfr": true,
         "vfrRestrictions": "Primul aeroport din Romania cu turn de control la distanta (Remote TWR operat din Centrul ROMATSA Arad)",
-        "twrFrequencyMhz": 128.550,
+        "twrFrequencyMhz": 128.55,
         "elevationFeet": 1739
       }
     ]
@@ -801,7 +945,7 @@
           "code": "BUF",
           "name": "Buftea",
           "latitude": 44.5667,
-          "longitude": 25.9500,
+          "longitude": 25.95,
           "elevationFeet": 360,
           "mandatoryReporting": true,
           "recommendedAltitudeFeet": 1500,
@@ -810,8 +954,8 @@
         {
           "code": "CHIA",
           "name": "Chiajna",
-          "latitude": 44.4600,
-          "longitude": 25.9800,
+          "latitude": 44.46,
+          "longitude": 25.98,
           "elevationFeet": 295,
           "mandatoryReporting": true,
           "recommendedAltitudeFeet": 1000,
@@ -828,8 +972,8 @@
         {
           "code": "VFR-R1",
           "name": "Codlea Vest",
-          "latitude": 45.6950,
-          "longitude": 25.4350,
+          "latitude": 45.695,
+          "longitude": 25.435,
           "elevationFeet": 1820,
           "mandatoryReporting": true,
           "recommendedAltitudeFeet": 3500,
@@ -838,8 +982,8 @@
         {
           "code": "VFR-R2",
           "name": "Prejmer Est",
-          "latitude": 45.7200,
-          "longitude": 25.7700,
+          "latitude": 45.72,
+          "longitude": 25.77,
           "elevationFeet": 1710,
           "mandatoryReporting": true,
           "recommendedAltitudeFeet": 3500,
@@ -882,23 +1026,83 @@
   "atcLicensingAndQualifications": {
     "source": "ROMATSA / AACR Manual de Selectie si Pregatire CTA",
     "qualifications": [
-      { "code": "ADV", "name": "Control de aerodrom, la vedere (Aerodrome Control Visual)", "description": "Competenta ATC la un aerodrom fara proceduri publicate de apropiere instrumentala" },
-      { "code": "ADI", "name": "Control de aerodrom, instrumental (Aerodrome Control Instrument)", "description": "Competenta ATC la aerodrom cu proceduri instrumentale publicate" },
-      { "code": "APP", "name": "Control de apropiere, procedural (Approach Control Procedural)", "description": "Control de apropiere fara utilizarea radarului/ADS" },
-      { "code": "APS", "name": "Control de apropiere, supraveghere (Approach Control Surveillance)", "description": "Control de apropiere cu utilizarea sistemelor radar sau ADS" },
-      { "code": "ACP", "name": "Control regional, procedural (Area Control Procedural)", "description": "Control de ruta fara utilizarea echipamentelor de supraveghere" },
-      { "code": "ACS", "name": "Control regional, supraveghere (Area Control Surveillance)", "description": "Control de ruta cu utilizare radar/ADS (ex: ACC Bucuresti)" }
+      {
+        "code": "ADV",
+        "name": "Control de aerodrom, la vedere (Aerodrome Control Visual)",
+        "description": "Competenta ATC la un aerodrom fara proceduri publicate de apropiere instrumentala"
+      },
+      {
+        "code": "ADI",
+        "name": "Control de aerodrom, instrumental (Aerodrome Control Instrument)",
+        "description": "Competenta ATC la aerodrom cu proceduri instrumentale publicate"
+      },
+      {
+        "code": "APP",
+        "name": "Control de apropiere, procedural (Approach Control Procedural)",
+        "description": "Control de apropiere fara utilizarea radarului/ADS"
+      },
+      {
+        "code": "APS",
+        "name": "Control de apropiere, supraveghere (Approach Control Surveillance)",
+        "description": "Control de apropiere cu utilizarea sistemelor radar sau ADS"
+      },
+      {
+        "code": "ACP",
+        "name": "Control regional, procedural (Area Control Procedural)",
+        "description": "Control de ruta fara utilizarea echipamentelor de supraveghere"
+      },
+      {
+        "code": "ACS",
+        "name": "Control regional, supraveghere (Area Control Surveillance)",
+        "description": "Control de ruta cu utilizare radar/ADS (ex: ACC Bucuresti)"
+      }
     ],
     "endorsements": [
-      { "code": "TWR", "parentQualification": "ADI", "description": "Control aerodrom furnizat dintr-o singura pozitie operationala combinata" },
-      { "code": "GMC", "parentQualification": "ADI", "description": "Controlul miscarii la sol (Ground Movement Control)" },
-      { "code": "GMS", "parentQualification": "ADI", "description": "Controlul miscarii la sol cu echipamente de supraveghere radar ASMCGS (Otopeni)" },
-      { "code": "AIR", "parentQualification": "ADI", "description": "Controlul zborului (Air Control) - traficul din aerodrom aflat in zbor" },
-      { "code": "RAD", "parentQualification": "ADI", "description": "Control radar de aerodrom" },
-      { "code": "TCL", "parentQualification": "APS/ACS", "description": "Control terminal in zona terminala (TMA)" },
-      { "code": "PAR", "parentQualification": "APS", "description": "Radar de apropiere de precizie" },
-      { "code": "SRA", "parentQualification": "APS", "description": "Apropiere supravegheata radar" },
-      { "code": "OJTI", "parentQualification": "ALL", "description": "On-the-Job Training Instructor - autorizare de instruire practica in trafic real" }
+      {
+        "code": "TWR",
+        "parentQualification": "ADI",
+        "description": "Control aerodrom furnizat dintr-o singura pozitie operationala combinata"
+      },
+      {
+        "code": "GMC",
+        "parentQualification": "ADI",
+        "description": "Controlul miscarii la sol (Ground Movement Control)"
+      },
+      {
+        "code": "GMS",
+        "parentQualification": "ADI",
+        "description": "Controlul miscarii la sol cu echipamente de supraveghere radar ASMCGS (Otopeni)"
+      },
+      {
+        "code": "AIR",
+        "parentQualification": "ADI",
+        "description": "Controlul zborului (Air Control) - traficul din aerodrom aflat in zbor"
+      },
+      {
+        "code": "RAD",
+        "parentQualification": "ADI",
+        "description": "Control radar de aerodrom"
+      },
+      {
+        "code": "TCL",
+        "parentQualification": "APS/ACS",
+        "description": "Control terminal in zona terminala (TMA)"
+      },
+      {
+        "code": "PAR",
+        "parentQualification": "APS",
+        "description": "Radar de apropiere de precizie"
+      },
+      {
+        "code": "SRA",
+        "parentQualification": "APS",
+        "description": "Apropiere supravegheata radar"
+      },
+      {
+        "code": "OJTI",
+        "parentQualification": "ALL",
+        "description": "On-the-Job Training Instructor - autorizare de instruire practica in trafic real"
+      }
     ],
     "languageProficiencyRequirement": "Autorizare lingvistica obligatorie atat pentru limba romana, cat si pentru limba engleza (minim Nivel 4 ICAO operational)"
   },
@@ -932,8 +1136,14 @@
           "windSpeedKnots": 12,
           "visibilityMeters": 10000,
           "clouds": [
-            { "coverage": "FEW", "baseFeetAgl": 3000 },
-            { "coverage": "SCT", "baseFeetAgl": 5000 }
+            {
+              "coverage": "FEW",
+              "baseFeetAgl": 3000
+            },
+            {
+              "coverage": "SCT",
+              "baseFeetAgl": 5000
+            }
           ],
           "temperatureCelsius": 16,
           "dewPointCelsius": 7,
@@ -982,8 +1192,8 @@
         "enduranceMinutes": 240
       },
       "liveTelemetry": {
-        "latitude": 44.4820,
-        "longitude": 24.1850,
+        "latitude": 44.482,
+        "longitude": 24.185,
         "altitudeFeetAmsl": 4500,
         "groundSpeedKnots": 112,
         "trueTrackDegrees": 255,
@@ -1027,10 +1237,10 @@
         "trueTrackDegrees": 180,
         "verticalSpeedFeetPerMinute": -400,
         "currentAirspaceClass": "C",
-        "currentAtsFrequency": 124.300,
+        "currentAtsFrequency": 124.3,
         "communicatingUnit": "TWR Craiova",
         "nextReportingPoint": "VFR-N",
-        "estimatedTimeToPointMinutes": 0.0,
+        "estimatedTimeToPointMinutes": 0,
         "status": "ENTERING_CTR_REPORTING"
       },
       "advisory": {
@@ -1058,14 +1268,14 @@
         "enduranceMinutes": 210
       },
       "liveTelemetry": {
-        "latitude": 44.2800,
-        "longitude": 23.4000,
+        "latitude": 44.28,
+        "longitude": 23.4,
         "altitudeFeetAmsl": 3500,
         "groundSpeedKnots": 240,
         "trueTrackDegrees": 110,
         "verticalSpeedFeetPerMinute": -1200,
         "currentAirspaceClass": "C",
-        "currentAtsFrequency": 124.300,
+        "currentAtsFrequency": 124.3,
         "communicatingUnit": "TWR Craiova",
         "nextReportingPoint": "VFR-W",
         "estimatedTimeToPointMinutes": 3.8,
@@ -1096,17 +1306,17 @@
         "enduranceMinutes": 220
       },
       "liveTelemetry": {
-        "latitude": 45.4200,
-        "longitude": 25.5300,
+        "latitude": 45.42,
+        "longitude": 25.53,
         "altitudeFeetAmsl": 5500,
         "groundSpeedKnots": 108,
         "trueTrackDegrees": 340,
         "verticalSpeedFeetPerMinute": 0,
         "currentAirspaceClass": "G",
-        "currentAtsFrequency": 129.400,
+        "currentAtsFrequency": 129.4,
         "communicatingUnit": "ACC Bucuresti (Bucuresti Information Nord)",
         "nextReportingPoint": "VFR-R1",
-        "estimatedTimeToPointMinutes": 14.0,
+        "estimatedTimeToPointMinutes": 14,
         "status": "EN_ROUTE_VALEA_PRAHOVEI"
       },
       "advisory": {
@@ -1119,7 +1329,7 @@
     {
       "code": "LRCW",
       "legacyAlias": "LRBV",
-      "name": "Aerodromul Craiova-Sud (Balta Verde)",
+      "name": "Aerodromul Balta Verde Craiova (Aeroclubul României)",
       "airspaceClass": "G (sub CTR Craiova Class C)",
       "latitude": 44.286389,
       "longitude": 23.791111,
@@ -1127,46 +1337,73 @@
       "distanceFromLrcvKm": 11.8,
       "bearingFromLrcvDegrees": 245,
       "runways": [
-        { "designator": "13", "headingDegrees": 130, "lengthMeters": 600, "widthMeters": 30, "surface": "Grass (Inierbata)" },
-        { "designator": "31", "headingDegrees": 310, "lengthMeters": 600, "widthMeters": 30, "surface": "Grass (Inierbata)" }
+        {
+          "designator": "13",
+          "headingDegrees": 130,
+          "lengthMeters": 920,
+          "widthMeters": 40,
+          "surface": "Grass (Inierbata)"
+        },
+        {
+          "designator": "31",
+          "headingDegrees": 310,
+          "lengthMeters": 920,
+          "widthMeters": 40,
+          "surface": "Grass (Inierbata)"
+        },
+        {
+          "designator": "02",
+          "headingDegrees": 20,
+          "lengthMeters": 920,
+          "widthMeters": 40,
+          "surface": "Grass (Inierbata)"
+        },
+        {
+          "designator": "20",
+          "headingDegrees": 200,
+          "lengthMeters": 920,
+          "widthMeters": 40,
+          "surface": "Grass (Inierbata)"
+        }
       ],
-      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
-      "radioFrequencyMhz": 123.450,
-      "operationalNotes": "Aerodrom certificat conform AIP AD 2.32 LRCW. Ideal pentru devierea VFR la vant de NV/SE cand pista 08/26 de la LRCV are vant lateral sever."
-    },
-    {
-      "code": "PODARI",
-      "name": "Aerodrom Podari (ULM Field)",
-      "airspaceClass": "G",
-      "latitude": 44.2258,
-      "longitude": 23.7602,
-      "elevationFeet": 310,
-      "distanceFromLrcvKm": 14.5,
-      "bearingFromLrcvDegrees": 225,
-      "runways": [
-        { "designator": "02", "headingDegrees": 20, "lengthMeters": 550, "widthMeters": 25, "surface": "Grass (Inierbata)" },
-        { "designator": "20", "headingDegrees": 200, "lengthMeters": 550, "widthMeters": 25, "surface": "Grass (Inierbata)" }
+      "supportedCategories": [
+        "UltralightAndGlider",
+        "GeneralAviation"
       ],
-      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
-      "radioFrequencyMhz": 123.500,
-      "operationalNotes": "Teren de zbor ULM/Savannah orientat NNE-SSW (020/200). Aproape perfect aliniat pe vanturile sudice (180-210 deg) care blocheaza pista 08/26 de la LRCV."
+      "radioFrequencyMhz": 119.08,
+      "operationalNotes": "Singurul aerodrom al Craiovei (Craiova-Sud LRCW, Balta Verde / Podari), administrat de Aeroclubul României (Aeroclubul Teritorial George Valentin Bibescu Craiova)."
     },
     {
       "code": "SLATINA",
       "name": "Aerodrom Slatina (Ganeasa)",
       "airspaceClass": "G",
-      "latitude": 44.4240,
-      "longitude": 24.4420,
+      "latitude": 44.424,
+      "longitude": 24.442,
       "elevationFeet": 520,
-      "distanceFromLrcvKm": 46.0,
+      "distanceFromLrcvKm": 46,
       "bearingFromLrcvDegrees": 75,
       "runways": [
-        { "designator": "08", "headingDegrees": 80, "lengthMeters": 700, "widthMeters": 30, "surface": "Grass (Inierbata)" },
-        { "designator": "26", "headingDegrees": 260, "lengthMeters": 700, "widthMeters": 30, "surface": "Grass (Inierbata)" }
+        {
+          "designator": "08",
+          "headingDegrees": 80,
+          "lengthMeters": 700,
+          "widthMeters": 30,
+          "surface": "Grass (Inierbata)"
+        },
+        {
+          "designator": "26",
+          "headingDegrees": 260,
+          "lengthMeters": 700,
+          "widthMeters": 30,
+          "surface": "Grass (Inierbata)"
+        }
       ],
-      "supportedCategories": ["UltralightAndGlider", "GeneralAviation"],
-      "radioFrequencyMhz": 123.450,
-      "operationalNotes": "Aerodrom de rezerva pe ruta de est catre Pitesti / Baneasa."
+      "supportedCategories": [
+        "UltralightAndGlider",
+        "GeneralAviation"
+      ],
+      "radioFrequencyMhz": 123.45,
+      "operationalNotes": "Punct secundar de rezerva VFR pe ruta de est catre Pitesti / Baneasa."
     }
   ]
 }

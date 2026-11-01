@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { ApiError, fetchLivePositions, fetchMetar, fetchVfrTracking } from '../api/client';
 import type { LivePositions, Metar, VfrTracking } from '../contracts/live';
+import { readFlag, writeFlag } from './prefs';
 
 /**
  * OpenSky anonim dă 400 de credite pe zi; un apel pe zona Craiova costă 1 credit.
@@ -77,8 +78,11 @@ export const useLive = create<LiveState>()((set, get) => {
     updatedAtMs: null,
     selectedIcao: null,
     select: (selectedIcao) => set({ selectedIcao }),
-    showRoutes: false,
-    setShowRoutes: (showRoutes) => set({ showRoutes }),
+    showRoutes: readFlag('aeris.showLiveRoutes', false),
+    setShowRoutes: (showRoutes) => {
+      writeFlag('aeris.showLiveRoutes', showRoutes);
+      set({ showRoutes });
+    },
     start: () => {
       let timers: number[] = [];
       const run = () => {

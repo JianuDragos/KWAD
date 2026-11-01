@@ -57,7 +57,7 @@ describe('schemele răspunsurilor', () => {
 
     const vfr = res.advisories.find((a) => a.aircraftId === 'YR-SAV')!;
     expect(vfr.vfrRedirection).toBeDefined();
-    expect(vfr.vfrRedirection?.bestAlternateCode).toBe('PODARI');
+    expect(vfr.vfrRedirection?.bestAlternateCode).toBe('LRCW');
     expect(vfr.vfrRedirection?.pointOfNoReturnMinutes).toBeGreaterThan(15);
   });
 

@@ -5,6 +5,7 @@ import { ApiError, evaluateCraiova, fetchScenarioTraffic } from '../api/client';
 import { FALLBACK_FIRS, loadFirsDataset, type FirEntry } from '../data/airspace';
 import { DEFAULT_PRESET_ID, WEATHER_PRESETS } from '../data/weatherPresets';
 import { buildTacticalTraffic, minArrivalDistance, type TrafficModel, type VfrPlan } from '../sim/traffic';
+import { readFlag, writeFlag } from './prefs';
 
 export const SPEEDS = [1, 10, 60] as const;
 export type Speed = (typeof SPEEDS)[number];
@@ -137,9 +138,9 @@ export const useApp = create<AppState>()((set, get) => {
     selectedId: null,
     view: 'wide',
     viewNonce: 0,
-    showSectors: true,
-    showAltitudeLegend: false,
-    showAllRoutes: true,
+    showSectors: readFlag('aeris.showSectors', true),
+    showAltitudeLegend: readFlag('aeris.showAltitudeLegend', false),
+    showAllRoutes: readFlag('aeris.showAllRoutes', true),
     timelineScope: 'approach',
 
     load: async () => {
@@ -258,9 +259,18 @@ export const useApp = create<AppState>()((set, get) => {
     },
     select: (selectedId) => set({ selectedId }),
     setView: (view) => set((s) => ({ view, viewNonce: s.viewNonce + 1 })),
-    setShowSectors: (showSectors) => set({ showSectors }),
-    setShowAllRoutes: (showAllRoutes) => set({ showAllRoutes }),
-    setShowAltitudeLegend: (showAltitudeLegend) => set({ showAltitudeLegend }),
+    setShowSectors: (showSectors) => {
+      writeFlag('aeris.showSectors', showSectors);
+      set({ showSectors });
+    },
+    setShowAllRoutes: (showAllRoutes) => {
+      writeFlag('aeris.showAllRoutes', showAllRoutes);
+      set({ showAllRoutes });
+    },
+    setShowAltitudeLegend: (showAltitudeLegend) => {
+      writeFlag('aeris.showAltitudeLegend', showAltitudeLegend);
+      set({ showAltitudeLegend });
+    },
     setTimelineScope: (timelineScope) => {
       set({ timelineScope });
       const { evaluation, simTimeSeconds } = get();

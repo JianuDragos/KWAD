@@ -19,11 +19,11 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
   {
     id: 'vfr-decision',
     title: '1. Decizie VFR: Așteptare Rând vs. Alternativă',
-    roleNote: 'Evaluează PNR, combustibilul și plafonul de vânt lateral pe LRCV față de Podari / Balta Verde / Slatina.',
+    roleNote: 'Evaluează PNR, combustibilul și plafonul de vânt lateral pe LRCV față de Aerodromul Balta Verde (LRCW — Aeroclubul României) și Slatina.',
     prompts: [
       'Analizează aeronavele VFR în așteptare: care pot ateriza pe LRCV după IFR și care trebuie redirecționate?',
       'Calculează marja PNR, combustibilul rămas și aerodromul alternativ optim pentru YR-5123.',
-      'Compară condițiile de aterizare pe Podari și Balta Verde pentru traficul VFR afectat de vânt.',
+      'Compară condițiile de aterizare pe Aerodromul Balta Verde (LRCW) și Slatina pentru traficul VFR afectat de vânt.',
     ],
   },
   {
@@ -389,7 +389,6 @@ function LiveOperationalSummaryPanel() {
             <strong>METAR LRCV ({metar.flightCategory})</strong>
             <span className="math-badge">QNH {metar.qnhHpa} hPa</span>
           </div>
-          <p className="metar__raw">{metar.rawMetar}</p>
           <p className="small muted">
             {metar.skyConditionDescription} · Vizibilitate {(metar.visibilityMeters / 1000).toFixed(1)} km · Temp {metar.temperatureCelsius}°C
           </p>

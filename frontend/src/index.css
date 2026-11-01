@@ -111,9 +111,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .map-controls .seg { background: var(--console); }
 
 /* ---------- Sectoare FIR, TMA, ATZ, Grilă Navigație & Rute Complete ---------- */
-.nav-grid { stroke: rgba(138, 152, 147, .14); stroke-width: 1; stroke-dasharray: 2 6; fill: none; }
 .fir-poly { stroke: rgba(122, 165, 160, .34); stroke-width: 1.1; fill: rgba(80, 120, 115, .02); }
-.fir-poly--sector { stroke: rgba(185, 163, 227, .28); stroke-width: 1; stroke-dasharray: 5 5; fill: none; }
 .fir-poly--lrbb { stroke: #63c5b8; stroke-width: 1.8; fill: rgba(99, 197, 184, .06); }
 .fir-poly--active { stroke: var(--ifr); stroke-width: 1.8; fill: rgba(169, 216, 234, .07); }
 .tma-poly { stroke: #7fc8b8; stroke-width: 1.4; stroke-dasharray: 7 4; fill: rgba(127, 200, 184, .04); }
@@ -403,6 +401,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 /* ---------- explicații la hover (data/glossary.ts) ---------- */
 .atis > [title], .clock[title], .pill[title], .rules[title], .strip__when[title], .math-badge[title],
 .kv dt[title], .math-metric__lbl[title], .ldr-bar__labels [title], .tl-eta, .tl-slot, .tl-window { cursor: help; }
+/* Orice text cu explicație arată cursorul cu semn de întrebare; butoanele și linkurile își păstrează mâna. */
+:where([title], [data-hint]):where(:not(button, a, input, select, textarea, label, .leaflet-interactive)) { cursor: help; }
 .kv dt[title], .math-metric__lbl[title] { text-decoration: underline dotted rgba(154, 168, 163, .55); text-underline-offset: 3px; }
 
 /* ---------- Verificare Matematică & Anti-Halucinație Qwen ---------- */
@@ -438,35 +438,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .ai__citation-list { margin: 0; padding-left: 14px; font-size: 13px; line-height: 1.45; }
 .ai__citation { margin-bottom: 4px; }
 .ai__citation-tag { color: var(--muted); font-size: 11px; margin-right: 4px; }
-
-/* ---------- Notificare Banner Alertă VFR (2+ avioane în holding) ---------- */
-.vfr-banner {
-  background: #2a2213; border-bottom: 1px solid rgba(240, 180, 67, .4);
-  padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
-  gap: 12px; z-index: 50; flex-shrink: 0;
-}
-.vfr-banner--warn {
-  background: linear-gradient(90deg, rgba(64, 45, 15, .95) 0%, rgba(38, 30, 18, .95) 100%);
-}
-.vfr-banner__main { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.vfr-banner__badge {
-  font: 700 11px/1 var(--mono); padding: 3px 6px; border-radius: 3px;
-  background: var(--hold); color: var(--scope); text-transform: uppercase; flex-shrink: 0;
-}
-.vfr-banner__content { font-size: 13px; line-height: 1.35; }
-.vfr-banner__content strong { color: #ffe4a0; }
-.vfr-banner__sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.vfr-banner__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.vfr-banner__btn { font-size: 13px; padding: 4px 10px; }
-.vfr-banner__btn--rej {
-  background: transparent; color: var(--divert); border: 1px solid rgba(255, 122, 102, .4);
-}
-.vfr-banner__btn--rej:hover { background: rgba(255, 122, 102, .15); }
-.vfr-banner__close {
-  background: transparent; border: none; color: var(--muted); cursor: pointer;
-  font-size: 15px; padding: 2px 6px; border-radius: 3px;
-}
-.vfr-banner__close:hover { color: var(--text); background: rgba(255, 255, 255, .08); }
 
 /* ---------- Tab-ul dedicat Asistent ---------- */
 .assistant-view {
@@ -593,6 +564,82 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   background: rgba(29, 37, 35, .9); padding: 2px 5px; border-radius: 2px;
   border: 1px solid rgba(255, 122, 102, .5);
 }
+
+/* Asistent: pagina are doar bara de sus și spațiul de lucru (fără hartă/panou/cronologie). */
+.app--assistant {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'top' 'assistant';
+}
+.assistant-workspace { grid-area: assistant; }
+.assistant-chat__hdr { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+
+.tactical-deck { background: var(--console); border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; flex-shrink: 0; }
+.tactical-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); background: rgba(20, 26, 25, .45); }
+.tactical-tab {
+  background: transparent; border: 0; border-right: 1px solid var(--line);
+  padding: 7px 11px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.tactical-tab:hover { color: var(--text); background: var(--raised); }
+.tactical-tab.is-active { background: var(--raised); color: var(--cleared); box-shadow: inset 0 -2px 0 var(--cleared); }
+.tactical-panel { padding: 9px 12px; display: grid; gap: 7px; }
+.tactical-panel > p { margin: 0; }
+.tactical-prompts { display: grid; gap: 5px; }
+.tactical-prompt-btn {
+  background: var(--raised); border: 1px solid var(--line-strong); border-radius: 4px;
+  padding: 6px 10px; text-align: left; font-size: 13px; color: var(--text); cursor: pointer;
+}
+.tactical-prompt-btn:hover:not(:disabled) { border-color: var(--cleared); background: rgba(143, 209, 158, .08); }
+
+.chat-thread { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.chat-empty { margin: auto 0; padding: 20px; text-align: center; background: var(--console); border: 1px dashed var(--line-strong); border-radius: 6px; }
+.chat-empty__title { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+.chat-msg--controller {
+  background: #18312e; border: 1px solid #28544e; border-right: 3px solid var(--cleared);
+  align-self: flex-end;
+}
+.chat-msg__author { font-weight: 600; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.chat-msg.is-thinking { opacity: .8; }
+
+.ops-hdr .panel__title { margin-bottom: 4px; }
+.btn--danger { background: var(--divert); color: #fff; border-color: transparent; }
+.btn--danger:hover { background: #ff5b43; }
+.btn--outline { background: transparent; border: 1px solid var(--line-strong); }
+.btn--outline:hover { border-color: var(--text); }
+.btn-link--quiet { color: var(--muted); }
+
+/* Alerta VFR în Asistent (2+ aeronave în așteptare) */
+.vfr-rec-box {
+  background: var(--raised); border: 1px solid var(--line-strong); border-radius: 6px;
+  padding: 14px 16px; display: grid; gap: 12px;
+}
+.vfr-rec-box--pending { border-left: 4px solid var(--hold); }
+.vfr-rec-box--rejected { border-left: 4px solid var(--divert); }
+.vfr-rec-box--accepted { border-left: 4px solid var(--cleared); }
+.vfr-rec-box__head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.vfr-rec-box__title-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.vfr-rec-box__badge {
+  font: 700 11px/1.2 var(--mono); padding: 2px 6px; border-radius: 3px;
+  background: var(--hold); color: var(--scope); text-transform: uppercase;
+}
+.vfr-rec-box--rejected .vfr-rec-box__badge { background: var(--divert); color: #fff; }
+.vfr-rec-box--accepted .vfr-rec-box__badge { background: var(--cleared); color: var(--scope); }
+.vfr-rec-box__title { margin: 0; font-size: 15px; font-weight: 600; }
+.vfr-rec-box__notice { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 4px; }
+.vfr-rec-box__notice p { margin: 4px 0 0; }
+.vfr-rec-box__notice--rejected { background: rgba(255, 122, 102, .15); border: 1px solid rgba(255, 122, 102, .5); color: #ffb4a8; }
+.vfr-rec-box__notice--accepted { background: rgba(143, 209, 158, .12); border: 1px solid rgba(143, 209, 158, .4); color: #a8e5b6; }
+.vfr-rec-box__notice-icon { font-size: 18px; line-height: 1.2; }
+.vfr-rec-planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.vfr-rec-plane-chip { background: var(--console); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; display: grid; gap: 2px; }
+.vfr-rec-plane-chip__cs { font-weight: 700; font-size: 15px; }
+.vfr-rec-plane-chip__detail { font-size: 13px; color: var(--hold); }
+.vfr-rec-plane-chip__alt { font-size: 11px; }
+.vfr-rec-proposal { background: var(--console); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; display: grid; gap: 8px; }
+.vfr-rec-proposal__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--cleared); }
+.vfr-rec-proposal__steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; display: grid; gap: 6px; }
+.vfr-rec-proposal__steps li strong { color: var(--text); }
+.vfr-rec-box__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
 
 @media (max-width: 960px) {
   .assistant-workspace { grid-template-columns: 1fr; overflow-y: auto; }

@@ -1,7 +1,7 @@
 // Setările de afișare, strânse sub o roată în bara de sus: se schimbă rar, deci nu ocupă loc pe hartă sau în bară.
 import { useEffect, useRef, useState } from 'react';
 import { HINT } from '../data/glossary';
-import { SPEED_UNIT_LABEL } from '../sim/units';
+import { DISTANCE_UNIT_LABEL, SPEED_UNIT_LABEL } from '../sim/units';
 import { useLive } from '../state/live';
 import type { Mode } from '../state/mode';
 import { useApp } from '../state/store';
@@ -44,6 +44,7 @@ export function SettingsMenu({ mode }: { mode: Mode }) {
       {open && (
         <div className="settings__panel" role="dialog" aria-label="Setări de afișare">
           <SpeedUnitRow />
+          <DistanceUnitRow />
           {mode !== 'assistant' && <MapRows mode={mode} />}
         </div>
       )}
@@ -60,9 +61,28 @@ function SpeedUnitRow() {
         Viteză
       </span>
       <div className="seg" role="group" aria-label="Unitatea vitezei">
-        {(['kmh', 'kt'] as const).map((u) => (
+        {(['kt', 'kmh'] as const).map((u) => (
           <button key={u} className={`seg__btn ${unit === u ? 'is-on' : ''}`} onClick={() => setSpeed(u)} aria-pressed={unit === u}>
             {SPEED_UNIT_LABEL[u]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DistanceUnitRow() {
+  const unit = useUnits((s) => s.distance);
+  const setDistance = useUnits((s) => s.setDistance);
+  return (
+    <div className="settings__row">
+      <span className="settings__label" title="Distanța avioanelor față de aeroport și lungimile rutelor: mile marine (1 NM = 1,852 km) sau kilometri.">
+        Distanță
+      </span>
+      <div className="seg" role="group" aria-label="Unitatea distanței">
+        {(['nm', 'km'] as const).map((u) => (
+          <button key={u} className={`seg__btn ${unit === u ? 'is-on' : ''}`} onClick={() => setDistance(u)} aria-pressed={unit === u}>
+            {DISTANCE_UNIT_LABEL[u]}
           </button>
         ))}
       </div>

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+﻿import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import L from 'leaflet';
 import { Circle, CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import type { AirportInfo } from '../data/airports';
-import { ATS_AIRWAYS, ATZ_RADIUS_NM, TMA_CRAIOVA_POLYGON, type FirEntry } from '../data/airspace';
+import { ATS_AIRWAYS, ATZ_RADIUS_NM, TMA_CRAIOVA_POLYGON } from '../data/airspace';
 import {
   ARP,
   CTR_RADIUS_NM,
@@ -25,6 +25,8 @@ import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetLabel, feetToMet
 import { BASE_TIME_OFFSET_SECONDS, useApp, type MapViewPreset } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 import { useLive } from '../state/live';
+import { useMode } from '../state/mode';
+import { useDistance } from '../state/units';
 
 /** Funcție stabilă: un ref inline s-ar re-rula la fiecare randare. */
 const hideLeafletPrefix = (map: L.Map | null) => void map?.attributionControl.setPrefix(false);
@@ -288,13 +290,14 @@ function useMapViewport(): ViewportState {
   return vp;
 }
 
-/** Grilă de orientare lat/lon + Sectoare FIR / ACC / TMA Craiova / Căi Aeriene ATS (Rank 2). */
+/** FIR-urile relevante / TMA Craiova / Căi Aeriene ATS (Rank 2). */
 function AirspaceAndGridLayers() {
   const vp = useMapViewport();
   const showSectors = useApp((s) => s.showSectors);
   const firs = useApp((s) => s.firs);
   const selectedId = useApp((s) => s.selectedId);
   const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
+  const mode = useMode();
 
   const traversedSet = useMemo(() => {
     if (!selectedId || !flights) return new Set<string>();
@@ -302,84 +305,29 @@ function AirspaceAndGridLayers() {
     return new Set(sel?.traversedFirs ?? []);
   }, [selectedId, flights]);
 
-  const visibleFirs = useMemo(() => {
-    if (!showSectors) return [];
-    const padLat = 6;
-    const padLon = 10;
-    return firs.filter((f: FirEntry) => {
-      if (f.kind === 'sector' && vp.zoom < 5.5) return false;
-      const [bMinLat, bMinLon, bMaxLat, bMaxLon] = f.bbox;
-      return !(
-        bMaxLat < vp.minLat - padLat ||
-        bMinLat > vp.maxLat + padLat ||
-        bMaxLon < vp.minLon - padLon ||
-        bMinLon > vp.maxLon + padLon
-      );
-    });
-  }, [showSectors, firs, vp.minLat, vp.maxLat, vp.minLon, vp.maxLon, vp.zoom]);
-
-  const graticule = useMemo(() => {
-    if (vp.zoom > 9) return null;
-    const step = vp.zoom < 4.5 ? 10 : vp.zoom < 6.8 ? 5 : 2;
-    const latStart = Math.max(-70, Math.floor((vp.minLat - step) / step) * step);
-    const latEnd = Math.min(80, Math.ceil((vp.maxLat + step) / step) * step);
-    const lonStart = Math.max(-170, Math.floor((vp.minLon - step) / step) * step);
-    const lonEnd = Math.min(170, Math.ceil((vp.maxLon + step) / step) * step);
-
-    const parallels: { lat: number; line: [number, number][] }[] = [];
-    for (let lat = latStart; lat <= latEnd; lat += step) {
-      parallels.push({
-        lat,
-        line: [
-          [lat, lonStart],
-          [lat, lonEnd],
-        ],
-      });
-    }
-    const meridians: { lon: number; line: [number, number][] }[] = [];
-    for (let lon = lonStart; lon <= lonEnd; lon += step) {
-      meridians.push({
-        lon,
-        line: [
-          [latStart, lon],
-          [latEnd, lon],
-        ],
-      });
-    }
-    return { parallels, meridians };
-  }, [vp.zoom, vp.minLat, vp.maxLat, vp.minLon, vp.maxLon]);
+  // Controlorul are nevoie doar de FIR-ul propriu (LRBB) și de cele prin care vine traficul din scenariu;
+  // restul Europei/Asiei și sub-sectoarele ACC sunt zgomot pentru APP/TWR. Pe Live nu știm de unde vin, deci doar LRBB.
+  const relevantFirIds = useMemo(() => {
+    const ids = new Set(['LRBB']);
+    if (mode === 'demo') for (const f of flights ?? []) for (const id of f.traversedFirs) ids.add(id);
+    return ids;
+  }, [mode, flights]);
+  const visibleFirs = useMemo(
+    () => (showSectors ? firs.filter((f) => f.kind === 'fir' && relevantFirIds.has(f.id)) : []),
+    [showSectors, firs, relevantFirIds],
+  );
 
   return (
     <>
-      {/* 1. Linii de orientare geografică (meridiane & paralele) când camera e depărtată */}
-      {graticule &&
-        graticule.parallels.map((p) => (
-          <Polyline key={`lat-${p.lat}`} positions={p.line} pathOptions={{ className: 'nav-grid' }} interactive={false} />
-        ))}
-      {graticule &&
-        graticule.meridians.map((m) => (
-          <Polyline key={`lon-${m.lon}`} positions={m.line} pathOptions={{ className: 'nav-grid' }} interactive={false} />
-        ))}
-
-      {/* 2. Sectoare FIR / ACC (184 sectoare Europa–Asia + evidențiere LRBB și coridor zbor selectat) */}
+      {/* 1. FIR-ul LRBB + FIR-urile traversate de traficul din scenariu (evidențiate pentru zborul selectat) */}
       {showSectors &&
         visibleFirs.map((fir) => {
           const isRomania = fir.id === 'LRBB';
           const isTraversed = traversedSet.has(fir.id);
-          const isSector = fir.kind === 'sector';
-          const cls = [
-            'fir-poly',
-            isSector ? 'fir-poly--sector' : '',
-            isRomania ? 'fir-poly--lrbb' : '',
-            isTraversed ? 'fir-poly--active' : '',
-          ]
+          const cls = ['fir-poly', isRomania ? 'fir-poly--lrbb' : '', isTraversed ? 'fir-poly--active' : '']
             .filter(Boolean)
             .join(' ');
-          const showLabel =
-            (isRomania && vp.zoom <= 9.5) ||
-            (isTraversed && vp.zoom <= 9.5) ||
-            (!isSector && vp.zoom >= 4.2 && vp.zoom <= 8.8) ||
-            (isSector && vp.zoom >= 6.2 && vp.zoom <= 9.2);
+          const showLabel = (isRomania || isTraversed || vp.zoom >= 4.2) && vp.zoom <= 9.5;
 
           return (
             <Polygon key={`fir-${fir.id}`} positions={fir.polygons} pathOptions={{ className: cls }} interactive={false} attribution={FIR_ATTRIBUTION}>
@@ -392,7 +340,7 @@ function AirspaceAndGridLayers() {
           );
         })}
 
-      {/* 3. TMA Craiova (760 m – FL145 ≈ 4 420 m) + Căi aeriene ATS (L605, N133, M747, W85) */}
+      {/* 2. TMA Craiova (760 m – FL145 ≈ 4 420 m) + Căi aeriene ATS (L605, N133, M747, W85) */}
       {showSectors && vp.zoom >= 6.2 && (
         <Polygon positions={TMA_CRAIOVA_POLYGON} pathOptions={{ className: 'tma-poly' }} interactive={false} />
       )}
@@ -430,9 +378,19 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
   const vp = useMapViewport();
   const showSectors = useApp((s) => s.showSectors);
   const isLive = useLive((s) => s.vfrTracking !== null);
-  const livePoints = useLive((s) => s.vfrTracking?.points ?? null);
+  // Pe Live arătăm doar punctele VFR spre care e îndrumat un zbor urmărit.
+  const liveTracking = useLive((s) => s.vfrTracking);
+  const liveUsed = liveTracking ? liveTracking.points.filter((p) => liveTracking.vfrFlights.some((f) => f.pointCode === p.code)) : null;
+  const mode = useMode();
+  const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
+  // Pe Demo știm prin ce punct intră fiecare zbor: arătăm doar tranzițiile și punctele VFR folosite. Pe Live nu știm, deci toate.
+  const usedFixes = useMemo(
+    () => (mode === 'demo' && flights ? new Set(flights.map((f) => f.entryFixId)) : null),
+    [mode, flights],
+  );
+  const uses = (id: string) => !usedFixes || usedFixes.has(id);
   const routes = useMemo(() => (runway ? allArrivalRoutes(runway) : []), [runway]);
-  const join = runway ? vfrFinalJoin(runway) : null;
+  const join = runway && (!usedFixes || [...usedFixes].some((id) => id.startsWith('VFR-'))) ? vfrFinalJoin(runway) : null;
   const showTerminalLabels = vp.zoom >= 8.8;
 
   return (
@@ -466,7 +424,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
         </CircleMarker>
       )}
 
-      {routes.map((r) => (
+      {routes.filter((r) => uses(r.iaf)).map((r) => (
         <Polyline key={r.iaf} positions={r.points} pathOptions={{ className: 'route' }} interactive={false} />
       ))}
       <Polyline positions={RUNWAY_LINE} pathOptions={{ className: 'runway' }} interactive={false} />
@@ -483,7 +441,11 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
         })}
       {showTerminalLabels &&
         Object.values(WAYPOINTS)
-          .filter((w) => w.role === 'IAF' || w.role.startsWith('IF') || w.role.startsWith('FAF'))
+          .filter((w) =>
+            w.role === 'IAF'
+              ? uses(w.id)
+              : (w.role.startsWith('IF') || w.role.startsWith('FAF')) && (!runway || w.role.endsWith(`RWY${runway}`)),
+          )
           .map((w) => (
             <CircleMarker key={w.id} center={[w.lat, w.lon]} radius={3} pathOptions={{ className: `wpt ${w.role === 'IAF' ? 'wpt--iaf' : ''}` }} interactive={false}>
               <Tooltip permanent direction="top" className="lbl" offset={[0, -3]}>
@@ -500,9 +462,9 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
           </CircleMarker>
         ))}
       {showTerminalLabels &&
-        (isLive && livePoints
-          ? livePoints.map((p) => ({ id: p.code, lat: p.lat, lon: p.long, role: 'Punct raportare VFR (sintetic)', synthetic: true }))
-          : [...VFR_ENTRY_POINTS, ...(join ? [join] : [])]
+        (isLive && liveTracking
+          ? (liveUsed ?? []).map((p) => ({ id: p.code, lat: p.lat, lon: p.long, role: 'Punct raportare VFR (sintetic)', synthetic: true }))
+          : [...VFR_ENTRY_POINTS.filter((p) => uses(p.id)), ...(join ? [join] : [])]
         ).map((p) => (
           <CircleMarker key={p.id} center={[p.lat, p.lon]} radius={3} pathOptions={{ className: 'wpt wpt--synthetic' }} interactive={false}>
             <Tooltip permanent direction="top" className="lbl lbl--synthetic" offset={[0, -3]}>
@@ -513,7 +475,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
       {showTerminalLabels && (
         <CircleMarker center={[LRCW.lat, LRCW.lon]} radius={3} pathOptions={{ className: 'wpt wpt--alt' }} interactive={false}>
           <Tooltip permanent direction="left" className="lbl" offset={[-4, 0]}>
-            LRCW
+            LRCW · Balta Verde
           </Tooltip>
         </CircleMarker>
       )}
@@ -602,6 +564,7 @@ function AircraftMarkerView({
   const visualStatusClass =
     flight.kind === 'divert' ? 'st-divert' : flight.kind === 'hold' ? 'st-hold' : STATUS_CLASS[flight.status];
   const trafficRenderer = useTrafficRenderer();
+  const distance = useDistance();
   const dimmed = done || preTakeoff;
 
   const icon = useMemo(
@@ -658,7 +621,7 @@ function AircraftMarkerView({
           interactive={false}
         >
           <Tooltip permanent direction="top" className="lbl lbl--tod" offset={[0, -5]}>
-            TOD · {feetLabel(flight.todPoint.altitudeFt)} ({flight.todPoint.distanceToLandingNm} NM)
+            TOD · {feetLabel(flight.todPoint.altitudeFt)} ({distance.label(flight.todPoint.distanceToLandingNm)})
           </Tooltip>
         </CircleMarker>
       )}

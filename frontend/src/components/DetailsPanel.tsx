@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
-import { useSpeed } from '../state/units';
+import { useDistance, useSpeed } from '../state/units';
 import { HINT } from '../data/glossary';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { ScenarioPicker } from './DemoControls';
@@ -111,6 +111,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
   const ac = flight.aircraft;
   const adv = flight.advisory;
   const speed = useSpeed();
+  const distance = useDistance();
   const seek = useApp((s) => s.seek);
   const setView = useApp((s) => s.setView);
   const [showPhases, setShowPhases] = useState(false);
@@ -125,7 +126,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
       <dl className="kv">
         <dt>Origine</dt>
         <dd>
-          <strong>{flight.origin.icao}</strong> · {flight.origin.name} ({flight.routeDistanceNm} NM)
+          <strong>{flight.origin.icao}</strong> · {flight.origin.name} ({distance.label(flight.routeDistanceNm)})
         </dd>
         <dt>Decolare</dt>
         <dd className="num">{clock(flight.takeoffSeconds)}</dd>
@@ -200,7 +201,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             onClick={() => seek(flight.todPoint!.timeSeconds)}
             title="Salt ceas la punctul Top of Descent (TOD)"
           >
-            TOD ({flight.todPoint.distanceToLandingNm} NM)
+            TOD ({distance.label(flight.todPoint.distanceToLandingNm)})
           </button>
         )}
         <button
@@ -255,13 +256,13 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           <div className="math-card__head">
             <strong>Analiză Decolare → Aterizare</strong>
             <span className="muted small">
-              {ttl.departureAerodromeIcao} → LRCV ({ttl.totalRouteDistanceNm} NM)
+              {ttl.departureAerodromeIcao} → LRCV ({distance.label(ttl.totalRouteDistanceNm)})
             </span>
           </div>
           <div className="math-metrics">
             <div className="math-metric">
               <span className="math-metric__lbl" title={HINT.TOD}>Top of Descent</span>
-              <span className="math-metric__val">{ttl.topOfDescentDistanceNm} NM</span>
+              <span className="math-metric__val">{distance.label(ttl.topOfDescentDistanceNm)}</span>
             </div>
             <div className="math-metric">
               <span className="math-metric__lbl" title={HINT.ROD}>Pantă {ttl.optimalGlidepathDegrees}° ROD</span>
@@ -294,7 +295,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={p.phaseCode} className="phase-item">
                   <span className="phase-item__name">{p.phaseName}</span>
                   <span className="num muted">
-                    {p.distanceNm} NM · {feetLabel(p.endAltitudeFeet)} · GS {p.groundSpeedKnots} kt · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
+                    {distance.label(p.distanceNm)} · {feetLabel(p.endAltitudeFeet)} · GS {p.groundSpeedKnots} kt · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
                   </span>
                 </li>
               ))}

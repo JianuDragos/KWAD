@@ -10,7 +10,7 @@ export interface Hint {
 }
 
 /** Cât stă pointerul pe element până apare explicația. Din tastatură (focus vizibil) apare imediat. */
-export const HOVER_DELAY_MS = 5000;
+export const HOVER_DELAY_MS = 2500;
 /** Distanța minimă față de marginile ferestrei (jumătate din lățimea maximă a tooltip-ului + spațiu). */
 const EDGE_PX = 150;
 

@@ -3,11 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { Marker, Polyline, Tooltip } from 'react-leaflet';
 import type { LiveFlight } from '../contracts/live';
-import { ARP } from '../data/geo';
-import { destination, distanceNm } from '../sim/geomath';
-import { extrapolate, trendArrow } from '../sim/live';
+import { destination } from '../sim/geomath';
+import { extrapolate, fromLrcv, trendArrow } from '../sim/live';
 import { altitudeBand, altitudeLabel } from '../sim/units';
-import { useSpeed } from '../state/units';
+import { useDistance, useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { GLYPH_IFR } from './MapView';
 import { useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
@@ -87,6 +86,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
   const showAllRoutes = useLive((s) => s.showRoutes);
   const select = useLive((s) => s.select);
   const speed = useSpeed();
+  const distance = useDistance();
   const pos = extrapolate(flight, now);
   const stale = now - flight.lastContact > STALE_SECONDS;
   const heading = Math.round(flight.trueTrackDegrees ?? 0);
@@ -116,7 +116,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
       : 0;
   const projEnd = projDistNm > 0.3 && flight.trueTrackDegrees != null ? destination(pos, flight.trueTrackDegrees, projDistNm) : null;
 
-  const distToLrcvNm = Math.round(distanceNm(pos, ARP) * 10) / 10;
+  const lrcv = fromLrcv(flight);
 
   return (
     <>
@@ -151,7 +151,7 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
           <br />
           <span className={`db-alt ${band}`}>{flight.baroAltitudeMeters != null ? altitudeLabel(flight.baroAltitudeMeters) : '—'}</span> {trendArrow(flight.verticalRateMs)}
           <br />
-          {flight.velocityKnots != null ? speed.label(flight.velocityKnots) : ''} · {distToLrcvNm} NM
+          {flight.velocityKnots != null ? speed.label(flight.velocityKnots) : ''}{lrcv ? ` · ${distance.label(lrcv.nm)}` : ''}
           <br />
           {flight.flightRules}
           {flight.vfrEtaMinutes != null && (

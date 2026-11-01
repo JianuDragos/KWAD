@@ -37,8 +37,10 @@ export const AIRPORTS: Record<string, AirportInfo> = {
   LRTR: { icao: 'LRTR', name: 'Timișoara Traian Vuia', city: 'Timișoara', lat: 45.809833, lon: 21.337872, elevationFt: 348, fir: 'LRBB', preferredIaf: 'TITEK' },
   LRSB: { icao: 'LRSB', name: 'Sibiu Intl', city: 'Sibiu', lat: 45.7858, lon: 24.091183, elevationFt: 1496, fir: 'LRBB', preferredIaf: 'TITEK' },
   LRCS: { icao: 'LRCS', name: 'Caransebeș', city: 'Caransebeș', lat: 45.420278, lon: 22.252222, elevationFt: 669, fir: 'LRBB', preferredIaf: 'TITEK' },
-  LRCW: { icao: 'LRCW', name: 'Craiova-Sud (LRCW)', city: 'Craiova-Sud', lat: LRCW.lat, lon: LRCW.lon, elevationFt: 450, fir: 'LRBB' },
-  PODARI: { icao: 'PODARI', name: 'Aerodrom Podari', city: 'Podari', lat: 44.2258, lon: 23.7654, elevationFt: 260, fir: 'LRBB' },
+  LRCW: { icao: 'LRCW', name: 'Aerodromul Balta Verde Craiova (Aeroclubul României)', city: 'Craiova (Balta Verde)', lat: LRCW.lat, lon: LRCW.lon, elevationFt: 450, fir: 'LRBB' },
+  LRBV: { icao: 'LRCW', name: 'Aerodromul Balta Verde Craiova (Aeroclubul României)', city: 'Craiova (Balta Verde)', lat: LRCW.lat, lon: LRCW.lon, elevationFt: 450, fir: 'LRBB' },
+  PODARI: { icao: 'LRCW', name: 'Aerodromul Balta Verde Craiova (Aeroclubul României)', city: 'Craiova (Balta Verde)', lat: LRCW.lat, lon: LRCW.lon, elevationFt: 450, fir: 'LRBB' },
+  SLATINA: { icao: 'SLATINA', name: 'Aerodrom Slatina', city: 'Slatina', lat: 44.424, lon: 24.442, elevationFt: 520, fir: 'LRBB' },
 };
 
 /** Rezolvă aerodromul de plecare al unei aeronave din analiza backendului, din câmpul explicit sau după ID. */
@@ -73,7 +75,7 @@ function defaultIcaoForAircraft(ac: CraiovaAircraft): string {
     case 'RO-204':
       return 'LROP';
     case 'YR-SAV':
-      return 'PODARI';
+      return 'LRCW';
     case 'YR-WILG':
       return 'LRCW';
     case 'YR-C172':
