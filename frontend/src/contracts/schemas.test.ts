@@ -37,7 +37,7 @@ describe('schemele răspunsurilor', () => {
     }
   });
 
-  it('calculează predicția viitorului 4D, doi pași înainte, takeoff-to-landing cu coordonate origine și redirecționarea VFR', () => {
+  it('calculează predicția viitorului, doi pași înainte, takeoff-to-landing cu coordonate origine și redirecționarea VFR', () => {
     const crossCritical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
     const res = mock.evaluateSimulation(mock.eurasiaLongHaulTraffic(), crossCritical, 'test');
     expect(res.futurePrediction).toBeDefined();

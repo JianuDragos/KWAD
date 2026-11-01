@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "_description": "ROMATSA R.A. (Administratia Romana a Serviciilor de Trafic Aerian) - Mock Database pentru operatiuni IFR (Instrument Flight Rules), proceduri PANS-OPS LRCV (RWY 08/26), profiluri cinematice Takeoff-to-Landing si separare 4D conform AIP Romania (AIRAC 2026-10) / EUROCONTROL / ICAO Doc 4444.",
+  "_description": "ROMATSA R.A. (Administratia Romana a Serviciilor de Trafic Aerian) - Mock Database pentru operatiuni IFR (Instrument Flight Rules), proceduri PANS-OPS LRCV (RWY 08/26), profiluri cinematice Takeoff-to-Landing si separare a traiectoriilor conform AIP Romania (AIRAC 2026-10) / EUROCONTROL / ICAO Doc 4444.",
   "metadata": {
     "provider": "ROMATSA R.A. - Directia Operatiuni IFR & ASM",
     "certificationBody": "Autoritatea Aeronautica Civila Romana (AACR) & EASA",

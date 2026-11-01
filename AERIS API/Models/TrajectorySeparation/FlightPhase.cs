@@ -1,7 +1,7 @@
 namespace Aeris.PlanningEngine.Models.TrajectorySeparation;
 
 /// <summary>
-/// Faza de zbor a aeronavei în simularea 4D.
+/// Faza de zbor a aeronavei în simulare.
 /// </summary>
 public enum FlightPhase
 {

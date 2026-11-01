@@ -1,7 +1,7 @@
 namespace Aeris.PlanningEngine.Models.TrajectorySeparation;
 
 /// <summary>
-/// Punct 4D în spațiu și timp pe traiectoria prezisă a unei aeronave.
+/// Punct în spațiu și timp pe traiectoria prezisă a unei aeronave.
 /// </summary>
 public record TrajectoryPoint(
     double TimeSeconds,

@@ -1,7 +1,7 @@
 namespace Aeris.PlanningEngine.Models.TrajectorySeparation;
 
 /// <summary>
-/// Traiectoria 4D completă prezisă pentru o aeronavă.
+/// Traiectoria completă prezisă pentru o aeronavă.
 /// </summary>
 public record AircraftTrajectory(
     string AircraftId,

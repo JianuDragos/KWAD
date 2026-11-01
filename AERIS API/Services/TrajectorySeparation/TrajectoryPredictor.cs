@@ -4,7 +4,7 @@ using Aeris.PlanningEngine.Models.TrajectorySeparation;
 namespace Aeris.PlanningEngine.Services.TrajectorySeparation;
 
 /// <summary>
-/// Motor de predicție a traiectoriilor 4D în spațiu și timp (latitudine, longitudine, altitudine, viteză, cap)
+/// Motor de predicție a traiectoriilor în spațiu și timp (latitudine, longitudine, altitudine, viteză, cap)
 /// pe baza procedurilor AIP oficiale, sloturilor de aterizare, circuitelor de așteptare și ratărilor.
 /// </summary>
 public class TrajectoryPredictor

@@ -96,7 +96,7 @@ function AssistantTopControls() {
       <div className="spacer" />
 
       <div className="pills">
-        <span className="pill pill--ok" title="Qwen3-4B-Instruct-2507 + Scut matematic C# anti-halucinație">
+        <span className="pill pill--ok" title="Qwen3-4B-Instruct-2507 + Verificare numerică C#">
           ● Qwen3-4B + Verificare C#
         </span>
         {msgCount > 0 && (

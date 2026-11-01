@@ -47,7 +47,7 @@ public class SeparationController : ControllerBase
     }
 
     /// <summary>
-    /// Evaluează o listă de traiectorii 4D complete pentru conflicte de apropiere, holding, ratare, siaj și ocupare pistă.
+    /// Evaluează o listă de traiectorii complete pentru conflicte de apropiere, holding, ratare, siaj și ocupare pistă.
     /// </summary>
     [HttpPost("validate-trajectories")]
     public ActionResult<SafetyAssessmentResult> ValidateTrajectories(
@@ -59,7 +59,7 @@ public class SeparationController : ControllerBase
     }
 
     /// <summary>
-    /// Generează punctele 4D pentru un circuit de așteptare hipodrom (ICAO Racetrack Holding Pattern).
+    /// Generează punctele de traiectorie pentru un circuit de așteptare hipodrom (ICAO Racetrack Holding Pattern).
     /// </summary>
     [HttpPost("racetrack")]
     public ActionResult<List<TrajectoryPoint>> GenerateRacetrack([FromBody] HoldingRacetrackConfig config)

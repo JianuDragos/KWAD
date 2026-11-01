@@ -22,7 +22,7 @@ public record FutureHorizonSnapshot(
 );
 
 /// <summary>
-/// Predicția completă 4D a evoluției atmosferei, vântului pe altitudine (spirala Ekman / legea Hellmann)
+/// Prognoza evoluției atmosferei și a vântului pe altitudine (spirala Ekman / legea Hellmann)
 /// și a stării pistei pe următoarele 45 de minute.
 /// </summary>
 public record FuturePredictionSummary(

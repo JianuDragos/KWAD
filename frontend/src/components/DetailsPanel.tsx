@@ -1,4 +1,4 @@
-// Raftul de benzi de zbor + motorul de predicție matematică 4D:
+// Raftul de benzi de zbor + motorul de predicție matematică:
 // 1. Predicția Viitorului (T+0 .. T+45 min, forfecare vânt Hellmann-Ekman, altitudine densitate)
 // 2. Doi Pași Înaintea Avionului (T0 → Pasul +1 → Pasul +2)
 // 3. Analiză De-la-Decolare-la-Aterizare (6 faze, TOD, ROD 3.0°, WCA, LDR vs 2500m, Sectoare FIR)
@@ -355,7 +355,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={a.code} className={flight.alternate?.code === a.code || a.isRecommendedBestSpot ? 'is-chosen' : ''}>
                   <div className="alts__row">
                     <span>
-                      {a.code === 'LRBV' ? 'Craiova-Sud (LRCW)' : a.name}
+                      {a.code === 'LRBV' ? 'Aerodrom Balta Verde Craiova (LRCW)' : a.name}
                       {a.isRecommendedBestSpot && <span className="alts__best"> ★ OPTIM</span>}
                     </span>
                     {a.safetyScore != null && <span className="alts__score num">{a.safetyScore}/100</span>}
