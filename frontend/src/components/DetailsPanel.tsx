@@ -241,7 +241,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 </span>
                 <span className="step-node__fix">{st.fixOrLocation}</span>
                 <span className="step-node__kin num">
-                  {feetLabel(st.altitudeFeet)} · GS {st.groundSpeedKnots} kt · HDG {st.headingDegrees}°
+                  {feetLabel(st.altitudeFeet)} · GS {speed.label(st.groundSpeedKnots)} · HDG {st.headingDegrees}°
                 </span>
                 <span className="step-node__act">{st.controllerAction}</span>
               </button>
@@ -295,7 +295,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
                 <li key={p.phaseCode} className="phase-item">
                   <span className="phase-item__name">{p.phaseName}</span>
                   <span className="num muted">
-                    {distance.label(p.distanceNm)} · {feetLabel(p.endAltitudeFeet)} · GS {p.groundSpeedKnots} kt · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
+                    {distance.label(p.distanceNm)} · {feetLabel(p.endAltitudeFeet)} · GS {speed.label(p.groundSpeedKnots)} · VS {verticalRateLabel(feetToMeters(p.verticalRateFpm) / 60)}
                   </span>
                 </li>
               ))}

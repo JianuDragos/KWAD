@@ -1,6 +1,6 @@
 // Unitățile alese de utilizator (viteză: km/h sau noduri; distanță: NM sau km), ținute minte în browserul lui.
 import { create } from 'zustand';
-import { DISTANCE_UNIT_LABEL, SPEED_UNIT_LABEL, distanceLabel, speedLabel, speedValue, type DistanceUnit, type SpeedUnit } from '../sim/units';
+import { DISTANCE_UNIT_LABEL, SPEED_UNIT_LABEL, convertUnitsInText, distanceLabel, speedLabel, speedValue, type DistanceUnit, type SpeedUnit } from '../sim/units';
 import { readPref, writePref } from './prefs';
 
 interface UnitsState {
@@ -31,6 +31,13 @@ export function useSpeed() {
     value: (knots: number) => speedValue(knots, unit),
     label: (knots: number) => speedLabel(knots, unit),
   };
+}
+
+/** Pentru texte gata scrise (răspunsurile Asistentului): rescrie „kt” și „NM” în unitățile alese. */
+export function useUnitText() {
+  const speed = useUnits((s) => s.speed);
+  const distance = useUnits((s) => s.distance);
+  return (text: string) => convertUnitsInText(text, speed, distance);
 }
 
 /** Formatorul de distanțe (primește NM). */

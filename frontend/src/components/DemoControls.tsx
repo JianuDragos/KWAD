@@ -12,7 +12,6 @@ export function DemoControls() {
   const speed = useApp((s) => s.speed);
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
-  const evaluationResult = useApp((s) => s.evaluation?.result);
   const { togglePlay, setSpeed, reset } = useApp.getState();
   const stale = useIsStale();
 
@@ -44,11 +43,6 @@ export function DemoControls() {
         {status === 'loading' && <span className="pill pill--busy">Se calculează</span>}
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
-        {evaluationResult?.safetyAssessment?.isSafe && (
-          <span className="pill pill--ok" title={`Evaluarea backend precede aplicarea planului tactic Demo.\n\n${evaluationResult.safetyAssessment.summary}`}>
-            ● Evaluare backend: fără conflicte
-          </span>
-        )}
       </div>
     </>
   );

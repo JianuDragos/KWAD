@@ -1,6 +1,7 @@
 import { useAssistant } from '../state/assistant';
 import { setMode, type Mode } from '../state/mode';
 import { useApp } from '../state/store';
+import { useSpeed } from '../state/units';
 import { DemoControls } from './DemoControls';
 import { LiveControls } from './LiveControls';
 import { SettingsMenu } from './SettingsMenu';
@@ -36,19 +37,17 @@ export function TopBar({ mode }: { mode: Mode }) {
   );
 }
 
-/** Deschide Asistentul; punctul roșu apare cât timp Asistentul are o recomandare la care nu s-a răspuns. */
+/** Deschide Asistentul. Recomandarea VFR se anunță prin bannerul de pe Demo, deci butonul nu mai are punct roșu. */
 function AssistantButton({ active }: { active: boolean }) {
-  const hasRecommendation = useApp((s) => s.vfrPlan.status === 'proposed');
   return (
     <button
       type="button"
       className={`assistant-btn ${active ? 'is-on' : ''}`}
       onClick={() => setMode('assistant')}
       aria-pressed={active}
-      title={hasRecommendation ? 'Asistentul are o recomandare nouă' : 'Deschide Asistentul'}
+      title="Deschide Asistentul"
     >
       Asistent
-      {hasRecommendation && <span className="assistant-btn__dot" aria-label="recomandare nouă" />}
     </button>
   );
 }
@@ -59,6 +58,7 @@ function AssistantTopControls() {
   const clearHistory = useAssistant((s) => s.clearHistory);
   const msgCount = useAssistant((s) => s.messages.length);
   const simResult = useApp((s) => s.evaluation?.result ?? null);
+  const speed = useSpeed();
 
   return (
     <>
@@ -88,7 +88,7 @@ function AssistantTopControls() {
         <div className="atis">
           <span className="atis__rwy">RWY {simResult.activeRunway}</span>
           <span className={`atis__xw ${simResult.isCrosswindCriticalForLightAircraft ? 'is-critical' : ''}`}>
-            lateral {simResult.activeRunwayCrosswindKnots} kt · {simResult.stats.totalInbounds} aeronave
+            lateral {speed.label(simResult.activeRunwayCrosswindKnots)} · {simResult.stats.totalInbounds} aeronave
           </span>
         </div>
       )}

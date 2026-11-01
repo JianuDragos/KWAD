@@ -378,6 +378,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
   const vp = useMapViewport();
   const showSectors = useApp((s) => s.showSectors);
   const isLive = useLive((s) => s.vfrTracking !== null);
+  const distance = useDistance();
   // Pe Live arătăm doar punctele VFR spre care e îndrumat un zbor urmărit.
   const liveTracking = useLive((s) => s.vfrTracking);
   const liveUsed = liveTracking ? liveTracking.points.filter((p) => liveTracking.vfrFlights.some((f) => f.pointCode === p.code)) : null;
@@ -409,7 +410,7 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
           return (
             <CircleMarker key={`lbl-${nm}`} center={[p.lat, p.lon]} radius={0} pathOptions={{ stroke: false }} interactive={false}>
               <Tooltip permanent direction="center" className="lbl lbl--ring">
-                {nm === CTR_RADIUS_NM ? `CTR ${nm} NM` : `${nm} NM`}
+                {nm === CTR_RADIUS_NM ? `CTR ${distance.label(nm)}` : distance.label(nm)}
               </Tooltip>
             </CircleMarker>
           );

@@ -482,13 +482,13 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   background: var(--console); border-left: 1px solid var(--line);
 }
 .ops-stack { display: flex; flex-direction: column; gap: 12px; }
-.ops-weather-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  padding: 7px 10px; background: var(--raised); border: 1px solid var(--line); border-radius: 4px;
-}
-.ops-weather-bar__lbl { font-size: 13px; color: var(--muted); font-weight: 600; }
-.ops-weather-pills { display: flex; flex-wrap: wrap; gap: 4px; }
-.ai__chip.is-selected-chip { background: var(--chrome-on); color: var(--scope); border-color: var(--chrome-on); font-weight: 600; }
+.ops-weather-bar { display: grid; gap: 6px; }
+.ops-weather-bar__lbl { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+/* Patru variante egale pe un rând; textul lung („Vânt lateral puternic”) se rupe în buton, nu împinge rândul. */
+.ops-weather-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.ops-weather-seg .seg__btn { padding: 7px 6px; font-size: 13px; color: var(--text); line-height: 1.25; }
+.ops-weather-seg .seg__btn.is-on { color: var(--scope); }
+.ops-weather-seg .seg__btn:disabled { cursor: not-allowed; opacity: .55; }
 
 
 .vfr-decision-list { display: grid; gap: 10px; }
@@ -531,11 +531,12 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .assistant-chat__hdr { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
 
 .tactical-deck { background: var(--console); border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; flex-shrink: 0; }
-.tactical-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); background: rgba(20, 26, 25, .45); }
+.tactical-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-bottom: 1px solid var(--line); background: rgba(20, 26, 25, .45); }
 .tactical-tab {
   background: transparent; border: 0; border-right: 1px solid var(--line);
-  padding: 7px 11px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
+  padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; text-align: center;
 }
+.tactical-tab:last-child { border-right: 0; }
 .tactical-tab:hover { color: var(--text); background: var(--raised); }
 .tactical-tab.is-active { background: var(--raised); color: var(--cleared); box-shadow: inset 0 -2px 0 var(--cleared); }
 .tactical-panel { padding: 9px 12px; display: grid; gap: 7px; }
@@ -586,11 +587,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 }
 .assistant-btn:hover { background: rgba(143, 209, 158, .16); }
 .assistant-btn.is-on { background: var(--cleared); color: var(--scope); border-color: var(--cleared); }
-/* Punctul roșu: recomandare nouă de la Asistent. */
-.assistant-btn__dot {
-  position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
-  background: var(--divert); box-shadow: 0 0 0 2px var(--console);
-}
 
 /* ---------- Setări (roata din bara de sus) ---------- */
 .settings { position: relative; }
@@ -619,16 +615,20 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 @media (prefers-reduced-motion: reduce) { .switch, .switch::after { transition: none; } }
 
 
-/* Alerta planului IFR + VFR, prima în coloana din dreapta a Asistentului (punctul roșu trimite aici). */
+/* O singură notificare pentru grup, deasupra hărții și a Asistentului. */
+.app-header { grid-area: top; min-width: 0; }
 .vfr-alert-banner {
-  display: grid; gap: 10px; padding: 12px 14px; border-radius: 6px;
-  border: 1px solid var(--line-strong); border-left: 4px solid var(--hold); background: var(--raised);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; border-bottom: 2px solid var(--hold); background: var(--raised);
 }
-.vfr-alert-banner__body p { margin: 4px 0 0; }
 .vfr-alert-banner__body { min-width: 0; overflow-wrap: anywhere; }
 .vfr-alert-banner__body > strong { color: var(--hold); }
-.vfr-alert-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.vfr-alert-banner--accepted { border-left-color: var(--cleared); }
+.vfr-alert-banner__actions { display: flex; gap: 8px; flex-shrink: 0; }
+.vfr-alert-banner--accepted { border-color: var(--cleared); }
 .vfr-alert-banner--accepted .vfr-alert-banner__body > strong { color: var(--cleared); }
-.vfr-alert-banner--rejected { border-left-color: var(--divert); }
+.vfr-alert-banner--rejected { border-color: var(--divert); }
 .vfr-alert-banner--rejected .vfr-alert-banner__body > strong { color: var(--divert); }
+@media (max-width: 900px) {
+  .vfr-alert-banner { flex-direction: column; align-items: stretch; }
+  .vfr-alert-banner__actions { flex-wrap: wrap; }
+}

@@ -422,7 +422,10 @@ public class CraiovaController : ControllerBase
         {
             statements.Add(new ApprovedStatement(
                 "separation_4d",
-                Clip($"Verificare Separare 4D & Siaj: Status {sa.Status} ({sa.Summary}). Perechi evaluate: {sa.TotalEvaluatedPairs}, puncte 4D: {sa.TotalTrajectoryPoints}, conflicte active: {sa.Conflicts.Count}.", 800),
+                // Numărul de conflicte stă primul și separat de numărul de perechi verificate: modelul mic le confunda („perechile 6”).
+                Clip(sa.Conflicts.Count > 0
+                    ? $"Separare 4D & siaj: {sa.Conflicts.Count} conflicte active (status {sa.Status}). {sa.Summary} Total perechi de avioane verificate: {sa.TotalEvaluatedPairs}."
+                    : $"Separare 4D & siaj: niciun conflict (status {sa.Status}). {sa.Summary} Total perechi de avioane verificate: {sa.TotalEvaluatedPairs}.", 800),
                 $"SEP-4D-{revision}"));
         }
 

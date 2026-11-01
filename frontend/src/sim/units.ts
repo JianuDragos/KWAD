@@ -72,3 +72,29 @@ export function distanceLabel(nm: number, unit: DistanceUnit): string {
   const v = unit === 'km' ? (nm * M_PER_NM) / 1000 : nm;
   return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${DISTANCE_UNIT_LABEL[unit]}`;
 }
+
+// „12”, „+7.9”, „20,5”; un grup e una sau mai multe valori legate prin „/” sau „–” („0.1/15 kt”, „30–20 NM”).
+const NUM = String.raw`[+-]?\d+(?:[.,]\d+)?`;
+const KT_GROUP = new RegExp(String.raw`(${NUM}(?:\s*[/–-]\s*${NUM})*)\s*kt\b`, 'g');
+const NM_GROUP = new RegExp(String.raw`(${NUM}(?:\s*[/–-]\s*${NUM})*)\s*NM\b`, 'g');
+const convertNumbers = (group: string, factor: number) =>
+  group.replace(new RegExp(NUM, 'g'), (n) => {
+    const v = Number(n.replace(',', '.')) * factor;
+    // Sub 100 păstrăm o zecimală (8 kt → 14.8 km/h), ca să nu pierdem precizia valorilor mici.
+    const abs = Math.abs(v) < 100 ? Math.abs(v).toFixed(1) : String(Math.round(Math.abs(v)));
+    return (n.startsWith('+') ? '+' : v < 0 ? '-' : '') + abs;
+  });
+
+// „2000 ft”, „2000ft”, „1.500 ft” (punct de mii), cu semn opțional.
+const FT_VALUE = /([+-]?)(\d{1,3}(?:[.,]\d{3})+|\d+)\s*ft\b/g;
+
+/**
+ * Texte venite gata scrise din backend (răspunsurile Asistentului, faptele): altitudinile trec mereu în metri,
+ * ca în restul aplicației; vitezele și distanțele, în unitățile alese.
+ */
+export function convertUnitsInText(text: string, speed: SpeedUnit, distance: DistanceUnit): string {
+  let out = text.replace(FT_VALUE, (_, sign: string, n: string) => sign + feetLabel(Number(n.replace(/[.,]/g, ''))));
+  if (speed === 'kmh') out = out.replace(KT_GROUP, (_, g: string) => `${convertNumbers(g, 1.852)} km/h`);
+  if (distance === 'km') out = out.replace(NM_GROUP, (_, g: string) => `${convertNumbers(g, M_PER_NM / 1000)} km`);
+  return out;
+}

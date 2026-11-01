@@ -51,7 +51,7 @@ public sealed class GroundedExplainer(
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex ConflictFactRegex = new(
-        @"\bUnsafe\b|conflicte active:\s*[1-9]|pierdere de (eșalonare|separare)|\bAirprox\b",
+        @"\bUnsafe\b|conflicte active:\s*[1-9]|\b[1-9]\d* conflicte active|pierdere de (eșalonare|separare)|\bAirprox\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex SafetyClaimRegex = new(
         @"\b(sigur[ăe]?|în siguranță|safe|fără conflicte?|nu există conflicte|eșalonare\s+(4D\s+)?(confirmată|sigură|respectată))\b",
