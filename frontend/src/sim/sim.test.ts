@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import { AIRPORTS } from '../data/airports';
 import { ARP, LRCW, arrivalRoute, publishedAltitudeFt, threshold } from '../data/geo';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
 import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
-import { destination, distanceNm, greatCirclePoints } from './geomath';
+import { distanceNm, greatCirclePoints } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
 import { altitudeBand, altitudeLabel, distanceLabel, feetLabel, speedLabel, verticalRateLabel } from './units';
 import { buildTraffic } from './traffic';
@@ -192,23 +192,25 @@ describe('buildTraffic', () => {
 
   const lowFuelSavannah = aircrafts.map((a) => (a.id === 'YR-SAV' ? { ...a, remainingFuelMinutes: 30 } : a));
 
-  it('combustibil puțin + vânt lateral: deviere spre alternativa cu cel mai mic vânt lateral', () => {
+  it('combustibil puțin + vânt lateral: deviere spre Aerodromul Balta Verde (LRCW — Aeroclubul României), nu pe câmp', () => {
     const critical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
     const res = mock.evaluateSimulation(lowFuelSavannah, critical, 'test');
     const f = buildTraffic(lowFuelSavannah, res).flights.find((x) => x.id === 'YR-SAV')!;
     expect(f.kind).toBe('divert');
-    expect(f.alternate?.code).toBe('PODARI');
+    expect(f.alternate?.code).toBe('LRCW');
+    expect(f.alternate?.point).toEqual(LRCW);
     const end = f.track[f.track.length - 1];
-    expect(distanceNm({ lat: end.latitudeDeg, lon: end.longitudeDeg }, destination(ARP, 225, 14.5 / 1.852))).toBeLessThan(0.01);
+    expect(distanceNm({ lat: end.latitudeDeg, lon: end.longitudeDeg }, LRCW)).toBeLessThan(0.01);
   });
 
-  it('„Balta Verde / LRBV” din backend se desenează la coordonatele AIP ale LRCW', () => {
-    // Vânt din 310°: pista 13/31 a terenului are vânt lateral 0, deci e alternativa aleasă.
+  it('Aerodromul Balta Verde (LRCW) este singurul aerodrom al Craiovei, iar Slatina rămâne punct secundar', () => {
     const nw: WeatherCondition = { windDirectionDegrees: 310, windSpeedKnots: 26, windGustKnots: 26, visibilityMeters: 9999 };
     const res = mock.evaluateSimulation(lowFuelSavannah, nw, 'test');
     const f = buildTraffic(lowFuelSavannah, res).flights.find((x) => x.id === 'YR-SAV')!;
-    expect(f.alternate?.code).toBe('LRBV');
+    expect(f.alternate?.code).toBe('LRCW');
     expect(f.alternate?.point).toEqual(LRCW);
+    const alts = f.advisory?.recommendedAlternates ?? [];
+    expect(alts.map((a) => a.code)).toEqual(['LRCW', 'SLATINA']);
   });
 
   it('scenariu fără avioane: fereastră de ceas validă, nu Infinity', () => {

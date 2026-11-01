@@ -172,7 +172,7 @@ export class MockBadRequest extends Error {}
 
 function light(base: number): CraiovaAircraft[] {
   return [
-    { id: 'YR-SAV', callsign: 'YR-5123', modelName: 'ICP Savannah S (Ultralight STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 11, etaSeconds: base, earliestSeconds: Math.max(0, base - 60), latestSeconds: base + 300, frozenTimeSeconds: null, speedKnots: 65, remainingFuelMinutes: 75, departureIcao: 'PODARI' },
+    { id: 'YR-SAV', callsign: 'YR-5123', modelName: 'ICP Savannah S (Ultralight STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 11, etaSeconds: base, earliestSeconds: Math.max(0, base - 60), latestSeconds: base + 300, frozenTimeSeconds: null, speedKnots: 65, remainingFuelMinutes: 75, departureIcao: 'LRCW' },
     { id: 'YR-WILG', callsign: 'YR-WLG', modelName: 'PZL-104 Wilga 35A (STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 13, etaSeconds: base + 180, earliestSeconds: base + 120, latestSeconds: base + 480, frozenTimeSeconds: null, speedKnots: 75, remainingFuelMinutes: 80, departureIcao: 'LRCW' },
     { id: 'YR-C172', callsign: 'YR-CRA', modelName: 'Cessna 172N Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: base + 360, earliestSeconds: base + 300, latestSeconds: base + 660, frozenTimeSeconds: null, speedKnots: 95, remainingFuelMinutes: 90, departureIcao: 'LRBS' },
   ];
@@ -218,18 +218,17 @@ export function liveTraffic(preset: TrafficPresetId = 'default'): LiveTrafficRes
 export function alternates(weather: WeatherCondition, cruiseSpeed = 70, maxAllowedXw = 12): AlternateAerodrome[] {
   const speed = cruiseSpeed <= 0 ? 70 : cruiseSpeed;
   const wind = Math.max(weather.windSpeedKnots, weather.windGustKnots);
-  const field = (name: string, code: string, km: number, brg: number, rwyA: [number, string], rwyB: [number, string], lenM: number, reason: (rwy: string, cross: number, minutes: number) => string): AlternateAerodrome => {
-    const a = crosswind(weather.windDirectionDegrees, wind, rwyA[0]);
-    const b = crosswind(weather.windDirectionDegrees, wind, rwyB[0]);
-    const useB = b.headwindKnots >= a.headwindKnots;
-    const best = useB ? b : a;
-    const label = useB ? rwyB[1] : rwyA[1];
+  const field = (name: string, code: string, km: number, brg: number, rwys: [number, string][], lenM: number, reason: (rwy: string, cross: number, minutes: number) => string): AlternateAerodrome => {
+    const evaluated = rwys.map(([hdg, lbl]) => ({ hdg, lbl, ...crosswind(weather.windDirectionDegrees, wind, hdg) }));
+    const nonTail = evaluated.filter((r) => r.headwindKnots >= -1);
+    const pool = nonTail.length > 0 ? nonTail : evaluated;
+    const chosen = [...pool].sort((a, b) => a.crosswindKnots - b.crosswindKnots || b.headwindKnots - a.headwindKnots)[0];
     const wt = windTriangle(brg, speed, weather.windDirectionDegrees, weather.windSpeedKnots);
     const minutes = roundEven((km / (speed * 1.852)) * 60, 1);
-    const ldrM = roundEven(175 * (1 - best.headwindKnots / 130) * 1.15, 0);
-    const xwRatio = best.crosswindKnots / Math.max(8, maxAllowedXw);
+    const ldrM = roundEven(175 * (1 - chosen.headwindKnots / 130) * 1.15, 0);
+    const xwRatio = chosen.crosswindKnots / Math.max(8, maxAllowedXw);
     const sXw = xwRatio <= 1 ? 100 * (1 - 0.35 * xwRatio) : Math.max(0, 35 - (xwRatio - 1) * 70);
-    const sHw = best.headwindKnots >= 0 ? Math.min(100, 70 + best.headwindKnots * 1.5) : Math.max(0, 70 + best.headwindKnots * 10);
+    const sHw = chosen.headwindKnots >= 0 ? Math.min(100, 70 + chosen.headwindKnots * 1.5) : Math.max(0, 70 + chosen.headwindKnots * 10);
     const sDist = Math.max(25, 100 - km * 1.1);
     const sLdr = Math.min(100, ((lenM - ldrM) / lenM) * 125);
     const score = roundEven(0.55 * sXw + 0.2 * sHw + 0.15 * sDist + 0.1 * sLdr, 1);
@@ -238,12 +237,12 @@ export function alternates(weather: WeatherCondition, cruiseSpeed = 70, maxAllow
       code,
       distanceKm: km,
       bearingDegrees: brg,
-      runwayHeadingDegrees: useB ? rwyB[0] : rwyA[0],
-      bestRunway: label,
-      calculatedCrosswindKnots: best.crosswindKnots,
-      calculatedHeadwindKnots: best.headwindKnots,
+      runwayHeadingDegrees: chosen.hdg,
+      bestRunway: chosen.lbl,
+      calculatedCrosswindKnots: chosen.crosswindKnots,
+      calculatedHeadwindKnots: chosen.headwindKnots,
       estimatedFlightMinutes: minutes,
-      suitabilityReason: reason(label, best.crosswindKnots, minutes),
+      suitabilityReason: reason(chosen.lbl, chosen.crosswindKnots, minutes),
       windCorrectedHeadingDegrees: wt.hdgDeg,
       landingDistanceRequiredMeters: ldrM,
       safetyScore: score,
@@ -251,9 +250,8 @@ export function alternates(weather: WeatherCondition, cruiseSpeed = 70, maxAllow
     };
   };
   const list = [
-    field('Aerodromul Balta Verde Craiova', 'LRBV', 11.8, 245, [130, '13 (130°)'], [310, '31 (310°)'], 600, (r, c) => `Pistă înierbată 600m. La vânt din ${weather.windDirectionDegrees}°, vântul lateral pe pista ${r} este de ${c} kts (mult redus față de Craiova).`),
-    field('Aerodrom Podari (ULM Field)', 'PODARI', 14.5, 225, [20, '02 (020°)'], [200, '20 (200°)'], 500, (r, c) => `Teren dedicat ULM/Savannah. Pista ${r} este orientată aproape pe axul vântului de sud, oferind un vânt lateral minim de doar ${c} kts.`),
-    field('Aerodrom Slatina', 'SLATINA', 46.0, 75, [80, '08 (080°)'], [260, '26 (260°)'], 700, (_r, _c, m) => `Aerodrom de rezervă estic la ${m} minute zbor.`),
+    field('Aerodromul Balta Verde Craiova (Aeroclubul României)', 'LRCW', 11.8, 245, [[130, '13 (130°)'], [310, '31 (310°)'], [20, '02 (020°)'], [200, '20 (200°)']], 920, (r, c) => `Singurul aerodrom al Craiovei (Craiova-Sud LRCW, Balta Verde), administrat de Aeroclubul României (pistă înierbată 920m). Pista ${r} oferă vânt lateral redus la ${c} kts.`),
+    field('Aerodrom Slatina', 'SLATINA', 46.0, 75, [[80, '08 (080°)'], [260, '26 (260°)']], 700, (_r, _c, m) => `Punct secundar de rezervă VFR estic la ${m} minute zbor.`),
   ];
   const bestIdx = list.reduce((best, cur, idx) => ((cur.safetyScore ?? 0) > (list[best].safetyScore ?? 0) ? idx : best), 0);
   list[bestIdx].isRecommendedBestSpot = true;
@@ -300,10 +298,10 @@ function buildMockMathForAircraft(
 
   const step1Fix = isJet
     ? rwyId === '26' ? 'OZZET (IF RWY 26)' : 'NECCO (IF RWY 08)'
-    : status === 'HoldInOrbitRecommended' ? 'Orbită Sud Cârcea (VFR Hold)' : status === 'DivertRecommended' ? `Traseu deviere → ${bestAlt?.code ?? 'PODARI'}` : `Aliniere Finală 3 NM RWY ${rwyId}`;
+    : status === 'HoldInOrbitRecommended' ? 'Orbită Sud Cârcea (VFR Hold)' : status === 'DivertRecommended' ? `Traseu deviere → ${bestAlt?.code ?? 'LRCW'}` : `Aliniere Finală 3 NM RWY ${rwyId}`;
   const step2Fix = status === 'ClearedForApproach'
     ? `THR RWY ${rwyId} (Touchdown)`
-    : status === 'HoldInOrbitRecommended' ? (isJet ? 'Holding VOR CRA (4000 ft)' : 'Ieșire Orbită / Reevaluare Meteo') : `${bestAlt?.name ?? 'Podari'} (Pistă ${bestAlt?.bestRunway ?? '20'})`;
+    : status === 'HoldInOrbitRecommended' ? (isJet ? 'Holding VOR CRA (4000 ft)' : 'Ieșire Orbită / Reevaluare Meteo') : `${bestAlt?.name ?? 'Aerodromul Balta Verde Craiova'} (Pistă ${bestAlt?.bestRunway ?? '20'})`;
 
   const cruiseDistNm = roundEven(Math.max(2, routeNm - todNm - 15), 1);
   const cruiseGs = Math.max(45, roundEven(cruiseTas - hw * 0.8, 0));
@@ -389,7 +387,7 @@ function buildMockMathForAircraft(
       expectedCrosswindKnots: xw,
       expectedHeadwindKnots: hw,
       remainingFuelMinutes: roundEven(Math.max(10, fuel - 5.5), 1),
-      controllerAction: status === 'ClearedForApproach' ? `Autorizare apropiere finală RWY ${rwyId}, cap corectat ${wt.hdgDeg}°` : status === 'HoldInOrbitRecommended' ? 'Instrucțiune intrare în orbită la sud de pistă' : `Vectorizare imediată spre ${bestAlt?.name ?? 'Podari'}`,
+      controllerAction: status === 'ClearedForApproach' ? `Autorizare apropiere finală RWY ${rwyId}, cap corectat ${wt.hdgDeg}°` : status === 'HoldInOrbitRecommended' ? 'Instrucțiune intrare în orbită la sud de pistă' : `Vectorizare imediată spre ${bestAlt?.name ?? 'Aerodromul Balta Verde Craiova'}`,
     },
     stepTwoAhead: {
       stepIndex: 2,
@@ -411,7 +409,7 @@ function buildMockMathForAircraft(
       expectedCrosswindKnots: status === 'DivertRecommended' && bestAlt ? bestAlt.calculatedCrosswindKnots : xw,
       expectedHeadwindKnots: hw,
       remainingFuelMinutes: roundEven(Math.max(5, fuel - 9.0), 1),
-      controllerAction: status === 'ClearedForApproach' ? `Aterizare la ${fmt(step2Sec)}, eliberare pistă în ${rotSec}s` : status === 'HoldInOrbitRecommended' ? 'Reevaluare rafale pentru ieșire din orbită' : `Confirmare aterizare sigură pe ${bestAlt?.name ?? 'Podari'}`,
+      controllerAction: status === 'ClearedForApproach' ? `Aterizare la ${fmt(step2Sec)}, eliberare pistă în ${rotSec}s` : status === 'HoldInOrbitRecommended' ? 'Reevaluare rafale pentru ieșire din orbită' : `Confirmare aterizare sigură pe ${bestAlt?.name ?? 'Aerodromul Balta Verde Craiova'}`,
     },
     predictiveSummary: `Cu 2 pași înaintea aeronavei ${ac.callsign}: Pas +1 la ${step1Fix} (${fmt(step1Sec)}), urmat de Pas +2 la ${step2Fix} (${fmt(step2Sec)}). Cap compas corectat pentru derivă: ${wt.hdgDeg}° (WCA ${wt.wcaDeg >= 0 ? '+' : ''}${wt.wcaDeg}°), ROD ${rodFpm} fpm, distanță de oprire ${ldrM}m.`,
   };

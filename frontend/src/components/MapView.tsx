@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+﻿import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import L from 'leaflet';
 import { Circle, CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import type { AirportInfo } from '../data/airports';
@@ -6,6 +6,7 @@ import { ATS_AIRWAYS, ATZ_RADIUS_NM, TMA_CRAIOVA_POLYGON } from '../data/airspac
 import {
   ARP,
   CTR_RADIUS_NM,
+  LRCW,
   MAP_BOUNDS_WIDE,
   NAVAIDS,
   RUNWAY_LINE,
@@ -471,6 +472,13 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
             </Tooltip>
           </CircleMarker>
         ))}
+      {showTerminalLabels && (
+        <CircleMarker center={[LRCW.lat, LRCW.lon]} radius={3} pathOptions={{ className: 'wpt wpt--alt' }} interactive={false}>
+          <Tooltip permanent direction="left" className="lbl" offset={[-4, 0]}>
+            LRCW · Balta Verde
+          </Tooltip>
+        </CircleMarker>
+      )}
     </>
   );
 }

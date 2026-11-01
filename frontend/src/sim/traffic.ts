@@ -684,9 +684,14 @@ function withRollout(track: TrackPoint[], runway: RunwayId): TrackPoint[] {
 function pickAlternate(alternates: AlternateAerodrome[] | null): FlightView['alternate'] {
   if (!alternates || alternates.length === 0) return null;
   const best = [...alternates].sort((a, b) => a.calculatedCrosswindKnots - b.calculatedCrosswindKnots || a.distanceKm - b.distanceKm)[0];
-  // „Balta Verde / LRBV” din backend este Craiova-Sud (LRCW) în AIP; folosim coordonatele oficiale.
-  const point = best.code === 'LRBV' || /balta verde/i.test(best.name) ? LRCW : destination(ARP, best.bearingDegrees, best.distanceKm / 1.852);
-  return { ...best, point };
+  // Singurul aerodrom al Craiovei este Aerodromul Balta Verde (LRCW), administrat de Aeroclubul României; folosim coordonatele oficiale LRCW.
+  const isBaltaVerde =
+    best.code === 'LRCW' ||
+    best.code === 'LRBV' ||
+    best.code === 'PODARI' ||
+    /balta verde|craiova-sud|podari/i.test(best.name);
+  const point = isBaltaVerde ? LRCW : destination(ARP, best.bearingDegrees, best.distanceKm / 1.852);
+  return { ...best, code: isBaltaVerde ? 'LRCW' : best.code, point };
 }
 
 function latLngs(points: LatLon[]): [number, number][] {
