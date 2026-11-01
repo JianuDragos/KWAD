@@ -1,24 +1,20 @@
 import type { TrafficPresetId } from '../contracts/backend';
-import { WEATHER_PRESETS, presetLabel } from '../data/weatherPresets';
+import { WEATHER_PRESETS } from '../data/weatherPresets';
 import { clockLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { BASE_TIME_OFFSET_SECONDS, SPEEDS, useApp, useIsStale } from '../state/store';
 import { WindArrow } from './WindArrow';
 import { HINT } from '../data/glossary';
 
-/** Bara de sus pe pagina Demo: ceasul simulării, redare, scenariu trafic și preset meteo. */
+/** Bara de sus pe pagina Demo: ceasul simulării, redarea, pista și vântul. Scenariul se alege în panoul din dreapta. */
 export function DemoControls() {
   const playing = useApp((s) => s.playing);
   const speed = useApp((s) => s.speed);
-  const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
-  const trafficPreset = useApp((s) => s.scenario?.trafficPreset ?? 'default');
-  const revision = useApp((s) => s.scenario?.revision ?? 0);
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
   const evaluationResult = useApp((s) => s.evaluation?.result);
-  const { togglePlay, setSpeed, setWeatherPreset, setTrafficPreset, reset } = useApp.getState();
+  const { togglePlay, setSpeed, reset } = useApp.getState();
   const stale = useIsStale();
-  const units = useSpeed();
 
   return (
     <>
@@ -42,29 +38,6 @@ export function DemoControls() {
 
       <Conditions />
 
-      <label className="group">
-        <span className="group__label">Trafic</span>
-        <select
-          value={trafficPreset}
-          onChange={(e) => void setTrafficPreset(e.target.value as TrafficPresetId)}
-          disabled={status === 'loading'}
-        >
-          <option value="default">Standard LRCV (EGGW / LIME + 3 VFR)</option>
-          <option value="eurasia">Eurasia Long-Haul (China ZBAA → LRCV)</option>
-        </select>
-      </label>
-
-      <label className="group">
-        <span className="group__label">Meteo</span>
-        <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData}>
-          {WEATHER_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {presetLabel(p, units.label)}
-            </option>
-          ))}
-        </select>
-      </label>
-
       <div className="spacer" />
 
       <div className="pills" aria-live="polite">
@@ -81,7 +54,6 @@ export function DemoControls() {
             ▲ {evaluationResult.safetyAssessment.conflicts.length} Conflicte
           </span>
         )}
-        <span className="pill" title={HINT.REVISION}>rev {revision}</span>
       </div>
     </>
   );
@@ -117,6 +89,36 @@ function Conditions() {
       <span className={`atis__xw ${result.isCrosswindCriticalForLightAircraft ? 'is-critical' : ''}`} title={HINT.CROSSWIND}>
         lateral {speed.label(result.activeRunwayCrosswindKnots)}
       </span>
+    </div>
+  );
+}
+
+/** Alegerea scenariului Demo (trafic și vreme), în panoul de sosiri: schimbă lista de dedesubt. */
+export function ScenarioPicker() {
+  const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
+  const trafficPreset = useApp((s) => s.scenario?.trafficPreset ?? 'default');
+  const status = useApp((s) => s.status);
+  const hasData = useApp((s) => !!s.evaluation);
+  const { setWeatherPreset, setTrafficPreset } = useApp.getState();
+  return (
+    <div className="scenario">
+      <label className="scenario__field">
+        <span className="scenario__label">Trafic</span>
+        <select value={trafficPreset} onChange={(e) => void setTrafficPreset(e.target.value as TrafficPresetId)} disabled={status === 'loading'}>
+          <option value="default">Standard LRCV</option>
+          <option value="eurasia">Eurasia (din China)</option>
+        </select>
+      </label>
+      <label className="scenario__field">
+        <span className="scenario__label">Vreme</span>
+        <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData}>
+          {WEATHER_PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

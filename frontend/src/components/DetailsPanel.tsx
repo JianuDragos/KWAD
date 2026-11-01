@@ -11,6 +11,7 @@ import { useSpeed } from '../state/units';
 import { HINT } from '../data/glossary';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { AskAi } from './AskAi';
+import { ScenarioPicker } from './DemoControls';
 import { CATEGORY_LABEL, STATUS_CLASS, isUnsequenced } from './flightStyle';
 
 const clock = (s: number) => clockLabel(BASE_TIME_OFFSET_SECONDS + s, false);
@@ -42,13 +43,14 @@ export function DetailsPanel() {
 
 
       <div className="panel__head">
-        <h2 className="panel__title">Sosiri &amp; Calcule Zbor</h2>
+        <h2 className="panel__title">Sosiri LRCV</h2>
         <span className="panel__count">
-          {stats.clearedToLandCount} aprobate
+          {flights.length} avioane, {flights.filter((f) => f.slot).length} cu slot
           {stats.holdingInOrbitCount > 0 && <>, {stats.holdingInOrbitCount} în așteptare</>}
           {stats.divertAdvisedCount > 0 && <>, {stats.divertAdvisedCount} deviate</>}
         </span>
       </div>
+      <ScenarioPicker />
       {ordered.length === 0 && <p className="notice">Niciun trafic în scenariu.</p>}
       <ol className="strips">
         {ordered.map((f) => (
@@ -96,7 +98,7 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
         <span className="strip__type">
           <span className={`rules rules--${rules}`} title={HINT[ac.flightRules]}>{ac.flightRules}</span> {ac.modelName}
         </span>
-        <span className="strip__when" title={flight.slot ? HINT.SLOT : HINT.ETA}>{tag ? <span className="strip__tag">{tag}</span> : flight.slot ? 'slot' : 'ETA'}</span>
+        <span className="strip__when" title={flight.slot ? HINT.SLOT : HINT.ETA}>{tag ? <span className={`strip__tag ${isUnsequenced(flight) ? 'strip__tag--noslot' : ''}`}>{tag}</span> : flight.slot ? 'slot' : 'ETA'}</span>
       </button>
       {expanded && <StripDetails flight={flight} id={bodyId} />}
     </article>
@@ -117,7 +119,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
 
   return (
     <div className="strip__body" id={id}>
-      {isUnsequenced(flight) && <p className="notice notice--warn">Aprobat pentru apropiere, dar fără slot de aterizare. Pe hartă aterizează la ETA.</p>}
+      {isUnsequenced(flight) && <p className="notice">Aprobat pentru apropiere, dar fără slot de aterizare. Pe hartă aterizează la ETA.</p>}
       <dl className="kv">
         <dt>Origine</dt>
         <dd>

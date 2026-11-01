@@ -16,9 +16,3 @@ export const WEATHER_PRESETS: WeatherPreset[] = [
 
 export const DEFAULT_PRESET_ID = 'calm';
 
-/** Eticheta din listă, cu vântul în unitatea aleasă; rafalele apar doar când diferă vizibil (4 kt sau mai mult). */
-export function presetLabel(p: WeatherPreset, speed: (knots: number) => string): string {
-  const w = p.weather;
-  const gust = w.windGustKnots - w.windSpeedKnots >= 4 ? ` cu rafale ${speed(w.windGustKnots)}` : '';
-  return `${p.label}, ${String(w.windDirectionDegrees).padStart(3, '0')}° ${speed(w.windSpeedKnots)}${gust}`;
-}

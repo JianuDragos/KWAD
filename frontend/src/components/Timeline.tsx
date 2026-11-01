@@ -47,11 +47,11 @@ export function Timeline() {
     <section className={`timeline ${collapsed ? 'timeline--collapsed' : ''}`} aria-label="Cronologia sosirilor">
       <div className="tl-row tl-row--axis">
         <div className="tl-label tl-label--hdr">
-          <button className="tl-toggle" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed}>
+          <button className="tl-toggle" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed} aria-label="Cronologie">
             <span className="tl-toggle__chev" aria-hidden="true">
               {collapsed ? '▸' : '▾'}
             </span>
-            Cronologie
+            <span className="tl-toggle__text">Cronologie</span>
           </button>
           <div className="tl-scope" role="group" aria-label="Domeniu cronologie">
             <button
@@ -118,7 +118,7 @@ export function Timeline() {
                   <span className="tl-eta" style={{ left: x(f.aircraft.etaSeconds) }} title={HINT.ETA} />
                   {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title={HINT.SLOT} />}
                   {!f.slot && (
-                    <span className={`tl-flag ${isUnsequenced(f) ? 'tl-flag--warn' : STATUS_CLASS[f.status]}`} style={{ left: x(f.aircraft.etaSeconds) }}>
+                    <span className={`tl-flag ${isUnsequenced(f) ? 'tl-flag--noslot' : STATUS_CLASS[f.status]}`} style={{ left: x(f.aircraft.etaSeconds) }}>
                       {isUnsequenced(f) ? 'fără slot' : f.status === 'DivertRecommended' ? 'deviere' : 'așteptare'}
                     </span>
                   )}

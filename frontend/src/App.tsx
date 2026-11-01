@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AltitudeLegend } from './components/AltitudeLegend';
 import { DetailsPanel } from './components/DetailsPanel';
+import { HintLayer } from './components/HintLayer';
 import { LivePanel } from './components/LivePanel';
 import { LiveTraffic } from './components/LiveTraffic';
 import { MapView, SimTraffic } from './components/MapView';
@@ -66,6 +67,7 @@ export default function App() {
   return (
     <div className={`app app--${mode}`}>
       <TopBar mode={mode} />
+      <HintLayer />
       <main className="map-area">
         {mode === 'demo' ? (
           <MapView runway={simRunway} onBackgroundClick={() => useApp.getState().select(null)}>
@@ -86,7 +88,7 @@ export default function App() {
               aria-keyshortcuts="0"
               title="Încadrează toate aeroporturile de decolare și rutele complete (tasta 0)"
             >
-              Continental
+              Europa
             </button>
             <button
               className={`seg__btn ${view === 'wide' ? 'is-on' : ''}`}
@@ -95,7 +97,7 @@ export default function App() {
               aria-keyshortcuts="1"
               title="Zona terminală TMA/CTR Craiova (tasta 1)"
             >
-              Larg
+              Regiune
             </button>
             <button
               className={`seg__btn ${view === 'close' ? 'is-on' : ''}`}
@@ -104,7 +106,7 @@ export default function App() {
               aria-keyshortcuts="2"
               title="Pragul pistei LRCV 08/26 (tasta 2)"
             >
-              Apropiat
+              Aeroport
             </button>
           </div>
           <button
