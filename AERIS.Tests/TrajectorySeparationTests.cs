@@ -576,6 +576,35 @@ public class TrajectorySeparationTests
         Assert.Contains("75 min", res.DirectAnswer);
     }
 
+    [Theory]
+    [InlineData("Situația este sigură, eșalonare 4D confirmată.", true)]
+    [InlineData("Nu există conflicte, traficul e în siguranță.", true)]
+    [InlineData("Atenție: 2 conflicte active, plan nesigur, necesită replanificare.", false)]
+    public async Task Test_23_GroundedExplainer_BlocksSafetyClaimWhenFactsShowConflicts(string modelAnswer, bool expectBlocked)
+    {
+        var handler = new DelegateHttpHandler((_, _) =>
+        {
+            var qaJson = JsonSerializer.Serialize(new { direct_answer = modelAnswer, statement_ids = new[] { "separation" } });
+            var payload = JsonSerializer.Serialize(new
+            {
+                choices = new[] { new { finish_reason = "stop", message = new { content = qaJson } } }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) });
+        });
+
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
+        var explainer = new GroundedExplainer(client);
+        var statements = new[]
+        {
+            new ApprovedStatement("separation", "Verificare Separare 4D & Siaj: Status Unsafe (S-au detectat 2 conflicte). Perechi evaluate: 6, conflicte active: 2.", "SEP-1")
+        };
+
+        var res = await explainer.ExplainAsync(new ExplanationRequest("Care este situația generală?", 9, statements));
+
+        Assert.Equal(expectBlocked, res.Verification!.HallucinationBlocked);
+        Assert.Equal(expectBlocked, res.DirectAnswer != modelAnswer);
+    }
+
     private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);

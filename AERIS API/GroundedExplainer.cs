@@ -50,6 +50,13 @@ public sealed class GroundedExplainer(
         @"\b(ești\s+autorizat|sunteți\s+autorizat|aveți\s+autorizația\s+să\s+aterizați|cleared\s+to\s+land|cleared\s+for\s+takeoff)\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    private static readonly Regex ConflictFactRegex = new(
+        @"\bUnsafe\b|conflicte active:\s*[1-9]|pierdere de (eșalonare|separare)|\bAirprox\b",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex SafetyClaimRegex = new(
+        @"\b(sigur[ăe]?|în siguranță|safe|fără conflicte?|nu există conflicte|eșalonare\s+(4D\s+)?(confirmată|sigură|respectată))\b",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     // Input statements MUST come from trusted backend code, never a browser or retrieved free-form note.
     public async Task<Explanation> ExplainAsync(ExplanationRequest input, CancellationToken cancellationToken = default)
     {
@@ -91,7 +98,8 @@ public sealed class GroundedExplainer(
             "1. Acoperă tot ce s-a întrebat, dar în aceeași formă scurtă. Folosește un termen din glosar doar când Faptele îl susțin (ex: pierdere de eșalonare = două aeronave prea apropiate, nu vânt prea mare). " +
             "2. Fără calcule sau formule; citează valorile gata calculate din Fapte. " +
             "3. Folosește EXCLUSIV numerele din Fapte (nu inventa niciun număr). " +
-            "4. Fără autorizări de tip „cleared to land” / „autorizat la aterizare”; doar recomanzi. " +
+            "4. Dacă Faptele arată conflicte, Unsafe sau pierdere de eșalonare, spune asta primul și nu numi situația sigură. " +
+            "5. Fără autorizări de tip „cleared to land” / „autorizat la aterizare”; doar recomanzi. " +
             "Returnează DOAR JSON valid: {\"direct_answer\":\"...\",\"statement_ids\":[\"...\"]}.";
 
         var userPrompt = $"Întrebare: {input.Question}\nFapte:\n" +
@@ -269,15 +277,19 @@ public sealed class GroundedExplainer(
             }
 
             bool hasForbiddenClearance = ProhibitedClearanceRegex.IsMatch(modelDirectAnswer);
+            // Cifrele pot fi corecte și concluzia greșită: „sigur” peste calcule cu conflicte e cea mai periculoasă eroare pentru controlor.
+            bool contradictsConflicts = statements.Any(s => ConflictFactRegex.IsMatch(s.Text)) && SafetyClaimRegex.IsMatch(modelDirectAnswer);
             var grounding = VerifyNumericGrounding(modelDirectAnswer, input.Question, statements);
 
-            if (hasForbiddenClearance || grounding.Unverified.Length > 0)
+            if (hasForbiddenClearance || contradictsConflicts || grounding.Unverified.Length > 0)
             {
                 var safeAnswer = ComposeFocusedAnswer(input.Question, chosen, statements);
                 var safeGrounding = VerifyNumericGrounding(safeAnswer, input.Question, statements);
                 string blockNote = hasForbiddenClearance
                     ? "Expresie de autorizare ATC directă blocată automat de verificatorul C#; înlocuită cu sinteza verificată."
-                    : $"Verificatorul anti-halucinație C# a interceptat valori neconfirmate ({string.Join(", ", grounding.Unverified)}) și a reconstruit răspunsul strict din calculele AERIS.";
+                    : contradictsConflicts
+                        ? "Răspunsul afirma o situație sigură deși calculele AERIS arată conflicte active; înlocuit cu sinteza verificată."
+                        : $"Verificatorul anti-halucinație C# a interceptat valori neconfirmate ({string.Join(", ", grounding.Unverified)}) și a reconstruit răspunsul strict din calculele AERIS.";
 
                 return new Explanation(
                     ScenarioRevision: input.ScenarioRevision,

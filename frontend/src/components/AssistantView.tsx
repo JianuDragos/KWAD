@@ -1,4 +1,4 @@
-// Tab-ul dedicat „Asistent”: spațiu de conversație tactică ATC (Qwen3-4B + verificare matematică C#)
+// Tab-ul dedicat „Asistent”: spațiu de conversație tactică ATC (model AI local + verificarea cifrelor în backend)
 // și panou interactiv de analiză & decizie pentru problemele operaționale (VFR Așteptare Rând vs. Redirecționare Alternativă).
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
@@ -78,16 +78,6 @@ const LIVE_TACTICAL_CATEGORIES: TacticalCategory[] = [
   },
 ];
 
-const FALLBACK_LABELS: Record<string, string> = {
-  inference_unavailable: 'serverul LLM local este oprit — a răspuns motorul determinist C#',
-  timeout: 'modelul 4B a depășit timpul limită — s-a folosit sinteza deterministă C#',
-  no_matching_statement: 'nicio regulă selectată — s-a folosit sinteza deterministă C#',
-  invalid_selection: 'format JSON invalid — s-a folosit sinteza deterministă C#',
-  invalid_response: 'răspuns invalid — s-a folosit sinteza deterministă C#',
-  incomplete_response: 'răspuns incomplet — s-a folosit sinteza deterministă C#',
-  response_too_large: 'răspuns prea amplu — s-a folosit sinteza deterministă C#',
-};
-
 const clock = (s: number) => clockLabel(BASE_TIME_OFFSET_SECONDS + s, false);
 
 export function AssistantView() {
@@ -124,7 +114,7 @@ export function AssistantView() {
           <div>
             <h1 className="assistant-chat__title">Asistent Tactic ATC · Suport Decizional Craiova (LRCV)</h1>
             <p className="muted small">
-               Analiză conversațională în limba română ancorată strict în calculele fizice AERIS (zero cifre inventate, verificare C# la fiecare răspuns).
+               Analiză conversațională în limba română ancorată strict în calculele fizice AERIS (fiecare cifră din răspuns e verificată în calcule).
             </p>
           </div>
         </header>
@@ -181,7 +171,7 @@ export function AssistantView() {
           {busy && (
             <div className="chat-msg chat-msg--assistant is-thinking">
               <div className="chat-msg__meta">
-                <span className="chat-msg__author">Asistent AERIS (Qwen3-4B)</span>
+                <span className="chat-msg__author">Asistent AERIS</span>
                 <span className="muted small">analizează telemetria &amp; verifică cifrele…</span>
               </div>
               <div className="chat-msg__body muted">
@@ -256,31 +246,11 @@ function ChatBubble({ msg }: { msg: AssistantMessage }) {
       <div className="chat-msg__meta">
         <span className="chat-msg__author">Asistent AERIS</span>
         <div className="chat-msg__badges">
-          {ver && (
-            <span className={`ai__mode-pill ${ans.mode === 'grounded_selection' ? 'is-llm' : 'is-det'}`}>
-              {ans.mode === 'grounded_selection' ? '● Qwen3-4B Activ' : '○ Q&A Determinist'}
-            </span>
-          )}
           <span className="muted small">{msg.createdAtLabel}</span>
         </div>
       </div>
 
       <div className="ai__direct">{msg.text}</div>
-
-      {ver && (
-        <div className="ai__verify-bar">
-          <span className={`ai__verify-badge ${ver.hallucinationBlocked ? 'is-blocked' : 'is-ok'}`}>
-            {ver.hallucinationBlocked
-              ? '🛡 Cifre neconfirmate interceptate — răspuns reconstruit matematic'
-              : `✓ Verificat fără halucinații (${ver.verifiedNumbers.length}/${ver.totalNumbersInAnswer} cifre confirmate)`}
-          </span>
-          <span className="muted small num">{ver.latencyMs} ms</span>
-        </div>
-      )}
-
-      {ans.fallbackReason && (
-        <p className="muted small">Notă: {FALLBACK_LABELS[ans.fallbackReason] ?? ans.fallbackReason}.</p>
-      )}
 
       <button
         type="button"
@@ -288,39 +258,25 @@ function ChatBubble({ msg }: { msg: AssistantMessage }) {
         onClick={() => setShowProof((v) => !v)}
         aria-expanded={showProof}
       >
-        {showProof ? '▾ Ascunde dovada matematică' : `▸ Verifică răspunsul (${ans.sourceIds.length} surse AERIS)`}
+        {showProof ? '▾ Ascunde datele folosite' : '▸ Vezi datele folosite'}
       </button>
 
       {showProof && (
         <div className="ai__proof">
-          {ver && (
-            <>
-              <p className="small">
-                <strong>Motor:</strong> <span className="num">{ver.engineUsed}</span>
-                {ver.runtimeEndpoint ? <span className="muted"> ({ver.runtimeEndpoint})</span> : null}
-              </p>
-              <p className="small muted">{ver.verificationSummary}</p>
-              {ver.verifiedNumbers.length > 0 && (
-                <div>
-                  <span className="ai__proof-lbl">Valori numerice confirmate din motorul AERIS:</span>
-                  <div className="ai__num-list">
-                    {ver.verifiedNumbers.map((n) => (
-                      <span key={n} className="ai__num-chip num">
-                        ✓ {n}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <p className="small muted">
+            {ans.fallbackReason || ver?.hallucinationBlocked
+              ? 'Răspuns construit direct din datele de mai jos.'
+              : ver && ver.totalNumbersInAnswer > 0
+                ? `✓ Toate cifrele din răspuns (${ver.totalNumbersInAnswer}) se regăsesc în datele de mai jos.`
+                : '✓ Răspunsul se bazează pe datele de mai jos.'}
+          </p>
           <div>
-            <span className="ai__proof-lbl">Fapte sursă citate din backend (ground-truth):</span>
+            <span className="ai__proof-lbl">Date din calcule pe care se bazează răspunsul:</span>
             <ul className="ai__citation-list">
               {(ver?.citations ?? ans.sentences.map((t, i) => ({ id: ans.statementIds[i] ?? `s${i}`, sourceId: ans.sourceIds[0] ?? 'AERIS', text: t }))).map(
                 (c) => (
                   <li key={c.id} className="ai__citation">
-                    <span className="ai__citation-tag num">[{c.id}]</span> {c.text}
+                    {c.text}
                   </li>
                 ),
               )}
@@ -487,7 +443,7 @@ export function VfrApproachRecommendationBox() {
             )
           }
         >
-          ▸ Consultă Qwen3-4B despre abordare
+          ▸ Cere explicația recomandării
         </button>
       </div>
     </section>
@@ -501,9 +457,20 @@ function DemoTacticalProblemsPanel() {
   const { setVfrResolution, clearVfrOverrides, setWeatherPreset, select } = useApp.getState();
   const { sendPrompt, resetVfrApproachRecommendation } = useAssistant.getState();
   const busy = useAssistant((s) => s.busy);
+  const status = useApp((s) => s.status);
+  const error = useApp((s) => s.error);
 
   if (!evaluation || !scenario) {
-    return <p className="muted">Se încarcă datele scenariului…</p>;
+    return status === 'error' ? (
+      <div className="notice notice--err">
+        <p>Datele scenariului nu s-au putut încărca: {error}</p>
+        <button type="button" className="btn btn--outline btn--xs" onClick={() => void useApp.getState().load()}>
+          Reîncearcă
+        </button>
+      </div>
+    ) : (
+      <p className="muted">Se încarcă datele scenariului…</p>
+    );
   }
 
   const { flights, runway } = evaluation.traffic;
@@ -661,7 +628,7 @@ function DemoTacticalProblemsPanel() {
                         )
                       }
                     >
-                      ▸ Justifică decizia în conversație (Qwen3-4B)
+                      ▸ Cere justificarea deciziei
                     </button>
                     <button
                       type="button"

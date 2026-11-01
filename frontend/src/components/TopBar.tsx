@@ -102,9 +102,6 @@ function AssistantTopControls() {
       <div className="spacer" />
 
       <div className="pills">
-        <span className="pill pill--ok" title="Qwen3-4B-Instruct-2507 + Scut matematic C# anti-halucinație">
-          ● Qwen3-4B + Verificare C#
-        </span>
         {msgCount > 0 && (
           <button type="button" className="btn btn--quiet btn--xs" onClick={clearHistory}>
             Șterge conversația
