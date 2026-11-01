@@ -306,7 +306,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .alts__score { font-weight: 600; font-size: 13px; color: var(--cleared); }
 
 /* ---------- cronologie ---------- */
-.timeline { grid-area: tl; background: var(--console); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 224px; padding: 6px 16px 8px; }
+.timeline { user-select: none; grid-area: tl; background: var(--console); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 224px; padding: 6px 16px 8px; }
 .timeline.timeline--collapsed { height: auto; min-height: 0; }
 .timeline--collapsed .tl-body, .timeline--collapsed .tl-legend { display: none; }
 .tl-toggle { min-height: 24px; background: transparent; border: 0; padding: 0 4px 0 0; cursor: pointer; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
@@ -333,8 +333,11 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .tl-axis { cursor: ew-resize; border-bottom: 1px solid var(--line); touch-action: none; overflow: hidden; }
 .tl-body .tl-track { overflow: hidden; }
 .tl-tick { position: absolute; bottom: 3px; transform: translateX(-50%); font: 11px var(--mono); color: var(--faint); pointer-events: none; }
-.tl-nowlayer { position: absolute; top: 0; bottom: 0; left: calc(var(--tl-label) + 1px); right: 0; pointer-events: none; } /* + 1px bordura pistei */
-.tl-now { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--select); pointer-events: none; }
+.tl-main { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Aceleași coloane și același spațiu de scrollbar ca rândurile, ca linia să cadă exact pe ora din axă. */
+.tl-nowlayer { position: absolute; inset: 0; display: grid; grid-template-columns: var(--tl-label) 1fr; overflow-y: hidden; scrollbar-gutter: stable; pointer-events: none; z-index: 2; }
+.tl-nowtrack { position: relative; border-left: 1px solid transparent; } /* = bordura pistei */
+.tl-now { position: absolute; top: 0; bottom: 0; width: 0; margin-left: -1px; border-left: 2px solid var(--select); pointer-events: none; } /* centrată pe oră, ca etichetele */
 .tl-airborne { position: absolute; top: 12px; height: 4px; border-radius: 2px; opacity: .45; }
 .tl-airborne--ifr { background: var(--ifr); }
 .tl-airborne--vfr { background: var(--vfr); }
