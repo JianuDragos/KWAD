@@ -6,7 +6,7 @@ import { FALLBACK_FIRS, loadFirsDataset, type FirEntry } from '../data/airspace'
 import { DEFAULT_PRESET_ID, WEATHER_PRESETS } from '../data/weatherPresets';
 import { buildTraffic, type TrafficModel, type VfrResolutionAction } from '../sim/traffic';
 
-export const SPEEDS = [1, 5, 10, 30, 60, 300] as const;
+export const SPEEDS = [1, 10, 60] as const;
 export type Speed = (typeof SPEEDS)[number];
 export type MapViewPreset = 'continental' | 'wide' | 'close';
 export type TimelineScope = 'approach' | 'mission';
@@ -107,7 +107,7 @@ export const useApp = create<AppState>()((set, get) => {
     vfrOverrides: {},
     simTimeSeconds: 0,
     playing: false,
-    speed: 5,
+    speed: 10,
     selectedId: null,
     view: 'wide',
     viewNonce: 0,

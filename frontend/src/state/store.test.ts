@@ -93,8 +93,8 @@ describe('store', () => {
     useApp.getState().tick(10);
     expect(useApp.getState().simTimeSeconds).toBe(startSeconds);
     useApp.getState().togglePlay();
-    useApp.getState().setSpeed(300);
-    useApp.getState().tick(0.2);
+    useApp.getState().setSpeed(60);
+    useApp.getState().tick(1);
     expect(useApp.getState().simTimeSeconds).toBe(startSeconds + 60);
     useApp.getState().tick(1e6);
     expect(useApp.getState().simTimeSeconds).toBe(endSeconds);

@@ -38,7 +38,9 @@ export function LivePanel() {
 
       {!positions && !positionsError && <p className="muted">Se încarcă pozițiile…</p>}
       {positions && airborne.length === 0 && (
-        <p className="notice">Niciun avion în zbor în zona Craiova acum.</p>
+        <p className="notice">
+          Niciun avion în zbor lângă Craiova acum. Pentru scenariul de prezentare, <a href="#/demo">deschide Demo</a>.
+        </p>
       )}
       <ol className="strips">
         {airborne.map((f) => (

@@ -18,6 +18,7 @@ import {
   type RunwayId,
 } from '../data/geo';
 import { TrafficRendererContext, destination, trackBearingDegSafe, useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
+import { distanceNm } from '../sim/geomath';
 import { positionAt, trailUntil } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetLabel, feetToMeters } from '../sim/units';
@@ -70,6 +71,7 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
 /** Traficul simulat (pagina Demo): aeroporturi de origine + rute complete + aeronave 4D. */
 export function SimTraffic() {
   const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
+  const vp = useMapViewport();
   const origins = useMemo(() => {
     if (!flights) return [];
     const byIcao = new Map<string, AirportInfo>();
@@ -83,19 +85,21 @@ export function SimTraffic() {
 
   return (
     <>
-      {origins.map((apt) => (
-        <CircleMarker
-          key={`orig-${apt.icao}`}
-          center={[apt.lat, apt.lon]}
-          radius={4.5}
-          pathOptions={{ className: 'origin-apt' }}
-          interactive={false}
-        >
-          <Tooltip permanent direction="top" className="lbl lbl--apt" offset={[0, -5]}>
-            {apt.icao} · {apt.city}
-          </Tooltip>
-        </CircleMarker>
-      ))}
+      {origins
+        .filter((apt) => vp.zoom >= NEAR_ORIGIN_MIN_ZOOM || distanceNm(apt, ARP) > NEAR_ORIGIN_NM)
+        .map((apt) => (
+          <CircleMarker
+            key={`orig-${apt.icao}`}
+            center={[apt.lat, apt.lon]}
+            radius={4.5}
+            pathOptions={{ className: 'origin-apt' }}
+            interactive={false}
+          >
+            <Tooltip permanent interactive direction="top" className="lbl lbl--apt" offset={[0, -5]}>
+              <span title={`${apt.name}, ${apt.city}`}>{apt.icao}</span>
+            </Tooltip>
+          </CircleMarker>
+        ))}
       {flights.map((f) => (
         <AircraftMarker key={f.id} flight={f} />
       ))}
@@ -380,9 +384,8 @@ function AirspaceAndGridLayers() {
           return (
             <Polygon key={`fir-${fir.id}`} positions={fir.polygons} pathOptions={{ className: cls }} interactive={false} attribution={FIR_ATTRIBUTION}>
               {showLabel && (
-                <Tooltip permanent direction="center" className={`lbl lbl--fir ${isRomania || isTraversed ? 'lbl--fir-hi' : ''}`}>
-                  {fir.id}
-                  {vp.zoom >= 5.3 ? ` · ${fir.name}` : ''}
+                <Tooltip permanent interactive direction="center" className={`lbl lbl--fir ${isRomania || isTraversed ? 'lbl--fir-hi' : ''}`}>
+                  <span title={fir.name}>{fir.id}</span>
                 </Tooltip>
               )}
             </Polygon>
@@ -391,13 +394,14 @@ function AirspaceAndGridLayers() {
 
       {/* 3. TMA Craiova (760 m – FL145 ≈ 4 420 m) + Căi aeriene ATS (L605, N133, M747, W85) */}
       {showSectors && vp.zoom >= 6.2 && (
-        <Polygon positions={TMA_CRAIOVA_POLYGON} pathOptions={{ className: 'tma-poly' }} interactive={false}>
-          {vp.zoom >= 7.2 && vp.zoom <= 10.5 && (
-            <Tooltip permanent direction="top" className="lbl lbl--tma">
-              TMA CRAIOVA (760–4 420 m)
-            </Tooltip>
-          )}
-        </Polygon>
+        <Polygon positions={TMA_CRAIOVA_POLYGON} pathOptions={{ className: 'tma-poly' }} interactive={false} />
+      )}
+      {showSectors && vp.zoom >= 7.2 && vp.zoom <= 10.5 && (
+        <CircleMarker center={TMA_LABEL_AT} radius={0} pathOptions={{ stroke: false }} interactive={false}>
+          <Tooltip permanent interactive direction="bottom" className="lbl lbl--tma">
+            <span title="Zona de control terminal Craiova: între 760 m și FL145 (≈ 4 420 m)">TMA CRAIOVA</span>
+          </Tooltip>
+        </CircleMarker>
       )}
       {showSectors &&
         vp.zoom >= 6.0 &&
@@ -416,6 +420,11 @@ function AirspaceAndGridLayers() {
 }
 
 const ring = (nm: number) => nm * M_PER_NM;
+/** Aerodromurile de plecare mai aproape de atât de LRCV își arată eticheta doar de la zoom-ul acesta în sus. */
+const NEAR_ORIGIN_NM = 25;
+const NEAR_ORIGIN_MIN_ZOOM = 10;
+/** Mijlocul marginii de nord a TMA Craiova, unde stă eticheta. */
+const TMA_LABEL_AT: [number, number] = [44.75, 23.635];
 
 function StaticLayers({ runway }: { runway: RunwayId | null }) {
   const vp = useMapViewport();
@@ -451,8 +460,8 @@ function StaticLayers({ runway }: { runway: RunwayId | null }) {
       {/* Pin LRCV vizibil clar la zoom continental/regional */}
       {!showTerminalLabels && (
         <CircleMarker center={[ARP.lat, ARP.lon]} radius={5} pathOptions={{ className: 'hub-apt' }} interactive={false}>
-          <Tooltip permanent direction="right" className="lbl lbl--hub" offset={[6, 0]}>
-            LRCV · Craiova
+          <Tooltip permanent interactive direction="right" className="lbl lbl--hub" offset={[6, 0]}>
+            <span title="Aeroportul Internațional Craiova">LRCV</span>
           </Tooltip>
         </CircleMarker>
       )}
@@ -676,7 +685,7 @@ function AircraftMarkerView({
           <br />
           <span className={`db-alt ${band}`}>{altitudeLabel(pos.altitudeMeters)}</span> {flight.aircraft.flightRules}
           <br />
-          <span className={isUnsequenced(flight) ? 'db-warn' : ''}>{tag}</span>
+          <span className={isUnsequenced(flight) ? 'db-noslot' : ''}>{tag}</span>
         </Tooltip>
       </Marker>
     </>
