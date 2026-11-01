@@ -49,11 +49,6 @@ export function DemoControls() {
             ● Evaluare backend: fără conflicte
           </span>
         )}
-        {evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
-          <span className="pill pill--warn" title={`${HINT.CONFLICTS}\n\n${evaluationResult.safetyAssessment.summary}`}>
-            ▲ Backend: {evaluationResult.safetyAssessment.conflicts.length} conflicte
-          </span>
-        )}
       </div>
     </>
   );
