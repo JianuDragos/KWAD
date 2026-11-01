@@ -1,24 +1,21 @@
-import { useState } from 'react';
 import { ALTITUDE_BANDS } from '../sim/units';
+import { useApp } from '../state/store';
 
-/** Legenda culorilor de altitudine de pe hartă; se poate restrânge ca să nu acopere traficul. */
+/** Legenda culorilor de altitudine de pe hartă; se pornește din Setări, ca să nu acopere traficul. */
 export function AltitudeLegend() {
-  const [open, setOpen] = useState(false);
+  const show = useApp((s) => s.showAltitudeLegend);
+  if (!show) return null;
   return (
-    <div className="alt-legend">
-      <button className="alt-legend__toggle" onClick={() => setOpen(!open)} aria-expanded={open} title="Culoarea altitudinii din eticheta fiecărui avion (în metri, față de nivelul mării)">
-        <span aria-hidden="true">{open ? '▾' : '▴'}</span> Altitudine
-      </button>
-      {open && (
-        <ul>
-          {[...ALTITUDE_BANDS].reverse().map((b) => (
-            <li key={b.id}>
-              <i className={`alt-legend__swatch ${b.id}`} aria-hidden="true" />
-              {b.label}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="alt-legend" role="region" aria-label="Legendă altitudine">
+      <span className="alt-legend__title">Altitudine</span>
+      <ul>
+        {[...ALTITUDE_BANDS].reverse().map((b) => (
+          <li key={b.id}>
+            <i className={`alt-legend__swatch ${b.id}`} aria-hidden="true" />
+            {b.label}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

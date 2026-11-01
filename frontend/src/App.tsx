@@ -16,13 +16,9 @@ import { useApp } from './state/store';
 
 export default function App() {
   const view = useApp((s) => s.view);
-  const showSectors = useApp((s) => s.showSectors);
-  const demoRoutes = useApp((s) => s.showAllRoutes);
-  const liveRoutes = useLive((s) => s.showRoutes);
-  const { setView, setShowSectors, setShowAllRoutes } = useApp.getState();
+  const { setView } = useApp.getState();
 
   const mode = useMode();
-  const showAllRoutes = mode === 'live' ? liveRoutes : demoRoutes;
   const simRunway = useApp((s) => s.evaluation?.traffic.runway ?? null);
   const metar = useLive((s) => s.metar);
   const liveRunway = metar ? runwayForWind(metar.windDirectionDegrees, metar.windSpeedKnots) : null;
@@ -81,7 +77,6 @@ export default function App() {
   return (
     <div className={`app app--${mode}`}>
       <TopBar mode={mode} />
-      <VfrNotificationBanner />
       <HintLayer />
       <main className="map-area">
         {mode === 'demo' ? (
@@ -124,22 +119,6 @@ export default function App() {
               Aeroport
             </button>
           </div>
-          <button
-            className={`seg__btn seg__btn--solo ${showSectors ? 'is-on' : ''}`}
-            onClick={() => setShowSectors(!showSectors)}
-            aria-pressed={showSectors}
-            title="Afișează sectoarele FIR (LRBB + Europa/Asia), TMA Craiova și căile aeriene ATS"
-          >
-            Sectoare FIR
-          </button>
-          <button
-            className={`seg__btn seg__btn--solo ${showAllRoutes ? 'is-on' : ''}`}
-            onClick={() => (mode === 'live' ? useLive.getState().setShowRoutes(!showAllRoutes) : setShowAllRoutes(!showAllRoutes))}
-            aria-pressed={showAllRoutes}
-            title={mode === 'live' ? 'Afișează direcția estimată a fiecărui avion (vector 5 min și linia spre LRCV)' : 'Afișează traiectoria completă Decolare → Aterizare pentru fiecare aeronavă'}
-          >
-            Rute complete
-          </button>
         </div>
       </main>
       {mode === 'demo' ? (

@@ -1,28 +1,19 @@
 import { getAwaitingVfrFlights } from '../sim/traffic';
-import { SPEED_UNIT_LABEL } from '../sim/units';
 import { useAssistant } from '../state/assistant';
 import { setMode, type Mode } from '../state/mode';
 import { useApp } from '../state/store';
-import { useUnits } from '../state/units';
 import { DemoControls } from './DemoControls';
 import { LiveControls } from './LiveControls';
-import { HINT } from '../data/glossary';
+import { SettingsMenu } from './SettingsMenu';
 
 export function TopBar({ mode }: { mode: Mode }) {
-  const evaluation = useApp((s) => s.evaluation);
-  const simTimeSeconds = useApp((s) => s.simTimeSeconds);
-  const flights = evaluation?.traffic.flights;
-  const awaitingVfr = flights ? getAwaitingVfrFlights(flights, simTimeSeconds) : [];
-  const vfrRec = useAssistant((s) => s.vfrRecommendation);
-  const vfrAlertCount = flights ? flights.filter((f) => f.tacticalDecision !== null).length : 0;
-
   return (
     <header className="topbar">
       <div className="brand">
         <span className="brand__name">AERIS</span>
         <span className="brand__apt">Craiova LRCV</span>
       </div>
-      {/* Comutator principal: Trafic real, Asistent Tactic 4B (chiar lângă Trafic real) și Simulare Demo. */}
+      {/* Comutator principal: date reale sau simulare. Asistentul se deschide din butonul din dreapta. */}
       <div className="seg seg--mode" role="group" aria-label="Modul operațional">
         <button
           className={`seg__btn ${mode === 'live' ? 'is-on' : ''}`}
@@ -30,25 +21,6 @@ export function TopBar({ mode }: { mode: Mode }) {
           aria-pressed={mode === 'live'}
         >
           Trafic real
-        </button>
-        <button
-          className={`seg__btn ${mode === 'assistant' ? 'is-on is-assistant' : ''}`}
-          onClick={() => setMode('assistant')}
-          aria-pressed={mode === 'assistant'}
-        >
-          Asistent
-          {awaitingVfr.length >= 2 ? (
-            <span
-              className={`tab-badge ${vfrRec.status === 'rejected' ? 'is-rejected' : 'is-alert'}`}
-              title={`${awaitingVfr.length} aeronave VFR sunt în așteptare pentru aterizare — Recomandare apropiere ${vfrRec.status === 'rejected' ? 'refuzată de controlor' : 'activă'}`}
-            >
-              {vfrRec.status === 'rejected' ? 'Refuzat' : `${awaitingVfr.length} VFR`}
-            </span>
-          ) : vfrAlertCount > 0 ? (
-            <span className="tab-badge" title={`${vfrAlertCount} aeronave VFR necesită decizie tactică`}>
-              {vfrAlertCount}
-            </span>
-          ) : null}
         </button>
         <button
           className={`seg__btn ${mode === 'demo' ? 'is-on is-demo' : ''}`}
@@ -59,8 +31,31 @@ export function TopBar({ mode }: { mode: Mode }) {
         </button>
       </div>
       {mode === 'demo' ? <DemoControls /> : mode === 'assistant' ? <AssistantTopControls /> : <LiveControls />}
-      <SpeedUnitSwitch />
+      <AssistantButton active={mode === 'assistant'} />
+      <SettingsMenu mode={mode} />
     </header>
+  );
+}
+
+/** Deschide Asistentul; punctul roșu apare cât timp Asistentul are o recomandare la care nu s-a răspuns. */
+function AssistantButton({ active }: { active: boolean }) {
+  const flights = useApp((s) => s.evaluation?.traffic.flights);
+  const simTimeSeconds = useApp((s) => s.simTimeSeconds);
+  const vfrRec = useAssistant((s) => s.vfrRecommendation);
+  const awaitingVfr = flights ? getAwaitingVfrFlights(flights, simTimeSeconds).length : 0;
+  const tacticalDecisions = flights ? flights.filter((f) => f.tacticalDecision !== null).length : 0;
+  const hasRecommendation = (awaitingVfr >= 2 && vfrRec.status === 'pending') || tacticalDecisions > 0;
+  return (
+    <button
+      type="button"
+      className={`assistant-btn ${active ? 'is-on' : ''}`}
+      onClick={() => setMode('assistant')}
+      aria-pressed={active}
+      title={hasRecommendation ? 'Asistentul are o recomandare nouă' : 'Deschide Asistentul'}
+    >
+      Asistent
+      {hasRecommendation && <span className="assistant-btn__dot" aria-label="recomandare nouă" />}
+    </button>
   );
 }
 
@@ -117,19 +112,5 @@ function AssistantTopControls() {
         )}
       </div>
     </>
-  );
-}
-
-function SpeedUnitSwitch() {
-  const unit = useUnits((s) => s.speed);
-  const setSpeed = useUnits((s) => s.setSpeed);
-  return (
-    <div className="seg" role="group" aria-label="Unitatea vitezei" title={HINT.SPEED_UNIT}>
-      {(['kmh', 'kt'] as const).map((u) => (
-        <button key={u} className={`seg__btn ${unit === u ? 'is-on' : ''}`} onClick={() => setSpeed(u)} aria-pressed={unit === u}>
-          {SPEED_UNIT_LABEL[u]}
-        </button>
-      ))}
-    </div>
   );
 }

@@ -31,8 +31,8 @@ export function DemoControls() {
             </button>
           ))}
         </div>
-        <button className="btn btn--quiet" onClick={reset} disabled={!hasData}>
-          Reset
+        <button className="btn btn--quiet" onClick={reset} disabled={!hasData} aria-label="Reset" title="Reia scenariul de la început">
+          ↺
         </button>
       </div>
 

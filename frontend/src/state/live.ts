@@ -21,7 +21,7 @@ interface LiveState {
   updatedAtMs: number | null;
   selectedIcao: string | null;
   select: (icao: string | null) => void;
-  /** Direcțiile estimate (vector 5 min, linia spre LRCV) pentru toate avioanele; oprit implicit, sunt doar estimări. */
+  /** Direcțiile estimate (vectorul de 5 minute) pentru toate avioanele; oprit implicit, sunt doar estimări. */
   showRoutes: boolean;
   setShowRoutes: (show: boolean) => void;
   /** Pornește interogarea; întoarce funcția de oprire. Se oprește singură cât tab-ul e ascuns. */

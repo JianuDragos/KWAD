@@ -10,7 +10,6 @@ import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verti
 import { useSpeed } from '../state/units';
 import { HINT } from '../data/glossary';
 import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
-import { AskAi } from './AskAi';
 import { ScenarioPicker } from './DemoControls';
 import { CATEGORY_LABEL, STATUS_CLASS, isUnsequenced } from './flightStyle';
 
@@ -19,7 +18,6 @@ const sequenceTime = (f: FlightView) => f.slot?.calculatedTimeSeconds ?? f.aircr
 
 export function DetailsPanel() {
   const evaluation = useApp((s) => s.evaluation);
-  const scenario = useApp((s) => s.scenario);
   const selectedId = useApp((s) => s.selectedId);
   const error = useApp((s) => s.error);
   const status = useApp((s) => s.status);
@@ -41,8 +39,6 @@ export function DetailsPanel() {
 
   return (
     <aside className="panel" aria-label="Sosiri">
-      <AskAi context={{ weather: scenario?.weather, aircrafts: scenario?.aircrafts, evaluationResult: evaluation.result }} />
-      <hr className="panel__rule" />
       {error && <p className="notice notice--err">{error}</p>}
 
 

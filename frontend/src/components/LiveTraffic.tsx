@@ -1,4 +1,4 @@
-// Avioanele reale (OpenSky / ADSB.lol) pe hartă: urmă istorică rulantă + vector de viteză proiectat 5 min + ghidaj spre LRCV.
+// Avioanele reale (OpenSky / ADSB.lol) pe hartă: urmă istorică rulantă + vector de viteză proiectat 5 min.
 import { useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { Marker, Polyline, Tooltip } from 'react-leaflet';
@@ -10,7 +10,7 @@ import { altitudeBand, altitudeLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
 import { GLYPH_IFR } from './MapView';
-import { isInboundTowards, useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
+import { useHeldWhileZooming, useTrafficRenderer } from './mapHelpers';
 
 /** Peste atâtea secunde fără contact, avionul apare estompat (date vechi). */
 const STALE_SECONDS = 60;
@@ -116,7 +116,6 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
       : 0;
   const projEnd = projDistNm > 0.3 && flight.trueTrackDegrees != null ? destination(pos, flight.trueTrackDegrees, projDistNm) : null;
 
-  const inboundToLrcv = isInboundTowards(pos, ARP, flight.trueTrackDegrees, 35);
   const distToLrcvNm = Math.round(distanceNm(pos, ARP) * 10) / 10;
 
   return (
@@ -132,17 +131,6 @@ function LiveMarker({ flight, now }: { flight: LiveFlight; now: number }) {
             [projEnd.lat, projEnd.lon],
           ]}
           pathOptions={{ className: `live-vector trail--${rulesLower} predicted` }}
-          interactive={false}
-        />
-      )}
-      {(selected || (showAllRoutes && inboundToLrcv && distToLrcvNm <= 45)) && (
-        <Polyline
-          renderer={trafficRenderer}
-          positions={[
-            [pos.lat, pos.lon],
-            [ARP.lat, ARP.lon],
-          ]}
-          pathOptions={{ className: `${selected ? 'planned planned--selected' : `full-route full-route--${rulesLower}`} predicted` }}
           interactive={false}
         />
       )}

@@ -49,6 +49,8 @@ interface AppState {
   viewNonce: number;
   showSectors: boolean;
   showAllRoutes: boolean;
+  /** Legenda culorilor de altitudine pe hartă; se pornește din Setări. */
+  showAltitudeLegend: boolean;
   timelineScope: TimelineScope;
 
   load: () => Promise<void>;
@@ -65,6 +67,7 @@ interface AppState {
   setView: (v: MapViewPreset) => void;
   setShowSectors: (show: boolean) => void;
   setShowAllRoutes: (show: boolean) => void;
+  setShowAltitudeLegend: (show: boolean) => void;
   setTimelineScope: (scope: TimelineScope) => void;
 }
 
@@ -112,6 +115,7 @@ export const useApp = create<AppState>()((set, get) => {
     view: 'wide',
     viewNonce: 0,
     showSectors: true,
+    showAltitudeLegend: false,
     showAllRoutes: true,
     timelineScope: 'approach',
 
@@ -243,6 +247,7 @@ export const useApp = create<AppState>()((set, get) => {
     setView: (view) => set((s) => ({ view, viewNonce: s.viewNonce + 1 })),
     setShowSectors: (showSectors) => set({ showSectors }),
     setShowAllRoutes: (showAllRoutes) => set({ showAllRoutes }),
+    setShowAltitudeLegend: (showAltitudeLegend) => set({ showAltitudeLegend }),
     setTimelineScope: (timelineScope) =>
       set((s) => {
         if (!s.evaluation) return { timelineScope };

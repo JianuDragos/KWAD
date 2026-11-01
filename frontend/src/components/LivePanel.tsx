@@ -5,7 +5,6 @@ import { airlineFor, trendArrow } from '../sim/live';
 import { M_PER_NM, altitudeLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
-import { AskAi } from './AskAi';
 import { HINT } from '../data/glossary';
 
 export function LivePanel() {
@@ -22,8 +21,6 @@ export function LivePanel() {
 
   return (
     <aside className="panel" aria-label="Trafic real">
-      <AskAi />
-      <hr className="panel__rule" />
       {positionsError && <p className="notice notice--err">{positionsError}</p>}
       <div className="panel__head">
         <h2 className="panel__title">Trafic real</h2>
