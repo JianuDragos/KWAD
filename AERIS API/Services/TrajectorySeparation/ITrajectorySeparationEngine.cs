@@ -9,7 +9,7 @@ namespace Aeris.PlanningEngine.Services.TrajectorySeparation;
 public interface ITrajectorySeparationEngine
 {
     /// <summary>
-    /// Evaluează separarea 3D și siguranța unei liste de traiectorii 4D calculate.
+    /// Evaluează separarea și siguranța unei liste de traiectorii calculate.
     /// </summary>
     SafetyAssessmentResult ValidateSeparation(List<AircraftTrajectory> trajectories, SeparationSettings? settings = null);
 

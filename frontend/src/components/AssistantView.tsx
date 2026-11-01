@@ -33,7 +33,7 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
     roleNote: 'Ordinea cronologică la prag, întârzierile alocate și protecția la turbulența de siaj EASA.',
     prompts: [
       'Care este ordinea programată la aterizare pe pista activă și ce întârzieri apar?',
-      'Există conflicte de separare 4D sau restricții de turbulență de siaj între zborurile active?',
+      'Există conflicte de separare sau restricții de turbulență de siaj între zborurile active?',
       'Care este situația generală a sectorului LRCV și câte aeronave sunt în holding?',
     ],
   },
@@ -159,7 +159,7 @@ export function AssistantView() {
             <div className="chat-empty">
               <h2 className="chat-empty__title">Consolă gata pentru consultare operațională</h2>
               <p className="muted">
-                Selectează o analiză tactică din categoriile de mai sus, folosește cardurile de rezoluție VFR din dreapta sau adresează o problemă operațională concretă (secvențiere, vânt lateral, PNR/combustibil, conflict 4D, aerodromuri de rezervă).
+                Selectează o analiză tactică din categoriile de mai sus, folosește cardurile de rezoluție VFR din dreapta sau adresează o problemă operațională concretă (secvențiere, vânt lateral, PNR/combustibil, conflicte de separare, aerodromuri de rezervă).
               </p>
             </div>
           )}
@@ -192,7 +192,7 @@ export function AssistantView() {
             className="chat-composer__input"
             value={draft}
             maxLength={1200}
-            placeholder="Solicită analiză tactică ATC (ex: secvențiere RWY, marjă PNR YR-5123, conflict 4D, decizie holding vs. Podari)…"
+            placeholder="Solicită analiză tactică ATC (ex: secvențiere RWY, marjă PNR YR-5123, conflicte de separare, decizie holding vs. Balta Verde)…"
             onChange={(e) => setDraft(e.target.value)}
           />
           <button className="btn btn--primary chat-composer__btn" type="submit" disabled={busy || !draft.trim()}>

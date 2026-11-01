@@ -172,7 +172,7 @@ public static class FlightPhysicsAndPredictionEngine
     }
 
     /// <summary>
-    /// Construiește predicția completă 4D a viitorului pe orizonturile T+0, T+5m, T+10m, T+15m, T+20m, T+30m, T+45m.
+    /// Construiește prognoza meteo pe orizonturile T+0, T+5m, T+10m, T+15m, T+20m, T+30m, T+45m.
     /// </summary>
     public static FuturePredictionSummary BuildFuturePrediction(
         WeatherCondition weather,

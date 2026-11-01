@@ -1,5 +1,5 @@
 // Leagă scenariul (aeronavele trimise) de rezultatul backendului și construiește ce desenează harta.
-// Fiecare aeronavă primește traiectoria completă 4D: Decolare (aerodrom origine) → Climb →
+// Fiecare aeronavă primește traiectoria completă: Decolare (aerodrom origine) → Climb →
 // Croazieră ortodromică (Great-Circle) → Top of Descent (TOD) → IAF/Intrare VFR → Finală → Prag LRCV / Orbită + Rezoluție (Aterizare LRCV sau Deviere Alternativă).
 import type {
   AircraftAdvisory,
@@ -573,7 +573,7 @@ export function buildTraffic(
         crosswindKt <= maxXw
           ? `Vântul lateral (${crosswindKt} kt ≤ ${maxXw} kt) permite aterizarea pe LRCV RWY ${vfrRunway}; aeronava așteaptă rândul în hipodromul Cârcea (${holdAlt} ft) și aterizează după degajarea traficului IFR.`
           : willImprove
-            ? `Prognoza Nowcasting indică scăderea vântului sub limita de ${maxXw} kt înainte de PNR (${pnrMinutes} min); așteptare în hipodromul Cârcea urmată de aterizare pe LRCV RWY ${vfrRunway}.`
+            ? `Prognoza meteo indică scăderea vântului sub limita de ${maxXw} kt înainte de PNR (${pnrMinutes} min); așteptare în hipodromul Cârcea urmată de aterizare pe LRCV RWY ${vfrRunway}.`
             : `Suprascriere controlor: așteptare rând în hipodromul Cârcea urmată de aterizare pe LRCV RWY ${vfrRunway} (atenție: vânt lateral ${crosswindKt} kt peste limita de ${maxXw} kt).`;
 
       return {

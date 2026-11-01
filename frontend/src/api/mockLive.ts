@@ -68,7 +68,7 @@ export function explanation(question?: string, evalResult?: CraiovaSimulationRes
       mode: 'deterministic_fallback',
       statementIds,
       sentences,
-      sourceIds: ['SIM-MATH-4D', 'ROMATSA-AIP-DB'],
+      sourceIds: ['SIM-MATH', 'ROMATSA-AIP-DB'],
       fallbackReason: 'inference_unavailable',
       directAnswer,
       verification: {
@@ -81,7 +81,7 @@ export function explanation(question?: string, evalResult?: CraiovaSimulationRes
         unverifiedNumbers: [],
         hallucinationBlocked: false,
         verificationSummary: 'Mod mock: răspuns generat determinist din evaluarea curentă.',
-        citations: [{ id: statementIds[0], sourceId: 'SIM-MATH-4D', text: directAnswer }],
+        citations: [{ id: statementIds[0], sourceId: 'SIM-MATH', text: directAnswer }],
       },
     };
   }

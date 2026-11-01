@@ -70,7 +70,7 @@ export function MapView({ runway, onBackgroundClick, children }: { runway: Runwa
   );
 }
 
-/** Traficul simulat (pagina Demo): aeroporturi de origine + rute complete + aeronave 4D. */
+/** Traficul simulat (pagina Demo): aeroporturi de origine + rute complete + aeronave. */
 export function SimTraffic() {
   const flights = useApp((s) => s.evaluation?.traffic.flights ?? null);
   const vp = useMapViewport();

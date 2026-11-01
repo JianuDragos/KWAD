@@ -1,4 +1,4 @@
-// Timeline de sosiri și traiectorii 4D (Apropiere LRCV vs. De la Decolare).
+// Timeline de sosiri și traiectorii (Apropiere LRCV vs. De la Decolare).
 import { useState, type PointerEvent } from 'react';
 import type { FlightView } from '../sim/traffic';
 import { clockLabel } from '../sim/units';

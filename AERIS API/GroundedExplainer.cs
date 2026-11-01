@@ -301,7 +301,7 @@ public sealed class GroundedExplainer(
                     DirectAnswer: safeAnswer,
                     Verification: new ExplanationVerification(
                         IsVerified: true,
-                        EngineUsed: engineLabel + " + Scut Anti-Halucinație C#",
+                        EngineUsed: engineLabel + " + Verificare C#",
                         RuntimeEndpoint: runtimeHost,
                         LatencyMs: latencyMs,
                         TotalNumbersInAnswer: safeGrounding.Verified.Length,
@@ -543,7 +543,7 @@ public sealed class GroundedExplainer(
             var seq = allStatements.FirstOrDefault(s => s.Id == "landing_sequence");
             var vfr = allStatements.FirstOrDefault(s => s.Id == "vfr_redirection");
             var wx = allStatements.FirstOrDefault(s => s.Id == "weather");
-            var sep = allStatements.FirstOrDefault(s => s.Id == "separation_4d");
+            var sep = allStatements.FirstOrDefault(s => s.Id == "trajectory_separation");
             var parts = new[] { wx?.Text, seq?.Text, vfr?.Text, sep?.Text }.Where(t => !string.IsNullOrEmpty(t));
             if (parts.Any()) return string.Join(" ", parts);
         }
@@ -570,7 +570,7 @@ public sealed class GroundedExplainer(
 
         if (q.Contains("conflict") || q.Contains("separar") || q.Contains("siaj") || q.Contains("wake") || q.Contains("sigur"))
         {
-            var sep = allStatements.FirstOrDefault(s => s.Id == "separation_4d");
+            var sep = allStatements.FirstOrDefault(s => s.Id == "trajectory_separation");
             if (sep is not null) return sep.Text;
         }
 
@@ -659,11 +659,11 @@ public sealed class GroundedExplainer(
             pickedIds.Add("landing_sequence");
             pickedIds.Add("vfr_redirection");
             pickedIds.Add("future_prediction");
-            pickedIds.Add("separation_4d");
+            pickedIds.Add("trajectory_separation");
         }
 
         if (q.Contains("separar") || q.Contains("siaj") || q.Contains("wake") || q.Contains("conflict") || q.Contains("ocupar") || q.Contains("sigur"))
-            pickedIds.Add("separation_4d");
+            pickedIds.Add("trajectory_separation");
 
         if (q.Contains("vreme") || q.Contains("vant") || q.Contains("vânt") || q.Contains("metar") || q.Contains("pist") || q.Contains("08") || q.Contains("26") || q.Contains("09") || q.Contains("27") || q.Contains("triunghi"))
             pickedIds.Add("weather");

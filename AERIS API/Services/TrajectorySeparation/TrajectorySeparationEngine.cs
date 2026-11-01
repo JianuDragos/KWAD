@@ -53,7 +53,7 @@ public class TrajectorySeparationEngine : ITrajectorySeparationEngine
                     TotalEvaluatedPairs: 0,
                     TotalTrajectoryPoints: 0,
                     EvaluatedAtUtc: DateTime.UtcNow,
-                    ReplanningSuggestions: new List<string> { $"Calculați punctele 4D pentru aeronava {t.AircraftId} înainte de validare." }
+                    ReplanningSuggestions: new List<string> { $"Calculați punctele de traiectorie pentru aeronava {t.AircraftId} înainte de validare." }
                 );
             }
         }
