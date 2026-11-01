@@ -16,7 +16,8 @@ public record CraiovaAircraft(
     double? FrozenTimeSeconds = null,
     double SpeedKnots = 100,        // Viteza de croazieră / apropiere
     double RemainingFuelMinutes = 90,
-    string? DepartureIcao = null    // Aerodrom de decolare (ex: "EGGW", "LIME", "ZBAA", "LROP", "LRBS")
+    string? DepartureIcao = null,   // Aerodrom de decolare (ex: "EGGW", "LIME", "ZBAA", "LROP", "LRBS")
+    string? DestinationIcao = "LRCV"
 );
 
 public record AlternateAerodrome(

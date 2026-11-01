@@ -48,7 +48,7 @@ export function DemoControls() {
           onChange={(e) => void setTrafficPreset(e.target.value as TrafficPresetId)}
           disabled={status === 'loading'}
         >
-          <option value="default">Standard LRCV (EGGW / LIME + 3 VFR)</option>
+          <option value="default">Standard LRCV (5 avioane: 3 IFR + 2 VFR)</option>
           <option value="eurasia">Eurasia Long-Haul (China ZBAA → LRCV)</option>
         </select>
       </label>

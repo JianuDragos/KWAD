@@ -77,6 +77,7 @@ const aircraftSchema: z.ZodType<CraiovaAircraft> = z.object({
   speedKnots: z.number().optional(),
   remainingFuelMinutes: z.number().optional(),
   departureIcao: z.string().nullable().optional(),
+  destinationIcao: z.string().nullable().optional(),
 });
 
 const alternateSchema: z.ZodType<AlternateAerodrome> = z.object({

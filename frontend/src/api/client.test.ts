@@ -7,15 +7,15 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 afterEach(() => vi.unstubAllGlobals());
 
 describe('fetchScenarioTraffic', () => {
-  it('pornește Demo-ul și fără zborurile ROMATSA (backend vechi, 404)', async () => {
-    const base = liveTraffic('eurasia');
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => (url.includes('/romatsa/') ? json({ error: 'nu există' }, 404) : json(base))));
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('cere traficul scenariului implicit (5 aeronave: 3 IFR + 2 VFR)', async () => {
+    const base = liveTraffic('default');
+    vi.stubGlobal('fetch', vi.fn(async () => json(base)));
     const res = await fetchScenarioTraffic();
     expect(res.traffic).toEqual(base.traffic);
+    expect(res.traffic).toHaveLength(5);
   });
 
-  it('presetul eurasia nu cere și nu adaugă zborurile ROMATSA', async () => {
+  it('presetul eurasia cere ruta specifică eurasia', async () => {
     const fetch = vi.fn(async (_url: string) => json(liveTraffic('eurasia')));
     vi.stubGlobal('fetch', fetch);
     await fetchScenarioTraffic(undefined, 'eurasia');

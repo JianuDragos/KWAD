@@ -197,11 +197,61 @@ public class OpenSkyService : IOpenSkyService
                 SpeedKnots: 150,
                 RemainingFuelMinutes: 125,
                 DepartureIcao: "LIME"
+            ),
+
+            // 3. Zbor comercial plecare - Wizz Air Craiova -> Budapesta (LRCV -> LHBP via 3 sectoare dinamice)
+            new(
+                Id: "W4-3770",
+                Callsign: "WZZ3770",
+                ModelName: "Airbus A320-232",
+                Category: AircraftCategory.CommercialJet,
+                FlightRules: FlightRules.IFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 33,
+                EtaSeconds: 600,       // Decolare la 14:10
+                EarliestSeconds: 600,
+                LatestSeconds: 960,
+                SpeedKnots: 145,
+                RemainingFuelMinutes: 140,
+                DepartureIcao: "LRCV",
+                DestinationIcao: "LHBP"
+            ),
+
+            // 4. Aeronava mică de agrement ULM - ICP Savannah (VFR)
+            new(
+                Id: "YR-SAV",
+                Callsign: "YR-5123",
+                ModelName: "ICP Savannah S (Ultralight STOL)",
+                Category: AircraftCategory.UltralightAndGlider,
+                FlightRules: FlightRules.VFR,
+                HasInstrumentAvionics: false,
+                MaxCrosswindKnots: 11,
+                EtaSeconds: 120,       // 14:02
+                EarliestSeconds: 60,
+                LatestSeconds: 420,
+                SpeedKnots: 65,
+                RemainingFuelMinutes: 75,
+                DepartureIcao: "PODARI"
+            ),
+
+            // 5. Aviație generală / Școală - Cessna 172 Skyhawk (VFR)
+            new(
+                Id: "YR-C172",
+                Callsign: "YR-CRA",
+                ModelName: "Cessna 172N Skyhawk",
+                Category: AircraftCategory.GeneralAviation,
+                FlightRules: FlightRules.VFR,
+                HasInstrumentAvionics: true,
+                MaxCrosswindKnots: 15,
+                EtaSeconds: 480,       // 14:08
+                EarliestSeconds: 420,
+                LatestSeconds: 780,
+                SpeedKnots: 95,
+                RemainingFuelMinutes: 90,
+                DepartureIcao: "LRBS"
             )
         };
 
-        // Adăugăm aeronavele mici de agrement locale (Savannah, Wilga, Cessna)
-        list.AddRange(GetStandardLightAircraftTraffic(baseOffsetSeconds: 120));
         return list;
     }
 

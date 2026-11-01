@@ -13,7 +13,6 @@ import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationRes
 import { explanationSchema, livePositionsSchema, metarSchema, vfrTrackingSchema, type Explanation, type LivePositions, type Metar, type VfrTracking } from '../contracts/live';
 import * as mock from './mockBackend';
 import * as mockLive from './mockLive';
-import { romatsaArrivals, romatsaIfrSchema, romatsaVfrSchema, withRomatsa } from './romatsa';
 
 export const API_MOCK = import.meta.env.VITE_API_MOCK === '1';
 
@@ -86,23 +85,7 @@ export function fetchScenarioTraffic(signal?: AbortSignal, preset: TrafficPreset
   const qs = preset === 'eurasia' ? 'forceSimulated=true&preset=eurasia' : 'forceSimulated=true';
   const path = `/api/craiova/live-traffic?${qs}`;
   if (API_MOCK) return mockDelay(() => parseResponse(path, liveTrafficSchema, mock.liveTraffic(preset)), signal);
-  if (preset === 'eurasia') return request(path, liveTrafficSchema, { signal });
-  // Scenariul implicit primește și zborurile spre LRCV din bazele mock ROMATSA. Sunt un extra:
-  // un backend fără ele (sau cu date invalide) nu trebuie să oprească Demo-ul.
-  const romatsa = Promise.all([
-    request('/api/craiova/romatsa/ifr', romatsaIfrSchema, { signal }),
-    request('/api/craiova/romatsa/vfr', romatsaVfrSchema, { signal }),
-  ]).then(
-    ([ifr, vfr]) => romatsaArrivals(ifr, vfr),
-    (e: unknown) => {
-      console.warn('Zborurile ROMATSA nu sunt disponibile; Demo continuă fără ele.', e);
-      return [];
-    },
-  );
-  return Promise.all([request(path, liveTrafficSchema, { signal }), romatsa]).then(([live, extra]) => {
-    const traffic = withRomatsa(live.traffic, extra);
-    return { ...live, count: traffic.length, traffic };
-  });
+  return request(path, liveTrafficSchema, { signal });
 }
 
 export function evaluateCraiova(body: CraiovaCustomEvaluationRequest, signal?: AbortSignal): Promise<CraiovaSimulationResult> {

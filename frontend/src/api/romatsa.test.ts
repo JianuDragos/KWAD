@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveTraffic, realisticCraiovaTraffic } from './mockBackend';
+import { realisticCraiovaTraffic, ROMATSA_ARRIVALS } from './mockBackend';
 import { romatsaArrivals, romatsaIfrSchema, romatsaVfrSchema, withRomatsa } from './romatsa';
 
 // Fișierele reale din backend, ca testul să pice când cineva le schimbă și mock-ul rămâne în urmă.
@@ -29,7 +29,8 @@ describe('romatsaArrivals', () => {
     expect(a.earliestSeconds).toBe(0);
   });
 
-  it('mock-ul conține exact avioanele calculate din bazele ROMATSA', () => {
-    expect(withRomatsa(realisticCraiovaTraffic(), arrivals)).toEqual(liveTraffic().traffic);
+  it('combinarea withRomatsa adaugă doar zborurile care nu există deja', () => {
+    const combined = withRomatsa(realisticCraiovaTraffic(), arrivals);
+    expect(combined).toEqual(withRomatsa(realisticCraiovaTraffic(), ROMATSA_ARRIVALS));
   });
 });

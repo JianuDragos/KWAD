@@ -94,6 +94,7 @@ export interface CraiovaAircraft {
   speedKnots?: number;            // implicit 100
   remainingFuelMinutes?: number;  // implicit 90
   departureIcao?: string | null;  // ex: "EGGW", "LIME", "ZBAA", "LROP", "LRBS"
+  destinationIcao?: string | null; // ex: "LRCV", "LHBP"
 }
 
 export interface AlternateAerodrome {

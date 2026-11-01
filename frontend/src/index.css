@@ -277,12 +277,12 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .strip--vfr { border-left-color: var(--vfr); }
 .strip.is-open { box-shadow: inset 0 0 0 1px var(--select); }
 .strip__head {
-  width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 0 12px; align-items: baseline;
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; align-items: baseline;
   background: transparent; border: 0; padding: 8px 12px; cursor: pointer; text-align: left;
 }
 .strip__head:hover { background: rgba(255, 255, 255, .04); }
-.strip__cs { font: 600 17px/1.2 var(--mono); }
-.strip__orig { font: 500 11px/1 var(--mono); color: var(--muted); margin-left: 4px; }
+.strip__cs { font: 600 17px/1.2 var(--mono); display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
+.strip__orig { font: 500 11px/1.2 var(--mono); color: var(--muted); }
 .strip__time { font: 600 17px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
 .strip__type { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip__when { font-size: 12px; color: var(--muted); text-align: right; }

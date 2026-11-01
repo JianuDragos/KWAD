@@ -75,6 +75,7 @@ export function SimTraffic() {
     const byIcao = new Map<string, AirportInfo>();
     for (const f of flights) {
       if (f.origin.icao !== 'LRCV') byIcao.set(f.origin.icao, f.origin);
+      if (f.destination && f.destination.icao !== 'LRCV') byIcao.set(f.destination.icao, f.destination);
     }
     return [...byIcao.values()];
   }, [flights]);
@@ -634,7 +635,7 @@ function AircraftMarkerView({
         position={[pos.lat, pos.lon]}
         icon={icon}
         keyboard
-        title={`${flight.callsign} (${flight.origin.icao} → LRCV)`}
+        title={`${flight.callsign} (${flight.origin.icao} → ${flight.destination.icao} · ${flight.origin.city} → ${flight.destination.city})`}
         eventHandlers={{
           click: (e) => {
             L.DomEvent.stopPropagation(e);
@@ -649,7 +650,10 @@ function AircraftMarkerView({
           offset={[12, 0]}
           className={`datablock ${selected ? 'datablock--selected' : ''}`}
         >
-          <span className="db-callsign">{flight.callsign}</span> <span className="db-orig">{flight.origin.icao}→LRCV</span>
+          <span className="db-callsign">{flight.callsign}</span>{' '}
+          <span className="db-orig">
+            {flight.origin.icao}→{flight.destination.icao} ({flight.origin.city} → {flight.destination.city})
+          </span>
           <br />
           <span className={`db-alt ${band}`}>{altitudeLabel(pos.altitudeMeters)}</span> {flight.aircraft.flightRules}
           <br />

@@ -62,12 +62,36 @@ export function resolveOriginAirport(aircraft: CraiovaAircraft, advisory: Aircra
   return AIRPORTS.LROP;
 }
 
+/** Rezolvă aerodromul de destinație al unei aeronave (ex: Craiova LRCV, Budapesta LHBP etc.). */
+export function resolveDestinationAirport(aircraft: CraiovaAircraft, _advisory?: AircraftAdvisory | null): AirportInfo {
+  const code = (aircraft.destinationIcao ?? defaultDestinationIcaoForAircraft(aircraft)).toUpperCase();
+  const known = AIRPORTS[code];
+  if (known) return known;
+  return {
+    icao: code,
+    name: code,
+    city: code,
+    lat: ARP.lat,
+    lon: ARP.lon,
+    elevationFt: 626,
+    fir: 'LRBB',
+  };
+}
+
+function defaultDestinationIcaoForAircraft(ac: CraiovaAircraft): string {
+  if (ac.destinationIcao) return ac.destinationIcao;
+  if (ac.id === 'W4-3770') return 'LHBP';
+  return 'LRCV';
+}
+
 function defaultIcaoForAircraft(ac: CraiovaAircraft): string {
   switch (ac.id) {
     case 'W4-3751':
       return 'EGGW';
     case 'W4-3762':
       return 'LIME';
+    case 'W4-3770':
+      return 'LRCV';
     case 'CA-841':
       return 'ZBAA';
     case 'RO-204':

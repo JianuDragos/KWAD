@@ -93,7 +93,7 @@ describe('mock = backendul KWAD', () => {
     const res = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), calm, 'test');
     const withSlot = res.advisories.filter((a) => a.assignedLandingSlot).map((a) => a.aircraftId);
     expect(res.advisories.every((a) => a.advisoryStatus === 'ClearedForApproach')).toBe(true);
-    expect(withSlot).toEqual(['W4-3751', 'W4-3762', 'YR-SAV']);
+    expect(withSlot).toEqual(['W4-3751', 'W4-3762', 'W4-3770', 'YR-SAV']);
   });
 
   const ifr = (id: string, eta: number, lo: number, hi: number, frozen: number | null = null): AircraftInput => ({
@@ -138,8 +138,8 @@ describe('mock = backendul KWAD', () => {
     const critical = WEATHER_PRESETS.find((p) => p.id === 'cross-critical')!.weather;
     const res = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), critical, 'test');
     expect(res.activeRunway).toBe('26');
-    expect(res.stats.clearedToLandCount).toBe(2);
-    expect(res.stats.holdingInOrbitCount).toBe(3);
+    expect(res.stats.clearedToLandCount).toBe(3);
+    expect(res.stats.holdingInOrbitCount).toBe(2);
   });
 });
 

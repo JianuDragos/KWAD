@@ -263,7 +263,7 @@ public class TrajectorySeparationEngine : ITrajectorySeparationEngine
         for (int i = 0; i < sorted.Count - 1; i++)
         {
             var lead = sorted[i];
-            var trail = sorted[i + 1];
+            var trail = sorted[i + 1];  
             double gapSeconds = trail.LandingTimeSeconds - lead.LandingTimeSeconds;
 
             // 1. Verificare ocupare pistă (Runway Occupancy Time)

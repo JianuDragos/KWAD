@@ -9,7 +9,7 @@ import type {
   CraiovaSimulationResult,
   ScheduleSlot,
 } from '../contracts/backend';
-import { resolveOriginAirport, selectIafForOrigin, type AirportInfo } from '../data/airports';
+import { resolveDestinationAirport, resolveOriginAirport, selectIafForOrigin, type AirportInfo } from '../data/airports';
 import { FALLBACK_FIRS, findTraversedFirs, type FirEntry } from '../data/airspace';
 import {
   ARP,
@@ -48,6 +48,7 @@ export interface FlightView {
   slot: ScheduleSlot | null;
   kind: FlightKind;
   origin: AirportInfo;
+  destination: AirportInfo;
   entryFixId: string;
   routeLabel: string;
   routeDistanceNm: number;
@@ -109,8 +110,9 @@ export function buildTraffic(
     const kind: FlightKind =
       status === 'HoldInOrbitRecommended' ? 'hold' : status === 'DivertRecommended' ? 'divert' : 'approach';
     const origin = resolveOriginAirport(aircraft, advisory);
+    const destAirport = resolveDestinationAirport(aircraft, advisory);
     const isIfr = aircraft.flightRules === 'IFR';
-    const base = { id: aircraft.id, callsign: aircraft.callsign, aircraft, advisory, status, slot, kind, origin };
+    const base = { id: aircraft.id, callsign: aircraft.callsign, aircraft, advisory, status, slot, kind, origin, destination: destAirport };
 
     if (isIfr) {
       const iaf = selectIafForOrigin(origin, ifrIndex++);

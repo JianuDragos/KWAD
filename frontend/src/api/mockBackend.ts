@@ -180,14 +180,16 @@ function light(base: number): CraiovaAircraft[] {
 
 export function realisticCraiovaTraffic(): CraiovaAircraft[] {
   return [
-    { id: 'W4-3751', callsign: 'WZZ3751', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 0, earliestSeconds: 0, latestSeconds: 240, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 110, departureIcao: 'EGGW' },
-    { id: 'W4-3762', callsign: 'WZZ3762', modelName: 'Airbus A321neo', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 35, etaSeconds: 360, earliestSeconds: 300, latestSeconds: 720, frozenTimeSeconds: null, speedKnots: 150, remainingFuelMinutes: 125, departureIcao: 'LIME' },
-    ...light(120),
+    { id: 'W4-3751', callsign: 'WZZ3751', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 0, earliestSeconds: 0, latestSeconds: 240, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 110, departureIcao: 'EGGW', destinationIcao: 'LRCV' },
+    { id: 'W4-3762', callsign: 'WZZ3762', modelName: 'Airbus A321neo', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 35, etaSeconds: 360, earliestSeconds: 300, latestSeconds: 720, frozenTimeSeconds: null, speedKnots: 150, remainingFuelMinutes: 125, departureIcao: 'LIME', destinationIcao: 'LRCV' },
+    { id: 'W4-3770', callsign: 'WZZ3770', modelName: 'Airbus A320-232', category: 'CommercialJet', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 33, etaSeconds: 600, earliestSeconds: 600, latestSeconds: 960, frozenTimeSeconds: null, speedKnots: 145, remainingFuelMinutes: 140, departureIcao: 'LRCV', destinationIcao: 'LHBP' },
+    { id: 'YR-SAV', callsign: 'YR-5123', modelName: 'ICP Savannah S (Ultralight STOL)', category: 'UltralightAndGlider', flightRules: 'VFR', hasInstrumentAvionics: false, maxCrosswindKnots: 11, etaSeconds: 120, earliestSeconds: 60, latestSeconds: 420, frozenTimeSeconds: null, speedKnots: 65, remainingFuelMinutes: 75, departureIcao: 'PODARI', destinationIcao: 'LRCV' },
+    { id: 'YR-C172', callsign: 'YR-CRA', modelName: 'Cessna 172N Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: 480, earliestSeconds: 420, latestSeconds: 780, frozenTimeSeconds: null, speedKnots: 95, remainingFuelMinutes: 90, departureIcao: 'LRBS', destinationIcao: 'LRCV' },
   ];
 }
 
 /** Zborurile spre LRCV din bazele mock ROMATSA, calculate de romatsaArrivals (romatsa.test.ts verifică să rămână la fel). */
-const ROMATSA_ARRIVALS: CraiovaAircraft[] = [
+export const ROMATSA_ARRIVALS: CraiovaAircraft[] = [
   { id: 'ROT-641', callsign: 'ROT641', modelName: 'ATR 72-600', category: 'RegionalTurboprop', flightRules: 'IFR', hasInstrumentAvionics: true, maxCrosswindKnots: 30, etaSeconds: 252, earliestSeconds: 192, latestSeconds: 552, frozenTimeSeconds: null, speedKnots: 118, remainingFuelMinutes: 135 },
   { id: 'YR-TNA', callsign: 'YR-TNA', modelName: 'Cessna 172 Skyhawk', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 15, etaSeconds: 1207, earliestSeconds: 1147, latestSeconds: 1507, frozenTimeSeconds: null, speedKnots: 75, remainingFuelMinutes: 165 },
   { id: 'YR-MDV', callsign: 'YR-MDV', modelName: 'Piper PA-44 Seminole', category: 'GeneralAviation', flightRules: 'VFR', hasInstrumentAvionics: true, maxCrosswindKnots: 17, etaSeconds: 528, earliestSeconds: 468, latestSeconds: 828, frozenTimeSeconds: null, speedKnots: 90, remainingFuelMinutes: 120 },
@@ -205,11 +207,11 @@ export function eurasiaLongHaulTraffic(): CraiovaAircraft[] {
 }
 
 export function liveTraffic(preset: TrafficPresetId = 'default'): LiveTrafficResponse {
-  const traffic = preset === 'eurasia' ? eurasiaLongHaulTraffic() : [...realisticCraiovaTraffic(), ...ROMATSA_ARRIVALS];
+  const traffic = preset === 'eurasia' ? eurasiaLongHaulTraffic() : realisticCraiovaTraffic();
   const source =
     preset === 'eurasia'
       ? 'Scenariu Eurasia Long-Haul (Beijing ZBAA / Londra EGGW / Milano LIME / Otopeni LROP → LRCV)'
-      : 'Trafic simulat realist (OpenSky bypass / mod demonstrativ)';
+      : 'Trafic simulat realist (OpenSky bypass / mod demonstrativ - 5 aeronave: 3 IFR + 2 VFR)';
   return { source, count: traffic.length, traffic };
 }
 

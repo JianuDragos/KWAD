@@ -89,16 +89,16 @@ export function Timeline() {
 
           return (
             <div key={f.id} className={`tl-row ${f.id === selectedId ? 'is-selected' : ''}`} onClick={() => select(f.id)}>
-              <button className="tl-label tl-label--btn" aria-pressed={f.id === selectedId} title={`${f.origin.icao} (${f.origin.city}) → LRCV`}>
+              <button className="tl-label tl-label--btn" aria-pressed={f.id === selectedId} title={`${f.origin.icao} (${f.origin.city}) → ${f.destination.icao} (${f.destination.city})`}>
                 <span className={`rules rules--${f.aircraft.flightRules.toLowerCase()}`}>{f.aircraft.flightRules}</span> {f.callsign}{' '}
-                <span className="muted">{f.origin.icao}</span>
+                <span className="muted">{f.origin.icao}→{f.destination.icao} ({f.origin.city} → {f.destination.city})</span>
               </button>
               <div className="tl-track">
                 {timelineScope === 'mission' && airWidth > 0.3 && (
                   <span
                     className={`tl-airborne tl-airborne--${f.aircraft.flightRules.toLowerCase()}`}
                     style={{ left: `${airLeft}%`, width: `${airWidth}%` }}
-                    title={`Zbor activ ${f.origin.icao} → LRCV (decolare ${clockLabel(BASE_TIME_OFFSET_SECONDS + f.takeoffSeconds, false)})`}
+                    title={`Zbor activ ${f.origin.icao} (${f.origin.city}) → ${f.destination.icao} (${f.destination.city}) (decolare ${clockLabel(BASE_TIME_OFFSET_SECONDS + f.takeoffSeconds, false)})`}
                   />
                 )}
                 {timelineScope === 'mission' && pct(f.takeoffSeconds) >= 0 && pct(f.takeoffSeconds) <= 100 && (

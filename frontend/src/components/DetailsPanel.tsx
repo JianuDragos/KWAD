@@ -152,7 +152,10 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
         aria-controls={bodyId}
       >
         <span className="strip__cs">
-          {flight.callsign} <span className="strip__orig">{flight.origin.icao}→LRCV</span>
+          {flight.callsign}{' '}
+          <span className="strip__orig">
+            {flight.origin.icao}→{flight.destination.icao} ({flight.origin.city} → {flight.destination.city})
+          </span>
         </span>
         <span className="strip__time">{flight.slot ? clock(flight.slot.calculatedTimeSeconds) : clock(ac.etaSeconds)}</span>
         <span className="strip__type">
@@ -181,9 +184,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
     <div className="strip__body" id={id}>
       {isUnsequenced(flight) && <p className="notice notice--warn">Aprobat pentru apropiere, dar fără slot de aterizare. Pe hartă aterizează la ETA.</p>}
       <dl className="kv">
-        <dt>Origine</dt>
+        <dt>Rută</dt>
         <dd>
-          <strong>{flight.origin.icao}</strong> · {flight.origin.name} ({flight.routeDistanceNm} NM)
+          <strong>{flight.origin.icao}</strong> ({flight.origin.city}) → <strong>{flight.destination.icao}</strong> ({flight.destination.city}) · {flight.origin.name} ({flight.routeDistanceNm} NM)
         </dd>
         <dt>Decolare</dt>
         <dd className="num">{clock(flight.takeoffSeconds)}</dd>
@@ -236,9 +239,9 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             setView('continental');
             seek(flight.takeoffSeconds + 60);
           }}
-          title={`Vezi decolarea de pe ${flight.origin.icao} pe harta continentală`}
+          title={`Vezi decolarea de pe ${flight.origin.icao} (${flight.origin.city}) pe harta continentală`}
         >
-          Decolare {flight.origin.icao}
+          Decolare {flight.origin.icao} ({flight.origin.city})
         </button>
         {flight.todPoint && (
           <button
@@ -302,7 +305,7 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
           <div className="math-card__head">
             <strong>Analiză Decolare → Aterizare</strong>
             <span className="muted small">
-              {ttl.departureAerodromeIcao} → LRCV ({ttl.totalRouteDistanceNm} NM)
+              {ttl.departureAerodromeIcao} ({flight.origin.city}) → {flight.destination.icao} ({flight.destination.city}) ({ttl.totalRouteDistanceNm} NM)
             </span>
           </div>
           <div className="math-metrics">
@@ -426,7 +429,7 @@ function FlightNow({ flight }: { flight: FlightView }) {
   if (t < flight.takeoffSeconds) {
     return (
       <span className="muted">
-        la sol pe {flight.origin.icao} (dec. {clock(flight.takeoffSeconds)})
+        la sol pe {flight.origin.icao} ({flight.origin.city}) (dec. {clock(flight.takeoffSeconds)})
       </span>
     );
   }
