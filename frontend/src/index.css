@@ -111,9 +111,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .map-controls .seg { background: var(--console); }
 
 /* ---------- Sectoare FIR, TMA, ATZ, Grilă Navigație & Rute Complete ---------- */
-.nav-grid { stroke: rgba(138, 152, 147, .14); stroke-width: 1; stroke-dasharray: 2 6; fill: none; }
 .fir-poly { stroke: rgba(122, 165, 160, .34); stroke-width: 1.1; fill: rgba(80, 120, 115, .02); }
-.fir-poly--sector { stroke: rgba(185, 163, 227, .28); stroke-width: 1; stroke-dasharray: 5 5; fill: none; }
 .fir-poly--lrbb { stroke: #63c5b8; stroke-width: 1.8; fill: rgba(99, 197, 184, .06); }
 .fir-poly--active { stroke: var(--ifr); stroke-width: 1.8; fill: rgba(169, 216, 234, .07); }
 .tma-poly { stroke: #7fc8b8; stroke-width: 1.4; stroke-dasharray: 7 4; fill: rgba(127, 200, 184, .04); }

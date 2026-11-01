@@ -38,9 +38,7 @@ public sealed class GroundedExplainer(
     HttpClient client,
     string model = "aeris-local",
     TimeSpan? timeout = null,
-    string? fallbackModel = "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0",
-    HttpClient? ollamaFallbackClient = null,
-    string? ollamaModel = "hf.co/unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_K_M")
+    string? fallbackModel = "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0")
 {
     private static readonly JsonSerializerOptions RelaxedJson = new()
     {
@@ -57,8 +55,6 @@ public sealed class GroundedExplainer(
     {
         cancellationToken.ThrowIfCancellationRequested();
         ValidateLoopbackEndpoint(client.BaseAddress);
-        if (ollamaFallbackClient?.BaseAddress is { } ollamaEndpoint)
-            ValidateLoopbackEndpoint(ollamaEndpoint);
 
         if (input is null || string.IsNullOrWhiteSpace(input.Question) || input.Question.Length > 1200 || input.ScenarioRevision < 0)
             throw new ArgumentException("A question of 1–1200 characters and a nonnegative backend revision are required.");
@@ -75,14 +71,27 @@ public sealed class GroundedExplainer(
         // Pre-filtrăm la cele mai relevante 1–5 fapte (~400–700 tokeni) pentru latență rapidă (~3–6s pe ARM64 CPU)
         var promptStatements = SelectPromptCandidates(input.Question, statements);
 
+        // Termenii din raportul de audit al controlorului TWR/APP LRCV; fără cifre, ca verificarea numerelor să accepte doar valori din Fapte.
+        const string atcGlossary =
+            "Glosar ATC (folosește acești termeni, nu parafraze): " +
+            "eșalonare (separare radar orizontală/verticală între două aeronave); pierdere de eșalonare și Airprox (doar între două aeronave prea apropiate, niciodată pentru vânt); vânt lateral peste limită = pistă nepotrivită pentru acel tip; STCA (alertă de conflict pe termen scurt); " +
+            "siaj și categoriile HEAVY/MEDIUM/LIGHT; leader/follower pe finală; finală, ax prelungit, prag de pistă, touchdown; " +
+            "ROT (timp de ocupare a pistei) și backtrack (LRCV nu are căi de degajare rapidă); pistă ocupată; go-around/ratare; " +
+            "secvență și slot de aterizare; holding/hipodrom și stivă de holding; " +
+            "TMA Craiova Clasa C: IFR eșalonat față de IFR și VFR, VFR primește informare de trafic; " +
+            "puncte de raportare VFR Pielești, Cârcea, Podari, Ișalnița; tur de pistă pe latura sudică, sectorul nordic liber pentru IFR; " +
+            "QNH, vânt de travers, vânt de față/spate.";
+
         const string systemPrompt =
-            "Ești Asistentul Tactic ATC AERIS pentru Aeroportul Craiova (LRCV). " +
-            "Oferă controlorului de trafic aerian (TWR/APP) răspunsuri complete, naturale, fluide și profesioniste în limba română (2–4 fraze bine articulate). " +
+            "Ești Asistentul Tactic ATC AERIS pentru Aeroportul Craiova (LRCV). Vorbești cu un controlor TWR/APP, în română. " +
+            "Stil de controlor: scurt și concret, cel mult 2 fraze și 40 de cuvinte. Începe direct cu indicativul sau faptul, apoi acțiunea recomandată. " +
+            "Fără introduceri, fără politețuri, fără repetarea întrebării, fără explicații de bază. " +
+            atcGlossary + " " +
             "Reguli stricte: " +
-            "1. Răspunde complet la toate aspectele întrebării (ex: precizează atât vântul pe pistă, cât și vântul la 2000 ft din Fapte; pentru zboruri VFR menționează eșalonarea și alternativele). " +
-            "2. Nu face calcule matematice intermediare și nu scrie formule (fără sin, cos sau calcule manuale) – citează direct valorile numerice gata calculate din Faptele furnizate. " +
-            "3. Folosește EXCLUSIV valorile numerice din Fapte (nu inventa niciun număr). " +
-            "4. Fără comenzi de autorizare de tip „sunteți autorizat să aterizați”. " +
+            "1. Acoperă tot ce s-a întrebat, dar în aceeași formă scurtă. Folosește un termen din glosar doar când Faptele îl susțin (ex: pierdere de eșalonare = două aeronave prea apropiate, nu vânt prea mare). " +
+            "2. Fără calcule sau formule; citează valorile gata calculate din Fapte. " +
+            "3. Folosește EXCLUSIV numerele din Fapte (nu inventa niciun număr). " +
+            "4. Fără autorizări de tip „cleared to land” / „autorizat la aterizare”; doar recomanzi. " +
             "Returnează DOAR JSON valid: {\"direct_answer\":\"...\",\"statement_ids\":[\"...\"]}.";
 
         var userPrompt = $"Întrebare: {input.Question}\nFapte:\n" +
@@ -110,54 +119,24 @@ public sealed class GroundedExplainer(
         deadline.CancelAfter(timeout ?? TimeSpan.FromSeconds(30));
 
         string activeEngineLabel = FormatModelLabel(model, client.BaseAddress);
-        string? activeEndpoint = FormatEndpoint(client.BaseAddress);
+        string activeEndpoint = FormatEndpoint(client.BaseAddress);
 
         try
         {
-            HttpResponseMessage? response = null;
-            try
+            using var body1 = BuildBody(model);
+            var response = await client.PostAsync("v1/chat/completions", body1, deadline.Token);
+            if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound &&
+                !string.IsNullOrWhiteSpace(fallbackModel) &&
+                !string.Equals(model, fallbackModel, StringComparison.Ordinal))
             {
-                using var body1 = BuildBody(model);
-                response = await client.PostAsync("v1/chat/completions", body1, deadline.Token);
-                if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound &&
-                    !string.IsNullOrWhiteSpace(fallbackModel) &&
-                    !string.Equals(model, fallbackModel, StringComparison.Ordinal))
-                {
-                    response.Dispose();
-                    activeEngineLabel = FormatModelLabel(fallbackModel, client.BaseAddress);
-                    using var body2 = BuildBody(fallbackModel);
-                    response = await client.PostAsync("v1/chat/completions", body2, deadline.Token);
-                }
-            }
-            catch (Exception primaryEx) when (
-                (primaryEx is HttpRequestException ||
-                 (primaryEx is OperationCanceledException && !deadline.IsCancellationRequested && !cancellationToken.IsCancellationRequested)) &&
-                ollamaFallbackClient is not null &&
-                !string.IsNullOrWhiteSpace(ollamaModel))
-            {
-                activeEndpoint = FormatEndpoint(ollamaFallbackClient.BaseAddress);
-                var resolvedOllamaModel = ollamaModel!;
-                activeEngineLabel = FormatModelLabel(resolvedOllamaModel, ollamaFallbackClient.BaseAddress);
-                using var bodyOllama = BuildBody(resolvedOllamaModel);
-                response = await ollamaFallbackClient.PostAsync("v1/chat/completions", bodyOllama, deadline.Token);
-
-                if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound)
-                {
-                    var discovered = await TryDiscoverOllamaModelAsync(ollamaFallbackClient, deadline.Token);
-                    if (!string.IsNullOrWhiteSpace(discovered) && !string.Equals(discovered, resolvedOllamaModel, StringComparison.OrdinalIgnoreCase))
-                    {
-                        response.Dispose();
-                        activeEngineLabel = FormatModelLabel(discovered, ollamaFallbackClient.BaseAddress);
-                        using var bodyDisc = BuildBody(discovered);
-                        response = await ollamaFallbackClient.PostAsync("v1/chat/completions", bodyDisc, deadline.Token);
-                    }
-                }
+                response.Dispose();
+                activeEngineLabel = FormatModelLabel(fallbackModel, client.BaseAddress);
+                using var body2 = BuildBody(fallbackModel);
+                response = await client.PostAsync("v1/chat/completions", body2, deadline.Token);
             }
 
             using (response)
             {
-                if (response is null)
-                    return RenderFallback("inference_unavailable", (int)sw.ElapsedMilliseconds);
                 if (!response.IsSuccessStatusCode)
                     return RenderFallback("http_" + (int)response.StatusCode, (int)sw.ElapsedMilliseconds);
 
@@ -428,39 +407,9 @@ public sealed class GroundedExplainer(
         string shortModel = modelId.Contains("Qwen3-4B-Instruct-2507", StringComparison.OrdinalIgnoreCase)
             ? "Qwen3-4B-Instruct-2507"
             : modelId;
-        if (endpoint?.Port == 11434)
-            return $"{shortModel} (Ollama local)";
         if (endpoint?.Port == 18090)
             return $"{shortModel} (llama.cpp / NPU local)";
         return shortModel;
-    }
-
-    private static async Task<string?> TryDiscoverOllamaModelAsync(HttpClient ollamaClient, CancellationToken ct)
-    {
-        try
-        {
-            using var resp = await ollamaClient.GetAsync("api/tags", ct);
-            if (!resp.IsSuccessStatusCode) return null;
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
-            if (!doc.RootElement.TryGetProperty("models", out var models) || models.ValueKind != JsonValueKind.Array)
-                return null;
-
-            string? firstModel = null;
-            foreach (var m in models.EnumerateArray())
-            {
-                if (!m.TryGetProperty("name", out var nameProp)) continue;
-                var name = nameProp.GetString();
-                if (string.IsNullOrWhiteSpace(name)) continue;
-                firstModel ??= name;
-                if (name.Contains("qwen", StringComparison.OrdinalIgnoreCase))
-                    return name;
-            }
-            return firstModel;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private static (string[] Verified, string[] Unverified) VerifyNumericGrounding(

@@ -229,7 +229,7 @@ public class CraiovaController : ControllerBase
 
     /// <summary>
     /// Răspunde direct și conversațional în limba română la întrebările controlorului folosind modelul local 4B
-    /// (Qwen3-4B-Instruct-2507 pe Ollama / llama.cpp) + verificare anti-halucinație C# pe cifrele din motorul AERIS.
+    /// (Qwen3-4B-Instruct-2507 pe llama.cpp local) + verificare anti-halucinație C# pe cifrele din motorul AERIS.
     /// </summary>
     [HttpPost("explain")]
     [ProducesResponseType(typeof(Explanation), StatusCodes.Status200OK)]

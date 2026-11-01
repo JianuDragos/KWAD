@@ -505,10 +505,9 @@ public class TrajectorySeparationTests
     }
 
     [Fact]
-    public async Task Test_21_GroundedExplainer_FailsOverToOllamaAndVerifiesDirectRomanianAnswer()
+    public async Task Test_21_GroundedExplainer_VerifiesDirectRomanianAnswer()
     {
-        var closedPrimary = new DelegateHttpHandler((_, _) => throw new TaskCanceledException("ConnectTimeout", new TimeoutException("18090 connect timeout")));
-        var ollamaHandler = new DelegateHttpHandler((_, _) =>
+        var llamaHandler = new DelegateHttpHandler((_, _) =>
         {
             var qaJson = JsonSerializer.Serialize(new
             {
@@ -522,12 +521,8 @@ public class TrajectorySeparationTests
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) });
         });
 
-        using var primaryClient = new HttpClient(closedPrimary) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
-        using var ollamaClient = new HttpClient(ollamaHandler) { BaseAddress = new Uri("http://127.0.0.1:11434/") };
-        var explainer = new GroundedExplainer(
-            primaryClient,
-            ollamaFallbackClient: ollamaClient,
-            ollamaModel: "hf.co/unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_K_M");
+        using var llamaClient = new HttpClient(llamaHandler) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
+        var explainer = new GroundedExplainer(llamaClient);
 
         var statements = new[]
         {
