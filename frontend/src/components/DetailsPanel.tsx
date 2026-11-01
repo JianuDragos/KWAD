@@ -30,26 +30,20 @@ export function DetailsPanel() {
     );
   }
   const { flights } = evaluation.traffic;
-  const stats = evaluation.result.stats;
+  const holdingCount = flights.filter((f) => f.kind === 'hold').length;
+  const divertCount = flights.filter((f) => f.kind === 'divert').length;
   const ordered = [...flights].sort((a, b) => sequenceTime(a) - sequenceTime(b));
-  const vfrDecisionFlights = ordered.filter(
-    (f): f is FlightView & { tacticalDecision: NonNullable<FlightView['tacticalDecision']> } =>
-      f.tacticalDecision !== null && f.status !== 'ClearedForApproach',
-  );
 
   return (
     <aside className="panel" aria-label="Sosiri">
       {error && <p className="notice notice--err">{error}</p>}
 
-
-      {vfrDecisionFlights.length > 0 && <VfrAssistantFlowBox flights={vfrDecisionFlights} />}
-
       <div className="panel__head">
         <h2 className="panel__title">Sosiri LRCV</h2>
         <span className="panel__count">
           {flights.length === 1 ? '1 avion' : `${flights.length} avioane`}, {flights.filter((f) => f.slot).length} cu slot
-          {stats.holdingInOrbitCount > 0 && <>, {stats.holdingInOrbitCount} în așteptare</>}
-          {stats.divertAdvisedCount > 0 && <>, {stats.divertAdvisedCount} deviate</>}
+          {holdingCount > 0 && <>, {holdingCount} în așteptare</>}
+          {divertCount > 0 && <>, {divertCount} deviate</>}
         </span>
       </div>
       <ScenarioPicker />
@@ -395,68 +389,5 @@ function FlightNow({ flight }: { flight: FlightView }) {
     <>
       {altitudeLabel(pos.altitudeMeters)}, {String(Math.round(pos.headingDeg ?? 0)).padStart(3, '0')}°
     </>
-  );
-}
-
-function VfrAssistantFlowBox({
-  flights,
-}: {
-  flights: (FlightView & { tacticalDecision: NonNullable<FlightView['tacticalDecision']> })[];
-}) {
-  const [open, setOpen] = useState(true);
-  const { setVfrResolution, select } = useApp.getState();
-
-  return (
-    <section className="math-box math-box--vfr-flow" aria-label="Recomandare Asistent VFR">
-      <button className="math-box__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="math-box__title">Recomandare Asistent VFR ({flights.length} aeronave)</span>
-        <span className="math-box__badge">Rezoluție activă</span>
-      </button>
-      {open && (
-        <div className="math-box__body">
-          <p className="muted small">
-            În condiții nefavorabile, Asistentul elimină bucla infinită de holding și alege matematic între așteptarea rândului pe LRCV sau redirecționarea la un alt punct de aterizare:
-          </p>
-          <div className="vfr-mini-list">
-            {flights.map((f) => {
-              const dec = f.tacticalDecision;
-              const isWait = dec.effectiveAction === 'wait_and_land_lrcv';
-              const alt = dec.alternate;
-              return (
-                <div key={f.id} className="vfr-mini-item">
-                  <div className="vfr-mini-item__hdr">
-                    <button type="button" className="btn-link" onClick={() => select(f.id)}>
-                      <strong>{f.callsign}</strong> ({f.aircraft.modelName})
-                    </button>
-                    <span className="muted small">
-                      vânt lat. {dec.crosswindKnots} kt / max {dec.maxCrosswindKnots} kt
-                    </span>
-                  </div>
-                  <div className="seg vfr-mini-seg">
-                    <button
-                      type="button"
-                      className={`seg__btn ${isWait ? 'is-active' : ''}`}
-                      onClick={() => setVfrResolution(f.id, 'wait_and_land_lrcv')}
-                      title="Așteaptă rândul în hipodromul sud Cârcea și aterizează pe LRCV după degajarea pistei"
-                    >
-                      Așteaptă rând LRCV (RWY {dec.assignedVfrRunway})
-                    </button>
-                    <button
-                      type="button"
-                      className={`seg__btn ${!isWait ? 'is-active is-divert-on' : ''}`}
-                      disabled={!alt}
-                      onClick={() => setVfrResolution(f.id, 'divert_alternate')}
-                      title={alt ? `Deviază spre ${alt.name} (${alt.bestRunway})` : 'Fără alternativă'}
-                    >
-                      {alt ? `Deviază spre ${alt.code === 'LRBV' ? 'LRCW' : alt.code}` : 'Deviere indisp.'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </section>
   );
 }

@@ -45,13 +45,13 @@ export function DemoControls() {
         {stale && status !== 'loading' && <span className="pill pill--warn">Rezultat depășit</span>}
         {status === 'error' && <span className="pill pill--err">Serviciu indisponibil</span>}
         {evaluationResult?.safetyAssessment?.isSafe && (
-          <span className="pill pill--ok" title={`${HINT.SAFE}\n\n${evaluationResult.safetyAssessment.summary}`}>
-            ● Traiectorii Sigure (EASA)
+          <span className="pill pill--ok" title={`Evaluarea backend precede aplicarea planului tactic Demo.\n\n${evaluationResult.safetyAssessment.summary}`}>
+            ● Evaluare backend: fără conflicte
           </span>
         )}
         {evaluationResult?.safetyAssessment && !evaluationResult.safetyAssessment.isSafe && (
           <span className="pill pill--warn" title={`${HINT.CONFLICTS}\n\n${evaluationResult.safetyAssessment.summary}`}>
-            ▲ {evaluationResult.safetyAssessment.conflicts.length} Conflicte
+            ▲ Backend: {evaluationResult.safetyAssessment.conflicts.length} conflicte
           </span>
         )}
       </div>
@@ -96,6 +96,7 @@ function Conditions() {
 /** Alegerea scenariului Demo (trafic și vreme), în panoul de sosiri: schimbă lista de dedesubt. */
 export function ScenarioPicker() {
   const presetId = useApp((s) => s.scenario?.weatherPresetId ?? '');
+  const planLocked = useApp((s) => s.vfrPlan.status === 'accepted' || s.vfrPlan.status === 'rejected');
   const trafficPreset = useApp((s) => s.scenario?.trafficPreset ?? 'default');
   const status = useApp((s) => s.status);
   const hasData = useApp((s) => !!s.evaluation);
@@ -111,7 +112,7 @@ export function ScenarioPicker() {
       </label>
       <label className="scenario__field">
         <span className="scenario__label">Vreme</span>
-        <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData}>
+        <select value={presetId} onChange={(e) => setWeatherPreset(e.target.value)} disabled={!hasData || planLocked} title={planLocked ? 'Reset pentru un nou scenariu meteo' : undefined}>
           {WEATHER_PRESETS.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}

@@ -11,6 +11,7 @@ import { TopBar } from './components/TopBar';
 import { VfrNotificationBanner } from './components/VfrNotificationBanner';
 import { runwayForWind } from './sim/live';
 import { useLive } from './state/live';
+import { useAssistant } from './state/assistant';
 import { currentMode, useMode } from './state/mode';
 import { useApp } from './state/store';
 
@@ -19,6 +20,7 @@ export default function App() {
   const { setView } = useApp.getState();
 
   const mode = useMode();
+  const contextSource = useAssistant((s) => s.contextSource);
   const simRunway = useApp((s) => s.evaluation?.traffic.runway ?? null);
   const metar = useLive((s) => s.metar);
   const liveRunway = metar ? runwayForWind(metar.windDirectionDegrees, metar.windSpeedKnots) : null;
@@ -67,8 +69,10 @@ export default function App() {
   if (mode === 'assistant') {
     return (
       <div className="app app--assistant">
-        <TopBar mode={mode} />
-        <VfrNotificationBanner />
+        <div className="app-header">
+          <TopBar mode={mode} />
+          {contextSource === 'demo' && <VfrNotificationBanner />}
+        </div>
         <AssistantView />
       </div>
     );
@@ -76,7 +80,10 @@ export default function App() {
 
   return (
     <div className={`app app--${mode}`}>
-      <TopBar mode={mode} />
+      <div className="app-header">
+        <TopBar mode={mode} />
+        {mode === 'demo' && <VfrNotificationBanner />}
+      </div>
       <HintLayer />
       <main className="map-area">
         {mode === 'demo' ? (

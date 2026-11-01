@@ -2,7 +2,6 @@
 // și panou interactiv de analiză & decizie pentru problemele operaționale (VFR Așteptare Rând vs. Redirecționare Alternativă).
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
-import { getAwaitingVfrFlights, type FlightView, type VfrResolutionAction } from '../sim/traffic';
 import { clockLabel } from '../sim/units';
 import { useAssistant, type AssistantMessage } from '../state/assistant';
 import { useLive } from '../state/live';
@@ -332,354 +331,45 @@ function ChatBubble({ msg }: { msg: AssistantMessage }) {
   );
 }
 
-export function VfrApproachRecommendationBox() {
-  const evaluation = useApp((s) => s.evaluation);
-  const simTimeSeconds = useApp((s) => s.simTimeSeconds);
-  const flights = evaluation?.traffic.flights;
-  const runway = evaluation?.traffic.runway ?? '08';
-  const awaitingVfr = flights ? getAwaitingVfrFlights(flights, simTimeSeconds) : [];
-  const vfrRec = useAssistant((s) => s.vfrRecommendation);
-  const {
-    acceptVfrApproachRecommendation,
-    rejectVfrApproachRecommendation,
-    resetVfrApproachRecommendation,
-    sendPrompt,
-  } = useAssistant.getState();
-  const busy = useAssistant((s) => s.busy);
-
-  if (awaitingVfr.length < 2) return null;
-
-  const names = awaitingVfr.map((f) => f.callsign).join(', ');
-
-  return (
-    <section
-      className={`vfr-rec-box ${
-        vfrRec.status === 'rejected'
-          ? 'vfr-rec-box--rejected'
-          : vfrRec.status === 'accepted'
-            ? 'vfr-rec-box--accepted'
-            : 'vfr-rec-box--pending'
-      }`}
-      aria-label="Recomandare procedură de apropiere VFR"
-    >
-      <div className="vfr-rec-box__head">
-        <div className="vfr-rec-box__title-wrap">
-          <span className="vfr-rec-box__badge">
-            {vfrRec.status === 'rejected'
-              ? 'DIRECTIVĂ CONTROLOR TWR'
-              : vfrRec.status === 'accepted'
-                ? 'RECOMANDARE ACCEPTATĂ'
-                : 'RECOMANDARE ASISTENT'}
-          </span>
-          <h3 className="vfr-rec-box__title">
-            Procedură de Apropiere VFR ({awaitingVfr.length} aeronave în așteptare)
-          </h3>
-        </div>
-        <span className="muted small">RWY {runway} · {awaitingVfr.length} zboruri VFR</span>
-      </div>
-
-      {vfrRec.status === 'rejected' && (
-        <div className="vfr-rec-box__notice vfr-rec-box__notice--rejected">
-          <span className="vfr-rec-box__notice-icon">🛑</span>
-          <div>
-            <strong>S-a refuzat recomandarea si se vor urma indicatiile controlorului de trafic aerian</strong>
-            <p className="small muted">
-              Asistentul a suspendat aplicarea automată a secvenței. Controlorul de trafic aerian va coordona manual
-              apropierea, eșalonarea și eventualele devieri ale aeronavelor VFR.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {vfrRec.status === 'accepted' && (
-        <div className="vfr-rec-box__notice vfr-rec-box__notice--accepted">
-          <span className="vfr-rec-box__notice-icon">✓</span>
-          <div>
-            <strong>Recomandarea Asistentului a fost acceptată</strong>
-            <p className="small muted">
-              Aeronavele VFR respectă eșalonarea la aterizare pe RWY {runway} sau ruta de deviere calculată.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="vfr-rec-planes">
-        {awaitingVfr.map((f) => {
-          const d = f.tacticalDecision;
-          const altLabel = d?.alternate ? `${d.alternate.name} (${d.alternate.bestRunway})` : 'Podari';
-          return (
-            <div key={f.id} className="vfr-rec-plane-chip">
-              <span className="vfr-rec-plane-chip__cs num">{f.callsign}</span>
-              <span className="muted small">{f.aircraft.modelName}</span>
-              <span className="vfr-rec-plane-chip__detail">
-                {d
-                  ? `Lateral: ${d.crosswindKnots}/${d.maxCrosswindKnots} kt · PNR ${d.pnrMinutes} min`
-                  : 'Așteptare slot / apropiere'}
-              </span>
-              <span className="vfr-rec-plane-chip__alt muted small">Alternativă: {altLabel}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="vfr-rec-proposal">
-        <h4 className="vfr-rec-proposal__title">Recomandare procedură de apropiere (Asistent):</h4>
-        <ol className="vfr-rec-proposal__steps">
-          <li>
-            <strong>Eșalonare la prag RWY {runway}:</strong> {awaitingVfr[0]?.callsign ?? 'Primul VFR'} execută
-            apropierea vizuală după degajarea pistei de către traficul IFR precedent (interval de minim 120s).
-          </li>
-          <li>
-            <strong>Circuit de așteptare:</strong> {awaitingVfr.slice(1).map((f) => f.callsign).join(', ')} mențin
-            circuitul de hipodrom la Cârcea (1.500 ft QNH, sud de ax) pentru eșalonare sigură și protecție de siaj.
-          </li>
-          <li>
-            <strong>Redirecționare la nevoie:</strong> Dacă vântul lateral depășește plafonul aprobat sau PNR scade sub 12
-            min, redirecționare imediată către Balta Verde (LRCW) sau Podari.
-          </li>
-        </ol>
-      </div>
-
-      <div className="vfr-rec-box__actions">
-        {vfrRec.status === 'pending' ? (
-          <>
-            <button
-              type="button"
-              className="btn btn--primary btn--xs"
-              onClick={acceptVfrApproachRecommendation}
-            >
-              ✓ Acceptă recomandarea de apropiere
-            </button>
-            <button
-              type="button"
-              className="btn btn--danger btn--xs"
-              onClick={rejectVfrApproachRecommendation}
-            >
-              ✕ Refuză recomandarea
-            </button>
-          </>
-        ) : vfrRec.status === 'rejected' ? (
-          <button
-            type="button"
-            className="btn btn--outline btn--xs"
-            onClick={resetVfrApproachRecommendation}
-          >
-            ↺ Revino la recomandarea Asistentului
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn--danger btn--xs"
-            onClick={rejectVfrApproachRecommendation}
-          >
-            ✕ Refuză recomandarea
-          </button>
-        )}
-
-        <button
-          type="button"
-          className="btn-link btn-link--quiet"
-          disabled={busy}
-          onClick={() =>
-            void sendPrompt(
-              `Explică recomandarea tactică de apropiere pentru cele ${awaitingVfr.length} aeronave VFR în așteptare (${names}) pe RWY ${runway}. Justifică marjele PNR și eșalonarea ATC.`,
-              'demo',
-            )
-          }
-        >
-          ▸ Consultă Qwen3-4B despre abordare
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function DemoTacticalProblemsPanel() {
   const evaluation = useApp((s) => s.evaluation);
   const scenario = useApp((s) => s.scenario);
-  const vfrOverrides = useApp((s) => s.vfrOverrides);
-  const { setVfrResolution, clearVfrOverrides, setWeatherPreset, select } = useApp.getState();
-  const { sendPrompt, resetVfrApproachRecommendation } = useAssistant.getState();
-  const busy = useAssistant((s) => s.busy);
-
-  if (!evaluation || !scenario) {
-    return <p className="muted">Se încarcă datele scenariului…</p>;
-  }
-
-  const { flights, runway } = evaluation.traffic;
-  const vfrDecisions = flights.filter((f): f is FlightView & { tacticalDecision: NonNullable<FlightView['tacticalDecision']> } => f.tacticalDecision !== null);
-  const hasOverrides = Object.keys(vfrOverrides).length > 0;
+  const plan = useApp((s) => s.vfrPlan);
+  const { setWeatherPreset, select } = useApp.getState();
+  if (!evaluation || !scenario) return <p className="muted">Se încarcă datele scenariului…</p>;
+  const locked = plan.status === 'accepted' || plan.status === 'rejected';
+  const vfr = evaluation.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR');
 
   return (
     <div className="ops-stack">
-      <div className="ops-hdr">
-        <div>
-          <h2 className="panel__title">Flux Decizional VFR &amp; Probleme Active</h2>
-          <p className="muted small">
-            Asistentul analizează fiecare aeronavă VFR și alege între așteptarea rândului pe LRCV sau redirecționarea la un alt punct de aterizare.
-          </p>
-        </div>
-      </div>
-
-      {/* Selector rapid de condiții meteo pentru testarea fluxului în condiții nefavorabile */}
+      <h2 className="panel__title">Plan integrat IFR + VFR · RWY {evaluation.traffic.runway}</h2>
+      <p className="muted small">
+        O singură decizie pentru întregul grup. Pragurile 30–20 NM urmăresc prima sosire IFR;
+        VFR-urile din holding așteaptă acceptarea planului.
+      </p>
       <div className="ops-weather-bar">
         <span className="ops-weather-bar__lbl">Condiții scenariu:</span>
         <div className="ops-weather-pills">
           {WEATHER_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
+            <button key={p.id} type="button" disabled={locked}
               className={`ai__chip ${scenario.weatherPresetId === p.id ? 'is-selected-chip' : ''}`}
-              onClick={() => {
-                setWeatherPreset(p.id);
-                resetVfrApproachRecommendation();
-              }}
-            >
-              {p.label}
-            </button>
+              title={locked ? 'Reset în Demo pentru un nou scenariu meteo' : undefined}
+              onClick={() => setWeatherPreset(p.id)}>{p.label}</button>
           ))}
         </div>
       </div>
-
-      {/* Recomandare dedicată de abordare / apropiere pentru 2+ aeronave VFR în așteptare */}
-      <VfrApproachRecommendationBox />
-
-      {vfrDecisions.length === 0 ? (
-        <div className="notice">
-          <strong>Condiții nominale pe RWY {runway}:</strong> toate aeronavele au vânt lateral în limite și sloturi fără conflict. Comută pe <em>Vânt lateral</em> sau <em>Vânt lateral puternic</em> mai sus pentru a analiza deciziile VFR în condiții nefavorabile.
-        </div>
-      ) : (
-        <>
-          <div className="ops-summary-bar">
-            <span className="small">
-              <strong>{vfrDecisions.length} aeronave VFR</strong> analizate tactic
-            </span>
-            <div className="ops-summary-actions">
-              {hasOverrides && (
-                <button type="button" className="btn btn--quiet btn--xs" onClick={clearVfrOverrides}>
-                  Revino la recomandarea Asistentului
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn btn--xs"
-                onClick={() => setMode('demo')}
-                title="Vezi traiectoriile de așteptare și redirecționare pe harta 4D"
-              >
-                Vezi pe hartă (Demo) →
-              </button>
-            </div>
-          </div>
-
-          <div className="vfr-decision-list">
-            {vfrDecisions.map((f) => {
-              const d = f.tacticalDecision;
-              const altName = d.alternate ? `${d.alternate.name} (${d.alternate.bestRunway})` : 'Fără alternativă';
-              const isWaitRec = d.recommendedAction === 'wait_and_land_lrcv';
-              const isDivertRec = d.recommendedAction === 'divert_alternate';
-
-              const applyChoice = (action: VfrResolutionAction) => {
-                setVfrResolution(f.id, action === d.recommendedAction ? null : action);
-              };
-
-              return (
-                <article
-                  key={f.id}
-                  className={`vfr-card ${d.effectiveAction === 'divert_alternate' ? 'vfr-card--divert' : 'vfr-card--wait'}`}
-                >
-                  <div className="vfr-card__head">
-                    <div>
-                      <span className="vfr-card__cs num">{f.callsign}</span>{' '}
-                      <span className="muted small">{f.aircraft.modelName}</span>
-                    </div>
-                    <span className={`vfr-rec-pill ${d.effectiveAction === 'divert_alternate' ? 'is-divert' : 'is-wait'}`}>
-                      {d.isOverridden ? 'Suprascris manual' : 'Recomandare Asistent'}
-                    </span>
-                  </div>
-
-                  <div className="math-metrics">
-                    <div className="math-metric">
-                      <span className="math-metric__lbl">Lateral LRCV</span>
-                      <span className={`math-metric__val ${d.crosswindKnots > d.maxCrosswindKnots ? 'txt-warn' : ''}`}>
-                        {d.crosswindKnots} / {d.maxCrosswindKnots} kt
-                      </span>
-                    </div>
-                    <div className="math-metric">
-                      <span className="math-metric__lbl">Marjă PNR</span>
-                      <span className="math-metric__val">{d.pnrMinutes} min</span>
-                    </div>
-                    <div className="math-metric">
-                      <span className="math-metric__lbl">Aterizare est.</span>
-                      <span className="math-metric__val">{clock(d.estimatedLandingSeconds)}</span>
-                    </div>
-                  </div>
-
-                  <p className="small muted">{d.summaryReason}</p>
-
-                  {/* Cele două opțiuni de rezoluție comparate de Asistent */}
-                  <div className="vfr-options" role="group" aria-label={`Rezoluție tactică ${f.callsign}`}>
-                    <button
-                      type="button"
-                      className={`vfr-opt-btn ${d.effectiveAction === 'wait_and_land_lrcv' ? 'is-chosen' : ''}`}
-                      onClick={() => applyChoice('wait_and_land_lrcv')}
-                    >
-                      <span className="vfr-opt-btn__hdr">
-                        <span>Așteaptă rândul → LRCV RWY {d.assignedVfrRunway}</span>
-                        {isWaitRec && <span className="vfr-opt-tag">Optim</span>}
-                      </span>
-                      <span className="vfr-opt-btn__sub muted">
-                        Hipodrom Cârcea, aterizare după degajarea IFR
-                      </span>
-                    </button>
-
-                    {d.alternate && (
-                      <button
-                        type="button"
-                        className={`vfr-opt-btn ${d.effectiveAction === 'divert_alternate' ? 'is-chosen is-divert' : ''}`}
-                        onClick={() => applyChoice('divert_alternate')}
-                      >
-                        <span className="vfr-opt-btn__hdr">
-                          <span>Redirecționare → {d.alternate.code === 'LRBV' ? 'Balta Verde (LRCW)' : d.alternate.name}</span>
-                          {isDivertRec && <span className="vfr-opt-tag is-divert">Optim</span>}
-                        </span>
-                        <span className="vfr-opt-btn__sub muted">
-                          RWY {d.alternate.bestRunway} · lateral {d.alternate.calculatedCrosswindKnots} kt · combustibil {d.fuelAtAlternateMinutes ?? '—'} min
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="vfr-card__foot">
-                    <button
-                      type="button"
-                      className="btn-link"
-                      disabled={busy}
-                      onClick={() =>
-                        void sendPrompt(
-                          `Analizează aeronava ${f.callsign}: ar trebui să aștepte rândul și să aterizeze pe LRCV sau să meargă la ${altName}? Verifică vântul lateral, PNR și combustibilul.`,
-                          'demo',
-                        )
-                      }
-                    >
-                      ▸ Justifică decizia în conversație (Qwen3-4B)
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-link"
-                      onClick={() => {
-                        select(f.id);
-                        setMode('demo');
-                      }}
-                    >
-                       Urmărește pe hartă →
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </>
-      )}
+      <p className="notice">
+        {plan.status === 'accepted' ? 'Plan aplicat: IFR la minimum 5.0 NM, apoi VFR la minimum 4.0 NM pe finală.' :
+          plan.status === 'rejected' ? 'Aplicare automată blocată. Holding extins și coordonare exclusiv radio TWR.' :
+            'Propunerea apare la 30 NM. Acceptă înainte de 20 NM pentru aterizarea integrată; fără acceptare, VFR-urile continuă holdingul.'}
+      </p>
+      {vfr.map((f) => (
+        <article key={f.id} className="vfr-card vfr-card--wait">
+          <div className="vfr-card__head"><strong>{f.callsign}</strong><span className="muted small">{f.aircraft.modelName}</span></div>
+          <p>{f.slot ? `Aterizare RWY ${evaluation.traffic.runway}: ${clock(f.slot.calculatedTimeSeconds)}` : 'Holding Cârcea · fără autorizare automată de aterizare'}</p>
+          <button type="button" className="btn-link" onClick={() => { select(f.id); setMode('demo'); }}>Urmărește pe hartă →</button>
+        </article>
+      ))}
     </div>
   );
 }

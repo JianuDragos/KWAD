@@ -125,3 +125,116 @@ describe('store', () => {
     expect(useApp.getState().timelineScope).toBe('mission');
   });
 });
+
+async function proposedStore() {
+  const useApp = await freshStore();
+  await useApp.getState().load();
+  const { minArrivalDistance } = await import('../sim/traffic');
+  const traffic = useApp.getState().evaluation!.traffic;
+  for (let t = traffic.startSeconds; t < traffic.endSeconds; t++) {
+    const d = minArrivalDistance(traffic, t);
+    if (d !== null && d <= 29 && d > 20) {
+      useApp.getState().seek(t);
+      return useApp;
+    }
+  }
+  throw new Error('Scenariul de test nu traversează fereastra de propunere');
+}
+
+describe('poarta tactică 30–20 NM', () => {
+  it('nu permite Accept înainte de propunere și nu aplică aterizările VFR implicit', async () => {
+    const app = await freshStore();
+    await app.getState().load();
+    expect(app.getState().vfrPlan.status).toBe('idle');
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+    expect(app.getState().evaluation!.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR')
+      .every((f) => f.kind === 'hold' && f.resolvedLandingSeconds === null)).toBe(true);
+  });
+
+  it('acceptă o singură dată în fereastră și păstrează Accept după trecerea pragului', async () => {
+    const app = await proposedStore();
+    expect(app.getState().vfrPlan.status).toBe('proposed');
+    expect(app.getState().acceptVfrPlan()).toBe(true);
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+    expect(app.getState().rejectVfrPlan()).toBe(false);
+    app.getState().seek(300);
+    expect(app.getState().vfrPlan.status).toBe('accepted');
+    expect(app.getState().evaluation!.traffic.flights.every((f) => f.resolvedLandingSeconds !== null)).toBe(true);
+  });
+
+  it('refuzul manual este definitiv pentru grup, inclusiv după seek înapoi', async () => {
+    const app = await proposedStore();
+    const t = app.getState().simTimeSeconds;
+    expect(app.getState().rejectVfrPlan()).toBe(true);
+    expect(app.getState().vfrPlan.rejectionReason).toBe('manual');
+    app.getState().seek(app.getState().evaluation!.traffic.startSeconds);
+    app.getState().seek(t);
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+    app.getState().setWeatherPreset('west');
+    expect(app.getState().vfrPlan.status).toBe('rejected');
+    expect(app.getState().scenario!.weatherPresetId).toBe('calm');
+  });
+
+  it('un salt peste prag și peste aterizarea IFR declanșează Auto-Reject', async () => {
+    const app = await freshStore();
+    await app.getState().load();
+    app.getState().seek(app.getState().evaluation!.traffic.endSeconds);
+    expect(app.getState().vfrPlan.status).toBe('rejected');
+    expect(app.getState().vfrPlan.rejectionReason).toBe('gate');
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+  });
+
+  it('redarea accelerată nu poate sări peste Auto-Reject', async () => {
+    const app = await proposedStore();
+    app.getState().setSpeed(60);
+    app.getState().togglePlay();
+    app.getState().tick(20);
+    expect(app.getState().vfrPlan.status).toBe('rejected');
+    expect(app.getState().vfrPlan.rejectionReason).toBe('gate');
+  });
+
+  it('Reset creează un grup nou; schimbarea traficului nu păstrează refuzul vechi', async () => {
+    const app = await proposedStore();
+    app.getState().rejectVfrPlan();
+    app.getState().reset();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(app.getState().vfrPlan.status).toBe('idle');
+    expect(app.getState().playing).toBe(false);
+    app.getState().seek(app.getState().evaluation!.traffic.endSeconds);
+    await app.getState().setTrafficPreset('eurasia');
+    expect(app.getState().vfrPlan.status).toBe('idle');
+  });
+
+  it('nu acceptă un plan cu revizie veche în timp ce se recalculează', async () => {
+    const app = await proposedStore();
+    evaluateCraiova.mockImplementation(() => new Promise(() => {}));
+    app.getState().setWeatherPreset('west');
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+    expect(app.getState().status).toBe('loading');
+  });
+});
+
+describe('limitele exacte ale ferestrei tactice', () => {
+  it('propune la exact 30 NM și blochează Accept la exact 20 NM', async () => {
+    const app = await freshStore();
+    await app.getState().load();
+    const { destination } = await import('../sim/geomath');
+    const { ARP } = await import('../data/geo');
+    const evaluation = app.getState().evaluation!;
+    const ifr = evaluation.traffic.flights.find((f) => f.aircraft.flightRules === 'IFR')!;
+    const vfr = evaluation.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR');
+    const track = [35, 30, 20, 0].map((distance, i) => {
+      const p = destination(ARP, 0, distance);
+      return { timeSeconds: i * 100, latitudeDeg: p.lat, longitudeDeg: p.lon, altitudeMeters: 1700, source: 'synthetic' as const };
+    });
+    app.setState({ simTimeSeconds: 0, evaluation: { ...evaluation, traffic: { ...evaluation.traffic,
+      flights: [{ ...ifr, track, takeoffSeconds: 0, resolvedLandingSeconds: 300 }, ...vfr] } } });
+    app.getState().seek(100);
+    expect(app.getState().minDistanceToLrcvNm).toBe(30);
+    expect(app.getState().vfrPlan.status).toBe('proposed');
+    app.getState().seek(200);
+    expect(app.getState().minDistanceToLrcvNm).toBe(20);
+    expect(app.getState().vfrPlan.status).toBe('rejected');
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+  });
+});

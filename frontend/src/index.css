@@ -646,3 +646,22 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .switch.is-on { background: var(--cleared); }
 .switch.is-on::after { transform: translateX(14px); background: var(--scope); }
 @media (prefers-reduced-motion: reduce) { .switch, .switch::after { transition: none; } }
+
+
+/* O singură notificare pentru grup, deasupra hărții și a Asistentului. */
+.app-header { grid-area: top; min-width: 0; }
+.vfr-alert-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; border-bottom: 2px solid var(--hold); background: var(--raised);
+}
+.vfr-alert-banner__body { min-width: 0; overflow-wrap: anywhere; }
+.vfr-alert-banner__body > strong { color: var(--hold); }
+.vfr-alert-banner__actions { display: flex; gap: 8px; flex-shrink: 0; }
+.vfr-alert-banner--accepted { border-color: var(--cleared); }
+.vfr-alert-banner--accepted .vfr-alert-banner__body > strong { color: var(--cleared); }
+.vfr-alert-banner--rejected { border-color: var(--divert); }
+.vfr-alert-banner--rejected .vfr-alert-banner__body > strong { color: var(--divert); }
+@media (max-width: 900px) {
+  .vfr-alert-banner { flex-direction: column; align-items: stretch; }
+  .vfr-alert-banner__actions { flex-wrap: wrap; }
+}
