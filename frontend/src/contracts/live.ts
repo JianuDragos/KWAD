@@ -71,6 +71,27 @@ export const metarSchema = z.object({
 });
 export type Metar = z.infer<typeof metarSchema>;
 
+export const verificationCitationSchema = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  text: z.string(),
+});
+export type VerificationCitation = z.infer<typeof verificationCitationSchema>;
+
+export const explanationVerificationSchema = z.object({
+  isVerified: z.boolean(),
+  engineUsed: z.string(),
+  runtimeEndpoint: z.string().nullable().optional(),
+  latencyMs: z.number(),
+  totalNumbersInAnswer: z.number(),
+  verifiedNumbers: z.array(z.string()),
+  unverifiedNumbers: z.array(z.string()),
+  hallucinationBlocked: z.boolean(),
+  verificationSummary: z.string(),
+  citations: z.array(verificationCitationSchema),
+});
+export type ExplanationVerification = z.infer<typeof explanationVerificationSchema>;
+
 /** Răspunsul de la POST /api/craiova/explain (recordul Explanation din GroundedExplainer.cs). */
 export const explanationSchema = z.object({
   scenarioRevision: z.number(),
@@ -79,5 +100,7 @@ export const explanationSchema = z.object({
   sentences: z.array(z.string()),
   sourceIds: z.array(z.string()),
   fallbackReason: z.string().nullable(),
+  directAnswer: z.string().nullable().optional(),
+  verification: explanationVerificationSchema.nullable().optional(),
 });
 export type Explanation = z.infer<typeof explanationSchema>;

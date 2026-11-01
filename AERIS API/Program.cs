@@ -67,14 +67,30 @@ builder.Services.AddHostedService<OgnAprsListener>();
 builder.Services.Configure<Sbs1Options>(builder.Configuration.GetSection("SBS1"));
 builder.Services.AddHostedService<Sbs1Listener>();
 
-// ── Local AI grounded explainer (Qwen3-4B-Instruct-2507, doar loopback) ───────
+// ── Local AI grounded explainer (Qwen3-4B-Instruct-2507: llama.cpp/GenieX 18090 + Ollama 11434, doar loopback) ──
 builder.Services.AddHttpClient("local-ai", (sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     var baseUrl = config["LocalAI:BaseUrl"];
     client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://127.0.0.1:18090/" : baseUrl);
     client.Timeout = Timeout.InfiniteTimeSpan; // deadline-ul este gestionat de GroundedExplainer
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseProxy = false });
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    UseProxy = false,
+    ConnectTimeout = TimeSpan.FromMilliseconds(250)
+});
+
+builder.Services.AddHttpClient("ollama-local", (sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var ollamaUrl = config["LocalAI:OllamaBaseUrl"];
+    client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(ollamaUrl) ? "http://127.0.0.1:11434/" : ollamaUrl);
+    client.Timeout = Timeout.InfiniteTimeSpan;
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    UseProxy = false,
+    ConnectTimeout = TimeSpan.FromMilliseconds(500)
+});
 
 builder.Services.AddScoped<GroundedExplainer>(sp =>
 {
@@ -82,12 +98,15 @@ builder.Services.AddScoped<GroundedExplainer>(sp =>
     var config = sp.GetRequiredService<IConfiguration>();
     var model = config["LocalAI:Model"] ?? "aeris-local";
     var fallbackModel = config["LocalAI:FallbackModel"] ?? "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_0";
-    var timeoutSec = Math.Clamp(config.GetValue("LocalAI:TimeoutSeconds", 15), 2, 60);
+    var ollamaModel = config["LocalAI:OllamaModel"] ?? "hf.co/unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_K_M";
+    var timeoutSec = Math.Clamp(config.GetValue("LocalAI:TimeoutSeconds", 30), 2, 90);
     return new GroundedExplainer(
         httpFactory.CreateClient("local-ai"),
         model: model,
         timeout: TimeSpan.FromSeconds(timeoutSec),
-        fallbackModel: fallbackModel);
+        fallbackModel: fallbackModel,
+        ollamaFallbackClient: httpFactory.CreateClient("ollama-local"),
+        ollamaModel: ollamaModel);
 });
 
 var app = builder.Build();

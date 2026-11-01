@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as mock from '../api/mockBackend';
+import * as mockLive from '../api/mockLive';
 import { WEATHER_PRESETS } from '../data/weatherPresets';
+import { explanationSchema } from './live';
 import { describeIssue, liveTrafficSchema, planningResponseSchema, simulationResultSchema } from './schemas';
 
 describe('schemele răspunsurilor', () => {
@@ -21,6 +23,18 @@ describe('schemele răspunsurilor', () => {
       { minimumGapSeconds: 120 },
     );
     expect(planningResponseSchema.safeParse(plan).success).toBe(true);
+  });
+
+  it('validează răspunsul AI direct în română împreună cu raportul de verificare anti-halucinație', () => {
+    const evalRes = mock.evaluateSimulation(mock.realisticCraiovaTraffic(), WEATHER_PRESETS[0].weather, 't');
+    const exp = mockLive.explanation('Cât combustibil mai are YR-5123?', evalRes);
+    const parsed = explanationSchema.safeParse(exp);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.directAnswer).toContain('YR-5123');
+      expect(parsed.data.verification?.isVerified).toBe(true);
+      expect(parsed.data.verification?.citations.length).toBeGreaterThan(0);
+    }
   });
 
   it('calculează predicția viitorului 4D, doi pași înainte, takeoff-to-landing cu coordonate origine și redirecționarea VFR', () => {

@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { AltitudeLegend } from './components/AltitudeLegend';
+import { AssistantView } from './components/AssistantView';
 import { DetailsPanel } from './components/DetailsPanel';
 import { LivePanel } from './components/LivePanel';
 import { LiveTraffic } from './components/LiveTraffic';
 import { MapView, SimTraffic } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { TopBar } from './components/TopBar';
+import { VfrNotificationBanner } from './components/VfrNotificationBanner';
 import { runwayForWind } from './sim/live';
 import { useLive } from './state/live';
 import { currentMode, useMode } from './state/mode';
@@ -28,7 +30,7 @@ export default function App() {
     void useApp.getState().load();
   }, []);
 
-  // Datele reale se cer doar cât e deschisă pagina Live (cache partajat 15s + protecție cotă OpenSky).
+  // Datele reale se cer doar cât e deschisă pagina Trafic real (cache partajat 15s + protecție cotă OpenSky).
   useEffect(() => (mode === 'live' ? useLive.getState().start() : undefined), [mode]);
 
   // O singură buclă de ceas pentru toată aplicația.
@@ -47,9 +49,11 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('select, input, textarea')) return;
+      const m = currentMode();
+      if (m === 'assistant') return;
       const s = useApp.getState();
       if (e.code === 'Space') {
-        if (target.closest('button, a[href], [role="button"]') || currentMode() !== 'demo') return;
+        if (target.closest('button, a[href], [role="button"]') || m !== 'demo') return;
         e.preventDefault();
         if (s.evaluation) s.togglePlay();
       } else if (e.key === 'Escape') {
@@ -63,9 +67,20 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  if (mode === 'assistant') {
+    return (
+      <div className="app app--assistant">
+        <TopBar mode={mode} />
+        <VfrNotificationBanner />
+        <AssistantView />
+      </div>
+    );
+  }
+
   return (
     <div className={`app app--${mode}`}>
       <TopBar mode={mode} />
+      <VfrNotificationBanner />
       <main className="map-area">
         {mode === 'demo' ? (
           <MapView runway={simRunway} onBackgroundClick={() => useApp.getState().select(null)}>

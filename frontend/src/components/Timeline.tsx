@@ -6,7 +6,7 @@ import { BASE_TIME_OFFSET_SECONDS, useApp } from '../state/store';
 import { STATUS_CLASS, isUnsequenced } from './flightStyle';
 import { HINT } from '../data/glossary';
 
-const sequenceTime = (f: FlightView) => f.slot?.calculatedTimeSeconds ?? f.aircraft.etaSeconds;
+const sequenceTime = (f: FlightView) => f.slot?.calculatedTimeSeconds ?? f.resolvedLandingSeconds ?? f.aircraft.etaSeconds;
 
 function chooseTickStep(spanSeconds: number): number {
   if (spanSeconds <= 2400) return 120;      // <= 40 min → la 2 minute
@@ -84,23 +84,24 @@ export function Timeline() {
       <div className="tl-body">
         <div className="tl-rows">
           {flights.map((f) => {
-            const endFlightSec = f.landingSeconds ?? f.track[f.track.length - 1]?.timeSeconds ?? f.aircraft.etaSeconds;
+            const endFlightSec = f.landingSeconds ?? f.resolvedLandingSeconds ?? f.track[f.track.length - 1]?.timeSeconds ?? f.aircraft.etaSeconds;
             const airLeft = Math.max(0, pct(f.takeoffSeconds));
             const airRight = Math.min(100, pct(endFlightSec));
             const airWidth = Math.max(0, airRight - airLeft);
+            const altCode = f.alternate ? (f.alternate.code === 'LRBV' ? 'LRCW' : f.alternate.code) : null;
 
             return (
               <div key={f.id} className={`tl-row ${f.id === selectedId ? 'is-selected' : ''}`} onClick={() => select(f.id)}>
-                <button className="tl-label tl-label--btn" aria-pressed={f.id === selectedId} title={`${f.origin.icao} (${f.origin.city}) → LRCV`}>
+                <button className="tl-label tl-label--btn" aria-pressed={f.id === selectedId} title={`${f.origin.icao} (${f.origin.city}) → ${altCode ?? 'LRCV'}`}>
                   <span className={`rules rules--${f.aircraft.flightRules.toLowerCase()}`} title={HINT[f.aircraft.flightRules]}>{f.aircraft.flightRules}</span> {f.callsign}{' '}
-                  <span className="muted">{f.origin.icao}</span>
+                  <span className="muted">{altCode ? `→${altCode}` : f.origin.icao}</span>
                 </button>
                 <div className="tl-track">
                   {timelineScope === 'mission' && airWidth > 0.3 && (
                     <span
                       className={`tl-airborne tl-airborne--${f.aircraft.flightRules.toLowerCase()}`}
                       style={{ left: `${airLeft}%`, width: `${airWidth}%` }}
-                      title={`Zbor activ ${f.origin.icao} → LRCV (decolare ${clockLabel(BASE_TIME_OFFSET_SECONDS + f.takeoffSeconds, false)})`}
+                      title={`Zbor activ ${f.origin.icao} → ${altCode ?? 'LRCV'} (decolare ${clockLabel(BASE_TIME_OFFSET_SECONDS + f.takeoffSeconds, false)})`}
                     />
                   )}
                   {timelineScope === 'mission' && pct(f.takeoffSeconds) >= 0 && pct(f.takeoffSeconds) <= 100 && (
@@ -117,7 +118,16 @@ export function Timeline() {
                   />
                   <span className="tl-eta" style={{ left: x(f.aircraft.etaSeconds) }} title={HINT.ETA} />
                   {f.slot && <span className={`tl-slot ${STATUS_CLASS[f.status]}`} style={{ left: x(f.slot.calculatedTimeSeconds) }} title={HINT.SLOT} />}
-                  {!f.slot && (
+                  {!f.slot && f.resolvedLandingSeconds !== null && f.status !== 'ClearedForApproach' && (
+                    <span
+                      className={`tl-flag ${altCode ? 'st-divert' : 'st-hold'}`}
+                      style={{ left: xClamped(f.resolvedLandingSeconds) }}
+                      title={altCode ? `Aterizare pe aerodromul alternativ ${altCode}` : 'Aterizare pe LRCV după așteptarea rândului'}
+                    >
+                      {altCode ? `→ ${altCode}` : `→ RWY ${f.tacticalDecision?.assignedVfrRunway ?? ev.traffic.runway}`}
+                    </span>
+                  )}
+                  {!f.slot && (f.resolvedLandingSeconds === null || f.status === 'ClearedForApproach') && (
                     <span className={`tl-flag ${isUnsequenced(f) ? 'tl-flag--warn' : STATUS_CLASS[f.status]}`} style={{ left: x(f.aircraft.etaSeconds) }}>
                       {isUnsequenced(f) ? 'fără slot' : f.status === 'DivertRecommended' ? 'deviere' : 'așteptare'}
                     </span>

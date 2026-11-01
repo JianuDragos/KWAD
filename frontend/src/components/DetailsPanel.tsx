@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
+import { useAssistant } from '../state/assistant';
+import { setMode } from '../state/mode';
 import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { HINT } from '../data/glossary';
@@ -33,6 +35,10 @@ export function DetailsPanel() {
   const { flights } = evaluation.traffic;
   const stats = evaluation.result.stats;
   const ordered = [...flights].sort((a, b) => sequenceTime(a) - sequenceTime(b));
+  const vfrDecisionFlights = ordered.filter(
+    (f): f is FlightView & { tacticalDecision: NonNullable<FlightView['tacticalDecision']> } =>
+      f.tacticalDecision !== null && f.status !== 'ClearedForApproach',
+  );
 
   return (
     <aside className="panel" aria-label="Sosiri">
@@ -40,6 +46,8 @@ export function DetailsPanel() {
       <hr className="panel__rule" />
       {error && <p className="notice notice--err">{error}</p>}
 
+
+      {vfrDecisionFlights.length > 0 && <VfrAssistantFlowBox flights={vfrDecisionFlights} />}
 
       <div className="panel__head">
         <h2 className="panel__title">Sosiri &amp; Calcule Zbor</h2>
@@ -57,11 +65,34 @@ export function DetailsPanel() {
           </li>
         ))}
       </ol>
+
+      <div className="assistant-cta">
+        <div>
+          <strong className="small">Asistent Tactic ATC (Qwen3-4B)</strong>
+          <p className="muted small">Conversație operațională, analiză secvențiere și rezoluții VFR în tab-ul dedicat.</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn--primary btn--xs"
+          onClick={() => {
+            useAssistant.getState().setContextSource('demo');
+            setMode('assistant');
+          }}
+        >
+          Deschide Asistent →
+        </button>
+      </div>
     </aside>
   );
 }
 
 function stripTag(f: FlightView): string | null {
+  if (f.tacticalDecision && f.status !== 'ClearedForApproach') {
+    if (f.tacticalDecision.effectiveAction === 'divert_alternate' && f.alternate) {
+      return `Deviere → ${f.alternate.code === 'LRBV' ? 'LRCW' : f.alternate.code}`;
+    }
+    return `Așteaptă → RWY ${f.tacticalDecision.assignedVfrRunway}`;
+  }
   if (f.status === 'HoldInOrbitRecommended') return 'Așteptare';
   if (f.status === 'DivertRecommended') return 'Deviere';
   if (isUnsequenced(f)) return 'Fără slot';
@@ -90,9 +121,9 @@ function Strip({ flight, expanded }: { flight: FlightView; expanded: boolean }) 
         aria-controls={bodyId}
       >
         <span className="strip__cs">
-          {flight.callsign} <span className="strip__orig">{flight.origin.icao}→LRCV</span>
+          {flight.callsign} <span className="strip__orig">{flight.origin.icao}→{flight.tacticalDecision?.effectiveAction === 'divert_alternate' && flight.alternate ? (flight.alternate.code === 'LRBV' ? 'LRCW' : flight.alternate.code) : 'LRCV'}</span>
         </span>
-        <span className="strip__time">{flight.slot ? clock(flight.slot.calculatedTimeSeconds) : clock(ac.etaSeconds)}</span>
+        <span className="strip__time">{flight.slot ? clock(flight.slot.calculatedTimeSeconds) : flight.resolvedLandingSeconds ? clock(flight.resolvedLandingSeconds) : clock(ac.etaSeconds)}</span>
         <span className="strip__type">
           <span className={`rules rules--${rules}`} title={HINT[ac.flightRules]}>{ac.flightRules}</span> {ac.modelName}
         </span>
@@ -138,6 +169,17 @@ function StripDetails({ flight, id }: { flight: FlightView; id: string }) {
             <dt title={HINT.SLOT}>Slot</dt>
             <dd className="num">
               {clock(flight.slot.calculatedTimeSeconds)} <span className="muted">întârziere {minutesLabel(flight.slot.delaySeconds)}</span>
+            </dd>
+          </>
+        )}
+        {!flight.slot && flight.resolvedLandingSeconds !== null && flight.status !== 'ClearedForApproach' && (
+          <>
+            <dt>Aterizare est.</dt>
+            <dd className="num">
+              {clock(flight.resolvedLandingSeconds)}{' '}
+              <span className="muted">
+                {flight.alternate ? `pe ${flight.alternate.name}` : `pe LRCV RWY ${flight.tacticalDecision?.assignedVfrRunway ?? '26'} după așteptare`}
+              </span>
             </dd>
           </>
         )}
@@ -374,5 +416,68 @@ function FlightNow({ flight }: { flight: FlightView }) {
     <>
       {altitudeLabel(pos.altitudeMeters)}, {String(Math.round(pos.headingDeg ?? 0)).padStart(3, '0')}°
     </>
+  );
+}
+
+function VfrAssistantFlowBox({
+  flights,
+}: {
+  flights: (FlightView & { tacticalDecision: NonNullable<FlightView['tacticalDecision']> })[];
+}) {
+  const [open, setOpen] = useState(true);
+  const { setVfrResolution, select } = useApp.getState();
+
+  return (
+    <section className="math-box math-box--vfr-flow" aria-label="Recomandare Asistent VFR">
+      <button className="math-box__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="math-box__title">Recomandare Asistent VFR ({flights.length} aeronave)</span>
+        <span className="math-box__badge">Rezoluție activă</span>
+      </button>
+      {open && (
+        <div className="math-box__body">
+          <p className="muted small">
+            În condiții nefavorabile, Asistentul elimină bucla infinită de holding și alege matematic între așteptarea rândului pe LRCV sau redirecționarea la un alt punct de aterizare:
+          </p>
+          <div className="vfr-mini-list">
+            {flights.map((f) => {
+              const dec = f.tacticalDecision;
+              const isWait = dec.effectiveAction === 'wait_and_land_lrcv';
+              const alt = dec.alternate;
+              return (
+                <div key={f.id} className="vfr-mini-item">
+                  <div className="vfr-mini-item__hdr">
+                    <button type="button" className="btn-link" onClick={() => select(f.id)}>
+                      <strong>{f.callsign}</strong> ({f.aircraft.modelName})
+                    </button>
+                    <span className="muted small">
+                      vânt lat. {dec.crosswindKnots} kt / max {dec.maxCrosswindKnots} kt
+                    </span>
+                  </div>
+                  <div className="seg vfr-mini-seg">
+                    <button
+                      type="button"
+                      className={`seg__btn ${isWait ? 'is-active' : ''}`}
+                      onClick={() => setVfrResolution(f.id, 'wait_and_land_lrcv')}
+                      title="Așteaptă rândul în hipodromul sud Cârcea și aterizează pe LRCV după degajarea pistei"
+                    >
+                      Așteaptă rând LRCV (RWY {dec.assignedVfrRunway})
+                    </button>
+                    <button
+                      type="button"
+                      className={`seg__btn ${!isWait ? 'is-active is-divert-on' : ''}`}
+                      disabled={!alt}
+                      onClick={() => setVfrResolution(f.id, 'divert_alternate')}
+                      title={alt ? `Deviază spre ${alt.name} (${alt.bestRunway})` : 'Fără alternativă'}
+                    >
+                      {alt ? `Deviază spre ${alt.code === 'LRBV' ? 'LRCW' : alt.code}` : 'Deviere indisp.'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

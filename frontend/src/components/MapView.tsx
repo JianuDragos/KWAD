@@ -590,7 +590,8 @@ function AircraftMarkerView({
   onSelect: (id: string) => void;
 }) {
   const rules = flight.aircraft.flightRules.toLowerCase();
-  const statusClass = STATUS_CLASS[flight.status];
+  const visualStatusClass =
+    flight.kind === 'divert' ? 'st-divert' : flight.kind === 'hold' ? 'st-hold' : STATUS_CLASS[flight.status];
   const trafficRenderer = useTrafficRenderer();
   const dimmed = done || preTakeoff;
 
@@ -600,9 +601,9 @@ function AircraftMarkerView({
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
-        html: `<div class="ac ac--${rules} ${statusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
+        html: `<div class="ac ac--${rules} ${band} ${visualStatusClass} ${selected ? 'ac--selected' : ''} ${dimmed ? 'ac--done' : ''}"><svg viewBox="0 0 24 24" class="ac__glyph" style="transform:rotate(${heading}deg)">${rules === 'ifr' ? GLYPH_IFR : GLYPH_VFR}</svg></div>`,
       }),
-    [rules, statusClass, selected, dimmed, heading],
+    [rules, band, visualStatusClass, selected, dimmed, heading],
   );
 
   const trail = useMemo(() => (preTakeoff ? [] : trailUntil(flight.track, Math.min(t, lastTime))), [flight.track, t, preTakeoff, lastTime]);
@@ -627,6 +628,14 @@ function AircraftMarkerView({
           renderer={trafficRenderer}
           positions={flight.fullRoute}
           pathOptions={{ className: selected ? 'planned planned--selected' : `full-route full-route--${rules}` }}
+          interactive={false}
+        />
+      )}
+            {(showAllRoutes || selected) && flight.diversionRoute && (
+        <Polyline
+          renderer={trafficRenderer}
+          positions={flight.diversionRoute}
+          pathOptions={{ className: 'divert-route' }}
           interactive={false}
         />
       )}
