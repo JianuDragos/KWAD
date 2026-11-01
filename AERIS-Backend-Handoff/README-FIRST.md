@@ -18,7 +18,7 @@ powershell -NoProfile -File .\Test-LLM.ps1
 No Windows execution-policy change is required by this package. If your computer blocks PowerShell scripts, follow its existing policy or run the native server directly from the terminal:
 
 ```powershell
-.\runtime\llama-server.exe -m ".\models\qwen3-4b-instruct-2507-q4_k_m.gguf" -c 4096 -ngl 0 -t 8 -tb 8 --parallel 1 --host 127.0.0.1 --port 18090 --alias aeris-local --jinja --no-webui --offline --cache-ram 0
+.\runtime\llama-server.exe -m ".\models\qwen3-4b-instruct-2507-q4_k_m.gguf" -c 8192 -ngl 0 -t 8 -tb 8 --parallel 1 --host 127.0.0.1 --port 18090 --alias aeris-local --jinja --no-webui --offline --cache-ram 0
 ```
 
 This direct command stays in the terminal; Ctrl+C stops it. The background ownership scripts apply only when Start-LLM.ps1 started the server.

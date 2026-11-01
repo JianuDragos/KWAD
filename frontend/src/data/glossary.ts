@@ -20,8 +20,6 @@ export const HINT = {
   FUEL: 'Combustibilul rămas, în minute de zbor. Contează când avionul trebuie să aștepte sau să devieze.',
   FIR: 'FIR (Flight Information Region): regiunile în care e împărțit spațiul aerian; fiecare are un centru de control. LRBB = România.',
   CATEGORY: 'Tipul de aeronavă, după mărime și motor.',
-  DENSITY_ALT: 'Altitudinea de densitate: cât de „subțire” e aerul. Cu cât e mai mare, cu atât avionul are nevoie de pistă mai lungă.',
-  VFR_WINDOW: 'Intervalul în care vremea permite zboruri la vedere (VFR).',
   TOD: 'TOD (top of descent): punctul de unde avionul începe coborârea spre aeroport.',
   ROD: 'Rata de coborâre (ROD) necesară ca să urmeze panta de apropiere.',
   WCA: 'Unghiul de derivă (WCA): cât trebuie să-și întoarcă pilotul botul avionului în vânt ca să zboare drept pe traseu.',

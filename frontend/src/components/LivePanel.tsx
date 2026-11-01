@@ -22,6 +22,8 @@ export function LivePanel() {
 
   return (
     <aside className="panel" aria-label="Trafic real">
+      <AskAi />
+      <hr className="panel__rule" />
       {positionsError && <p className="notice notice--err">{positionsError}</p>}
       <div className="panel__head">
         <h2 className="panel__title">Trafic real</h2>
@@ -34,7 +36,7 @@ export function LivePanel() {
 
       {!positions && !positionsError && <p className="muted">Se încarcă pozițiile…</p>}
       {positions && airborne.length === 0 && (
-        <p className="notice">Niciun avion în zbor în zona Craiova acum. {positions.source}</p>
+        <p className="notice">Niciun avion în zbor în zona Craiova acum.</p>
       )}
       <ol className="strips">
         {airborne.map((f) => (
@@ -44,8 +46,6 @@ export function LivePanel() {
         ))}
       {(vfrTracking?.vfrFlights ?? []).map((flight) => <p className="notice" key={`vfr-${flight.flightId}`}>{flight.callsign}: {flight.pointCode}, {flight.distanceToPointMeters.toFixed(0)} m, ETA prin punct {flight.etaViaPointMinutes.toFixed(1)} min — {flight.status}</p>)}
       </ol>
-      {positions && <p className="muted small">Sursa: {positions.source}. Actualizare la 15 s.</p>}
-      <AskAi />
     </aside>
   );
 }

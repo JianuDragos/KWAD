@@ -4,7 +4,6 @@
 // 3. Analiză De-la-Decolare-la-Aterizare (6 faze, TOD, ROD 3.0°, WCA, LDR vs 2500m, Sectoare FIR)
 // 4. Decizie VFR Orbită vs. Redirecționare (PNR + scor multi-criterial piste înierbate apropiate)
 import { useEffect, useRef, useState } from 'react';
-import type { FuturePredictionSummary } from '../contracts/backend';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
 import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
@@ -33,14 +32,14 @@ export function DetailsPanel() {
   }
   const { flights } = evaluation.traffic;
   const stats = evaluation.result.stats;
-  const futurePrediction = evaluation.result.futurePrediction;
   const ordered = [...flights].sort((a, b) => sequenceTime(a) - sequenceTime(b));
 
   return (
     <aside className="panel" aria-label="Sosiri">
+      <AskAi context={{ weather: scenario?.weather, aircrafts: scenario?.aircrafts, evaluationResult: evaluation.result }} />
+      <hr className="panel__rule" />
       {error && <p className="notice notice--err">{error}</p>}
 
-      {futurePrediction && <FuturePredictionBox fp={futurePrediction} />}
 
       <div className="panel__head">
         <h2 className="panel__title">Sosiri &amp; Calcule Zbor</h2>
@@ -58,69 +57,7 @@ export function DetailsPanel() {
           </li>
         ))}
       </ol>
-      <AskAi context={{ weather: scenario?.weather, aircrafts: scenario?.aircrafts, evaluationResult: evaluation.result }} />
     </aside>
-  );
-}
-
-function FuturePredictionBox({ fp }: { fp: FuturePredictionSummary }) {
-  const [open, setOpen] = useState(true);
-  const seek = useApp((s) => s.seek);
-  const simTimeSeconds = useApp((s) => s.simTimeSeconds);
-
-  return (
-    <section className="math-box math-box--future" aria-label="Predicția Viitorului 4D">
-      <button className="math-box__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="math-box__title">Predicția Viitorului 4D (T+0 → T+45m)</span>
-        <span className="math-box__badge" title={HINT.DENSITY_ALT}>DA {feetLabel(fp.densityAltitudeFeet)}</span>
-      </button>
-      {open && (
-        <div className="math-box__body">
-          <div className="math-metrics">
-            <div className="math-metric">
-              <span className="math-metric__lbl">Vânt {feetLabel(2000)}</span>
-              <span className="math-metric__val">
-                {fp.windAt2000FtDegrees}° / {fp.windAt2000FtKnots} kt
-              </span>
-            </div>
-            <div className="math-metric">
-              <span className="math-metric__lbl">Vânt {feetLabel(5000)}</span>
-              <span className="math-metric__val">
-                {fp.windAt5000FtDegrees}° / {fp.windAt5000FtKnots} kt
-              </span>
-            </div>
-            <div className="math-metric">
-              <span className="math-metric__lbl" title={HINT.VFR_WINDOW}>Fereastră VFR</span>
-              <span className="math-metric__val">{fp.optimalVfrLandingWindow.split(' ')[0]}</span>
-            </div>
-          </div>
-          <p className="muted small">{fp.trendSummary}</p>
-          <div className="horizon-grid" role="group" aria-label="Orizonturi de predicție (click pentru salt în timp)">
-            {fp.horizons.map((h) => {
-              const targetSec = h.horizonSeconds;
-              const isNear = Math.abs(simTimeSeconds - targetSec) < 150;
-              return (
-                <button
-                  key={h.horizonMinutes}
-                  type="button"
-                  className={`horizon-pill ${h.isVfrLegalAndSafe ? 'is-vfr-ok' : 'is-vfr-warn'} ${isNear ? 'is-active' : ''}`}
-                  onClick={() => seek(targetSec)}
-                  title={`Salt ceas la ${h.formattedTime} (T+${h.horizonMinutes}m) — Trafic activ: ${h.activeAirborneCount}, Holding: ${h.holdingCount}`}
-                >
-                  <span className="horizon-pill__t">T+{h.horizonMinutes}m</span>
-                  <span className="horizon-pill__xw">
-                    RWY {h.recommendedRunway} · {h.predictedCrosswindKnots} kt
-                  </span>
-                  <span className="horizon-pill__load">
-                    {h.activeAirborneCount} av. ({h.holdingCount} hold)
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </section>
   );
 }
 

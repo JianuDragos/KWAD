@@ -200,44 +200,22 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 /* ---------- panou: benzi de zbor ---------- */
 .panel {
   grid-area: panel; overflow: auto; padding: 14px 16px;
+  position: relative; /* ține în panou elementele absolute (ex. eticheta .sr-only), altfel lungesc toată pagina */
   background: var(--console); border-left: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 12px;
 }
+/* Panoul derulează; copiii nu se strâng (altfel caseta de predicție, cu overflow: hidden, ajungea la 1 px). */
+.panel > * { flex-shrink: 0; }
 .panel__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .panel__title { margin: 0; font-size: 18px; font-weight: 600; }
 .panel__count { color: var(--muted); font-size: 13px; text-align: right; }
 .panel__sub { margin: 10px 0 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
 
 /* ---------- casete matematice ---------- */
-.math-box {
-  background: var(--raised); border: 1px solid var(--line-strong); border-left: 3px solid var(--synthetic);
-  border-radius: 4px; overflow: hidden;
-}
-.math-box__toggle {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
-  background: rgba(185, 163, 227, .08); border: 0; padding: 7px 10px; cursor: pointer; text-align: left;
-}
-.math-box__title { font-weight: 600; font-size: 13px; color: var(--text); }
-.math-box__badge { font: 600 11px/1 var(--mono); padding: 2px 6px; border-radius: 3px; background: var(--console); color: var(--synthetic); border: 1px solid var(--line-strong); }
-.math-box__body { padding: 8px 10px; display: grid; gap: 7px; }
-
 .math-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .math-metric { background: var(--console); border: 1px solid var(--line); border-radius: 3px; padding: 4px 6px; display: grid; gap: 1px; }
 .math-metric__lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
 .math-metric__val { font: 600 12px/1.2 var(--mono); color: var(--text); }
-
-.horizon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.horizon-pill {
-  background: var(--console); border: 1px solid var(--line-strong); border-radius: 3px;
-  padding: 4px 6px; display: grid; gap: 1px; text-align: left; cursor: pointer;
-}
-.horizon-pill:hover { border-color: var(--text); }
-.horizon-pill.is-active { border-color: var(--select); box-shadow: inset 0 0 0 1px var(--select); }
-.horizon-pill.is-vfr-ok { border-left: 3px solid var(--cleared); }
-.horizon-pill.is-vfr-warn { border-left: 3px solid var(--hold); }
-.horizon-pill__t { font: 600 11px/1.1 var(--mono); color: var(--text); }
-.horizon-pill__xw { font: 11px/1.1 var(--mono); color: var(--muted); }
-.horizon-pill__load { font-size: 10px; color: var(--faint); }
 
 .math-card {
   background: rgba(29, 37, 35, .55); border: 1px solid var(--line-strong); border-left: 3px solid var(--ifr);
@@ -320,8 +298,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .alts__row { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
 .alts__best { font: 600 10px/1 var(--mono); color: var(--cleared); }
 .alts__score { font-weight: 600; font-size: 12px; color: var(--cleared); }
-.ai { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
-.ai .panel__sub { margin-top: 0; }
 
 /* ---------- cronologie ---------- */
 .timeline { grid-area: tl; background: var(--console); border-top: 1px solid var(--line); display: flex; flex-direction: column; height: 224px; padding: 6px 16px 8px; }
@@ -329,11 +305,13 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .timeline--collapsed .tl-body, .timeline--collapsed .tl-legend { display: none; }
 .tl-toggle { background: transparent; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
 .tl-toggle__chev { color: var(--muted); width: 10px; }
-.tl-body { overflow: auto; flex: 1; position: relative; }
+/* Corpul și rândul cu ore rezervă același loc pentru bara de derulare, ca orele să cadă deasupra rândurilor. */
+.tl-body { overflow: auto; flex: 1; scrollbar-gutter: stable; }
+.tl-rows { position: relative; } /* linia „acum” acoperă toate rândurile, și pe cele derulate */
 .tl-row { display: grid; grid-template-columns: 196px 1fr; align-items: center; height: 28px; cursor: pointer; }
 .tl-row:hover { background: rgba(255, 255, 255, .03); }
 .tl-row.is-selected { background: rgba(255, 255, 255, .06); box-shadow: inset 2px 0 0 var(--select); }
-.tl-row--axis { cursor: default; height: 26px; }
+.tl-row--axis { cursor: default; height: 26px; overflow-y: hidden; scrollbar-gutter: stable; }
 .tl-row--axis:hover { background: none; }
 .tl-label { font: 12px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
 .tl-label--hdr { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -347,7 +325,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .tl-axis { cursor: ew-resize; border-bottom: 1px solid var(--line); touch-action: none; overflow: hidden; }
 .tl-body .tl-track { overflow: hidden; }
 .tl-tick { position: absolute; bottom: 3px; transform: translateX(-50%); font: 11px var(--mono); color: var(--faint); pointer-events: none; }
-.tl-nowlayer { position: absolute; top: 0; bottom: 0; left: 196px; right: 0; pointer-events: none; }
+.tl-nowlayer { position: absolute; top: 0; bottom: 0; left: 197px; right: 0; pointer-events: none; } /* 196px etichetă + 1px bordura pistei */
 .tl-now { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--select); pointer-events: none; }
 .tl-airborne { position: absolute; top: 12px; height: 4px; border-radius: 2px; opacity: .45; }
 .tl-airborne--ifr { background: var(--ifr); }
@@ -380,7 +358,7 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
   .panel { border-left: 0; border-top: 1px solid var(--line); }
   .timeline { height: auto; min-height: 220px; }
   .tl-row { grid-template-columns: 140px 1fr; }
-  .tl-nowlayer { left: 140px; }
+  .tl-nowlayer { left: 141px; }
 }
 
 /* ---------- Live / Demo ---------- */
@@ -410,15 +388,44 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 
 /* ---------- întrebări AI ---------- */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.ai__form { display: flex; gap: 6px; }
-.ai__input { flex: 1; min-width: 0; background: var(--raised); border: 1px solid var(--line-strong); border-radius: 4px; padding: 6px 8px; color: var(--text); font: inherit; }
-.ai__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.ai__chip { background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; padding: 2px 8px; font-size: 12px; color: var(--muted); cursor: pointer; }
-.ai__chip:hover:not(:disabled) { color: var(--text); border-color: var(--text); }
-.ai__answer { display: grid; gap: 6px; margin-top: 8px; }
-.ai__sentences { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+/* Mod AI: modul de consolă, cu bara colorată în stânga ca benzile de zbor; verdele doar pe LED, bară și trimitere. */
+.ai { flex: none; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid var(--cleared); border-radius: 4px; }
+/* Linia care desparte Mod AI de restul panoului (Trafic real / Sosiri). */
+.panel__rule { margin: 0; border: 0; border-top: 1px solid var(--line); }
+.ai__toggle { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 12px 9px 10px; background: transparent; border: 0; cursor: pointer; text-align: left; color: var(--text); }
+.ai__toggle:hover { background: rgba(255, 255, 255, .03); }
+.ai__led { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cleared); box-shadow: 0 0 0 3px rgba(143, 209, 158, .16); cursor: help; }
+.ai__heading { display: grid; gap: 1px; min-width: 0; }
+.ai__title { font-size: 15px; font-weight: 600; line-height: 1.2; }
+.ai__sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai__chev { margin-left: auto; flex: none; width: 8px; height: 8px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: translateY(-2px) rotate(45deg); transition: transform .18s ease; }
+.ai.is-open .ai__chev { transform: translateY(2px) rotate(-135deg); }
+@media (prefers-reduced-motion: reduce) { .ai__chev { transition: none; } }
+.ai__body { padding: 0 12px 12px 10px; display: grid; gap: 10px; }
+.ai__form { display: flex; align-items: center; gap: 6px; background: var(--scope); border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 3px 3px 10px; }
+.ai__form:focus-within { border-color: var(--cleared); }
+.ai__input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 6px 0; color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.ai__input::placeholder { color: var(--faint); }
+.ai__send { flex: none; width: 30px; height: 30px; border-radius: 4px; border: 0; background: var(--cleared); color: var(--scope); font-weight: 700; font-size: 15px; cursor: pointer; }
+.ai__send:disabled { background: var(--line); color: var(--faint); cursor: default; }
+.ai__chips { display: grid; border-top: 1px solid var(--line); }
+.ai__chip { text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 7px 2px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.ai__chip:hover { color: var(--text); }
+.ai__chip:focus-visible { outline-offset: -2px; }
+.ai__thinking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.ai__dots { display: inline-flex; gap: 3px; }
+.ai__dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--cleared); animation: ai-dot 1.2s infinite ease-in-out; }
+.ai__dots i:nth-child(2) { animation-delay: .15s; }
+.ai__dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes ai-dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ai__dots i { animation: none; opacity: .7; } }
+.ai__answer { display: grid; gap: 8px; }
+.ai__new { justify-self: end; background: transparent; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
+.ai__new:hover { color: var(--text); }
+.ai__sentences { margin: 0; padding: 0 0 0 18px; display: grid; gap: 6px; font-size: 14px; line-height: 1.5; }
+.ai__sentences li::marker { color: var(--cleared); }
 
 /* ---------- explicații la hover (data/glossary.ts) ---------- */
-.atis > [title], .clock[title], .pill[title], .rules[title], .strip__when[title], .math-badge[title], .math-box__badge[title],
+.atis > [title], .clock[title], .pill[title], .rules[title], .strip__when[title], .math-badge[title],
 .kv dt[title], .math-metric__lbl[title], .ldr-bar__labels [title], .tl-eta, .tl-slot, .tl-window { cursor: help; }
 .kv dt[title], .math-metric__lbl[title] { text-decoration: underline dotted rgba(154, 168, 163, .55); text-underline-offset: 3px; }

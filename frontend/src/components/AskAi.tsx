@@ -1,4 +1,4 @@
-// Întrebări pentru modelul AI local 4B (POST /api/craiova/explain). Modelul doar alege și traduce în
+// Întrebări pentru modelul AI local (POST /api/craiova/explain). Modelul doar alege și traduce în
 // limbaj natural enunțurile matematice aprobate de backend (din datele reale sau din scenariul Demo).
 import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, explain, type ExplainContext } from '../api/client';
@@ -11,21 +11,10 @@ const DEFAULT_SUGGESTIONS = [
   'Care e distanța de aterizare și unghiul de derivă?',
 ];
 
-/** Motivele de rezervă din backend, spuse pe înțelesul controlorului. */
-const FALLBACK_REASON: Record<string, string> = {
-  inference_unavailable: 'modelul AI local (4B) nu rulează — traducere deterministă activă',
-  timeout: 'modelul AI nu a răspuns în 30 de secunde',
-  no_matching_statement: 'întrebarea nu se potrivește cu datele disponibile',
-  invalid_selection: 'modelul a dat un răspuns invalid',
-  invalid_response: 'modelul a dat un răspuns invalid',
-  incomplete_response: 'răspunsul modelului a fost incomplet',
-  response_too_large: 'răspunsul modelului a fost prea mare',
-};
-
 export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?: ExplainContext; suggestions?: string[] }) {
+  const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<Explanation | null>(null);
-  const [asked, setAsked] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef<AbortController | null>(null);
@@ -41,7 +30,6 @@ export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?
     try {
       const result = await explain(text, controller.signal, context);
       setAnswer(result);
-      setAsked(text);
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       setError(e instanceof ApiError ? e.message : 'Analiza AI nu a putut fi obținută.');
@@ -56,62 +44,84 @@ export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?
   };
 
   return (
-    <section className="ai" aria-label="Analiză AI">
-      <h3 className="panel__sub">Interpretare AI 4B (Calcul → Limbaj Natural)</h3>
-      <form className="ai__form" onSubmit={onSubmit}>
-        <label className="sr-only" htmlFor="ai-question">
-          Întrebare despre calcule matematice, predicție și trafic
-        </label>
-        <input
-          id="ai-question"
-          className="ai__input"
-          value={question}
-          maxLength={1200}
-          placeholder="Întreabă despre predicție, PNR, Podari, TOD…"
-          onChange={(e) => setQuestion(e.target.value)}
-        />
-        <button className="btn btn--primary" type="submit" disabled={busy || !question.trim()}>
-          {busy ? 'Calcul…' : 'Explică'}
-        </button>
-      </form>
-      <div className="ai__chips">
-        {suggestions.map((s) => (
-          <button
-            key={s}
-            className="ai__chip"
-            disabled={busy}
-            onClick={() => {
-              setQuestion(s);
-              void ask(s);
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div aria-live="polite">
-        {busy && <p className="muted small">Se sintetizează calculele fizice în limbaj natural…</p>}
-        {error && !busy && <p className="notice notice--err">{error}</p>}
-        {answer && !busy && (
-          <div className="ai__answer">
-            <p className="muted small">„{asked}”</p>
-            {answer.mode === 'deterministic_fallback' && (
-              <p className="notice notice--warn small">
-                 Sinteza matematică directă ({FALLBACK_REASON[answer.fallbackReason ?? ''] ?? answer.fallbackReason ?? 'rezervă deterministă'}):
-              </p>
-            )}
-            <ul className="ai__sentences">
-              {answer.sentences.map((s, i) => (
-                <li key={answer.statementIds[i] ?? i}>{s}</li>
+    <section className={`ai ${open ? 'is-open' : ''}`} aria-label="Mod AI">
+      <button type="button" className="ai__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="ai__led" title="Modelul rulează pe acest laptop și explică doar calculele verificate de aplicație, fără să inventeze date." />
+        <span className="ai__heading">
+          <span className="ai__title">Mod AI</span>
+          <span className="ai__sub">Întreabă despre trafic, sloturi și vreme</span>
+        </span>
+        <span className="ai__chev" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="ai__body">
+          <form className="ai__form" onSubmit={onSubmit}>
+            <label className="sr-only" htmlFor="ai-question">
+              Întrebare despre trafic, predicție și calcule
+            </label>
+            <input
+              id="ai-question"
+              className="ai__input"
+              value={question}
+              maxLength={1200}
+              placeholder="Pune o întrebare despre trafic…"
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <button className="ai__send" type="submit" disabled={busy || !question.trim()} aria-label="Întreabă">
+              ↑
+            </button>
+          </form>
+          {!answer && !busy && (
+            <div className="ai__chips">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  className="ai__chip"
+                  onClick={() => {
+                    setQuestion(s);
+                    void ask(s);
+                  }}
+                >
+                  {s}
+                </button>
               ))}
-            </ul>
-            <p className="muted small">
-              Surse verificate: {answer.sourceIds.join('; ')}.
-            </p>
+            </div>
+          )}
+
+          <div aria-live="polite">
+            {busy && (
+              <div className="ai__thinking">
+                <span className="ai__dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                Modelul local caută răspunsul (10–20 s)…
+              </div>
+            )}
+            {error && !busy && <p className="notice notice--err">{error}</p>}
+            {answer && !busy && (
+              <div className="ai__answer">
+                <ul className="ai__sentences">
+                  {answer.sentences.map((s, i) => (
+                    <li key={answer.statementIds[i] ?? i}>{s}</li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="ai__new"
+                  onClick={() => {
+                    setAnswer(null);
+                    setQuestion('');
+                  }}
+                >
+                  Altă întrebare
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
