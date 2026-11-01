@@ -106,8 +106,8 @@ export function vfrFinalJoin(rwy: RunwayId): NamedPoint {
   return { id: `F${norm}-3NM`, role: 'Aliniere finală VFR (sintetic)', synthetic: true, ...destination(thr, reciprocal, 3) };
 }
 
-/** Craiova-Sud din AIP (AD 2.32 LRCW). Backendul îl numește greșit „Balta Verde LRBV”. */
-export const LRCW: NamedPoint = { id: 'LRCW', role: 'Craiova-Sud (AIP)', lat: 44.286389, lon: 23.791111 };
+/** Aerodromul Balta Verde Craiova (AD 2.32 LRCW), administrat de Aeroclubul României — singurul aerodrom al Craiovei. */
+export const LRCW: NamedPoint = { id: 'LRCW', role: 'Aerodromul Balta Verde (Aeroclubul României)', lat: 44.286389, lon: 23.791111 };
 
 export const MAP_BOUNDS_WIDE: [[number, number], [number, number]] = [
   [43.98, 23.48],

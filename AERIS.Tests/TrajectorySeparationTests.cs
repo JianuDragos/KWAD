@@ -301,14 +301,15 @@ public class TrajectorySeparationTests
         var alternates = FlightPhysicsAndPredictionEngine.EvaluateAlternatesWithMath(weatherSouth, 65, 11, 30, 95);
 
         var best = alternates.First(a => a.IsRecommendedBestSpot);
-        Assert.Equal("PODARI", best.Code);
+        Assert.Equal("LRCW", best.Code);
+        Assert.Equal(2, alternates.Count);
         Assert.True(best.SafetyScore > 75.0);
 
         var lowFuelSav = new CraiovaAircraft("YR-SAV", "YR-5123", "ICP Savannah S", AircraftCategory.UltralightAndGlider, FlightRules.VFR, false, 11, 120, 60, 420, SpeedKnots: 65, RemainingFuelMinutes: 30);
         var redir = FlightPhysicsAndPredictionEngine.BuildVfrRedirectionAnalysis(lowFuelSav, "26", "26", 26.0, 0.4, false, true, weatherSouth, alternates);
 
         Assert.Equal("REDIRECT_TO_ALTERNATE", redir.RecommendedDecision);
-        Assert.Equal("PODARI", redir.BestAlternateCode);
+        Assert.Equal("LRCW", redir.BestAlternateCode);
     }
 
     [Fact]

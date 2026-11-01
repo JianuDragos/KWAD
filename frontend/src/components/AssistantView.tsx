@@ -20,11 +20,11 @@ const DEMO_TACTICAL_CATEGORIES: TacticalCategory[] = [
   {
     id: 'vfr-decision',
     title: '1. Decizie VFR: Așteptare Rând vs. Alternativă',
-    roleNote: 'Evaluează PNR, combustibilul și plafonul de vânt lateral pe LRCV față de Podari / Balta Verde / Slatina.',
+    roleNote: 'Evaluează PNR, combustibilul și plafonul de vânt lateral pe LRCV față de Aerodromul Balta Verde (LRCW — Aeroclubul României) și Slatina.',
     prompts: [
       'Analizează aeronavele VFR în așteptare: care pot ateriza pe LRCV după IFR și care trebuie redirecționate?',
       'Calculează marja PNR, combustibilul rămas și aerodromul alternativ optim pentru YR-5123.',
-      'Compară condițiile de aterizare pe Podari și Balta Verde pentru traficul VFR afectat de vânt.',
+      'Compară condițiile de aterizare pe Aerodromul Balta Verde (LRCW) și Slatina pentru traficul VFR afectat de vânt.',
     ],
   },
   {
@@ -406,7 +406,7 @@ export function VfrApproachRecommendationBox() {
       <div className="vfr-rec-planes">
         {awaitingVfr.map((f) => {
           const d = f.tacticalDecision;
-          const altLabel = d?.alternate ? `${d.alternate.name} (${d.alternate.bestRunway})` : 'Podari';
+          const altLabel = d?.alternate ? `${d.alternate.name} (${d.alternate.bestRunway})` : 'Aerodromul Balta Verde (LRCW)';
           return (
             <div key={f.id} className="vfr-rec-plane-chip">
               <span className="vfr-rec-plane-chip__cs num">{f.callsign}</span>
@@ -435,7 +435,7 @@ export function VfrApproachRecommendationBox() {
           </li>
           <li>
             <strong>Redirecționare la nevoie:</strong> Dacă vântul lateral depășește plafonul aprobat sau PNR scade sub 12
-            min, redirecționare imediată către Balta Verde (LRCW) sau Podari.
+            min, redirecționare imediată către Aerodromul Balta Verde (LRCW — Aeroclubul României) sau Slatina.
           </li>
         </ol>
       </div>

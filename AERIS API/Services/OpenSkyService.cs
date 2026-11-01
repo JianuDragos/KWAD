@@ -298,7 +298,7 @@ public class OpenSkyService : IOpenSkyService
                 LatestSeconds: baseOffsetSeconds + 300,
                 SpeedKnots: 65,
                 RemainingFuelMinutes: 75,
-                DepartureIcao: "PODARI"
+                DepartureIcao: "LRCW"
             ),
 
             // 4. Aeronava utilitară / agrement - PZL-104 Wilga
