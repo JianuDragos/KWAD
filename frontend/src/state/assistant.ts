@@ -22,7 +22,6 @@ export type VfrApproachRecommendationStatus = 'pending' | 'accepted' | 'rejected
 export interface VfrApproachRecommendation {
   status: VfrApproachRecommendationStatus;
   rejectionNotice: string | null;
-  dismissed: boolean;
   timestamp: string | null;
 }
 
@@ -41,7 +40,6 @@ interface AssistantState {
   acceptVfrApproachRecommendation: () => void;
   rejectVfrApproachRecommendation: () => void;
   resetVfrApproachRecommendation: () => void;
-  dismissVfrNotificationBanner: () => void;
 }
 
 let activeController: AbortController | null = null;
@@ -59,7 +57,6 @@ export const useAssistant = create<AssistantState>()((set, get) => ({
   vfrRecommendation: {
     status: 'pending',
     rejectionNotice: null,
-    dismissed: false,
     timestamp: null,
   },
 
@@ -85,7 +82,6 @@ export const useAssistant = create<AssistantState>()((set, get) => ({
       vfrRecommendation: {
         status: 'accepted',
         rejectionNotice: null,
-        dismissed: false,
         timestamp: nowTimeLabel(),
       },
       messages: [...s.messages, userMsg],
@@ -105,7 +101,6 @@ export const useAssistant = create<AssistantState>()((set, get) => ({
       vfrRecommendation: {
         status: 'rejected',
         rejectionNotice,
-        dismissed: false,
         timestamp: nowTimeLabel(),
       },
       messages: [...s.messages, userMsg],
@@ -117,19 +112,9 @@ export const useAssistant = create<AssistantState>()((set, get) => ({
       vfrRecommendation: {
         status: 'pending',
         rejectionNotice: null,
-        dismissed: false,
         timestamp: null,
       },
     });
-  },
-
-  dismissVfrNotificationBanner: () => {
-    set((s) => ({
-      vfrRecommendation: {
-        ...s.vfrRecommendation,
-        dismissed: true,
-      },
-    }));
   },
 
   sendPrompt: async (rawQuestion, forceSource) => {

@@ -8,7 +8,6 @@ import { LiveTraffic } from './components/LiveTraffic';
 import { MapView, SimTraffic } from './components/MapView';
 import { Timeline } from './components/Timeline';
 import { TopBar } from './components/TopBar';
-import { VfrNotificationBanner } from './components/VfrNotificationBanner';
 import { runwayForWind } from './sim/live';
 import { useLive } from './state/live';
 import { currentMode, useMode } from './state/mode';
@@ -68,7 +67,6 @@ export default function App() {
     return (
       <div className="app app--assistant">
         <TopBar mode={mode} />
-        <VfrNotificationBanner />
         <AssistantView />
       </div>
     );

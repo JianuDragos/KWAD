@@ -369,10 +369,10 @@ export function VfrApproachRecommendationBox() {
               ? 'DIRECTIVĂ CONTROLOR TWR'
               : vfrRec.status === 'accepted'
                 ? 'RECOMANDARE ACCEPTATĂ'
-                : 'RECOMANDARE ASISTENT'}
+                : 'ALERTĂ VFR'}
           </span>
           <h3 className="vfr-rec-box__title">
-            Procedură de Apropiere VFR ({awaitingVfr.length} aeronave în așteptare)
+            {awaitingVfr.length} aeronave VFR așteaptă aterizarea
           </h3>
         </div>
         <span className="muted small">RWY {runway} · {awaitingVfr.length} zboruri VFR</span>
@@ -521,6 +521,9 @@ function DemoTacticalProblemsPanel() {
         </div>
       </div>
 
+      {/* Alerta VFR (2+ aeronave în așteptare) stă prima: punctul roșu din butonul Asistent trimite aici. */}
+      <VfrApproachRecommendationBox />
+
       {/* Selector rapid de condiții meteo pentru testarea fluxului în condiții nefavorabile */}
       <div className="ops-weather-bar">
         <span className="ops-weather-bar__lbl">Condiții scenariu:</span>
@@ -540,9 +543,6 @@ function DemoTacticalProblemsPanel() {
           ))}
         </div>
       </div>
-
-      {/* Recomandare dedicată de abordare / apropiere pentru 2+ aeronave VFR în așteptare */}
-      <VfrApproachRecommendationBox />
 
       {vfrDecisions.length === 0 ? (
         <div className="notice">
@@ -699,7 +699,6 @@ function LiveOperationalSummaryPanel() {
             <strong>METAR LRCV ({metar.flightCategory})</strong>
             <span className="math-badge">QNH {metar.qnhHpa} hPa</span>
           </div>
-          <p className="metar__raw">{metar.rawMetar}</p>
           <p className="small muted">
             {metar.skyConditionDescription} · Vizibilitate {(metar.visibilityMeters / 1000).toFixed(1)} km · Temp {metar.temperatureCelsius}°C
           </p>
