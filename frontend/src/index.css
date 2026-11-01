@@ -490,8 +490,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .ops-weather-pills { display: flex; flex-wrap: wrap; gap: 4px; }
 .ai__chip.is-selected-chip { background: var(--chrome-on); color: var(--scope); border-color: var(--chrome-on); font-weight: 600; }
 
-.ops-summary-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-.ops-summary-actions { display: flex; gap: 6px; align-items: center; }
 
 .vfr-decision-list { display: grid; gap: 10px; }
 .vfr-card {
@@ -501,29 +499,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .vfr-card--divert { border-left-color: var(--divert); }
 .vfr-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .vfr-card__cs { font-size: 15px; font-weight: 600; }
-.vfr-rec-pill {
-  font: 600 11px/1.2 var(--mono); padding: 2px 6px; border-radius: 3px;
-  color: var(--hold); border: 1px solid rgba(240, 180, 67, .45); background: rgba(240, 180, 67, .1);
-}
-.vfr-rec-pill.is-divert {
-  color: var(--divert); border-color: rgba(255, 122, 102, .45); background: rgba(255, 122, 102, .1);
-}
-.vfr-options { display: grid; gap: 5px; }
-.vfr-opt-btn {
-  background: var(--console); border: 1px solid var(--line-strong); border-radius: 4px;
-  padding: 6px 9px; text-align: left; display: grid; gap: 2px; cursor: pointer;
-}
-.vfr-opt-btn:hover { border-color: var(--text); }
-.vfr-opt-btn.is-chosen { border-color: var(--cleared); background: rgba(143, 209, 158, .1); }
-.vfr-opt-btn.is-chosen.is-divert { border-color: var(--divert); background: rgba(255, 122, 102, .1); }
-.vfr-opt-btn__hdr { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; }
-.vfr-opt-btn__sub { font-size: 11px; }
-.vfr-opt-tag {
-  font: 700 11px/1 var(--mono); padding: 2px 5px; border-radius: 2px;
-  background: var(--cleared); color: var(--scope); text-transform: uppercase;
-}
-.vfr-opt-tag.is-divert { background: var(--divert); color: var(--scope); }
-.vfr-card__foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
 
 /* Card compact în DetailsPanel (Demo) + CTA Asistent */
 .math-box--vfr-flow { border-left-color: var(--hold); }
@@ -589,38 +564,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .btn--outline:hover { border-color: var(--text); }
 .btn-link--quiet { color: var(--muted); }
 
-/* Alerta VFR în Asistent (2+ aeronave în așteptare) */
-.vfr-rec-box {
-  background: var(--raised); border: 1px solid var(--line-strong); border-radius: 6px;
-  padding: 14px 16px; display: grid; gap: 12px;
-}
-.vfr-rec-box--pending { border-left: 4px solid var(--hold); }
-.vfr-rec-box--rejected { border-left: 4px solid var(--divert); }
-.vfr-rec-box--accepted { border-left: 4px solid var(--cleared); }
-.vfr-rec-box__head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-.vfr-rec-box__title-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.vfr-rec-box__badge {
-  font: 700 11px/1.2 var(--mono); padding: 2px 6px; border-radius: 3px;
-  background: var(--hold); color: var(--scope); text-transform: uppercase;
-}
-.vfr-rec-box--rejected .vfr-rec-box__badge { background: var(--divert); color: #fff; }
-.vfr-rec-box--accepted .vfr-rec-box__badge { background: var(--cleared); color: var(--scope); }
-.vfr-rec-box__title { margin: 0; font-size: 15px; font-weight: 600; }
-.vfr-rec-box__notice { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 4px; }
-.vfr-rec-box__notice p { margin: 4px 0 0; }
-.vfr-rec-box__notice--rejected { background: rgba(255, 122, 102, .15); border: 1px solid rgba(255, 122, 102, .5); color: #ffb4a8; }
-.vfr-rec-box__notice--accepted { background: rgba(143, 209, 158, .12); border: 1px solid rgba(143, 209, 158, .4); color: #a8e5b6; }
-.vfr-rec-box__notice-icon { font-size: 18px; line-height: 1.2; }
-.vfr-rec-planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-.vfr-rec-plane-chip { background: var(--console); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; display: grid; gap: 2px; }
-.vfr-rec-plane-chip__cs { font-weight: 700; font-size: 15px; }
-.vfr-rec-plane-chip__detail { font-size: 13px; color: var(--hold); }
-.vfr-rec-plane-chip__alt { font-size: 11px; }
-.vfr-rec-proposal { background: var(--console); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; display: grid; gap: 8px; }
-.vfr-rec-proposal__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--cleared); }
-.vfr-rec-proposal__steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; display: grid; gap: 6px; }
-.vfr-rec-proposal__steps li strong { color: var(--text); }
-.vfr-rec-box__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
 
 @media (max-width: 960px) {
   .assistant-workspace { grid-template-columns: 1fr; overflow-y: auto; }
@@ -674,3 +617,18 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .switch.is-on { background: var(--cleared); }
 .switch.is-on::after { transform: translateX(14px); background: var(--scope); }
 @media (prefers-reduced-motion: reduce) { .switch, .switch::after { transition: none; } }
+
+
+/* Alerta planului IFR + VFR, prima în coloana din dreapta a Asistentului (punctul roșu trimite aici). */
+.vfr-alert-banner {
+  display: grid; gap: 10px; padding: 12px 14px; border-radius: 6px;
+  border: 1px solid var(--line-strong); border-left: 4px solid var(--hold); background: var(--raised);
+}
+.vfr-alert-banner__body p { margin: 4px 0 0; }
+.vfr-alert-banner__body { min-width: 0; overflow-wrap: anywhere; }
+.vfr-alert-banner__body > strong { color: var(--hold); }
+.vfr-alert-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.vfr-alert-banner--accepted { border-left-color: var(--cleared); }
+.vfr-alert-banner--accepted .vfr-alert-banner__body > strong { color: var(--cleared); }
+.vfr-alert-banner--rejected { border-left-color: var(--divert); }
+.vfr-alert-banner--rejected .vfr-alert-banner__body > strong { color: var(--divert); }

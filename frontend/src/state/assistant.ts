@@ -17,29 +17,18 @@ export interface AssistantMessage {
   isError?: boolean;
 }
 
-export type VfrApproachRecommendationStatus = 'pending' | 'accepted' | 'rejected';
-
-export interface VfrApproachRecommendation {
-  status: VfrApproachRecommendationStatus;
-  rejectionNotice: string | null;
-  timestamp: string | null;
-}
-
 interface AssistantState {
   messages: AssistantMessage[];
   contextSource: AssistantContextSource;
   busy: boolean;
   draft: string;
-  vfrRecommendation: VfrApproachRecommendation;
 
   setContextSource: (source: AssistantContextSource) => void;
   setDraft: (draft: string) => void;
   clearHistory: () => void;
   sendPrompt: (question: string, forceSource?: AssistantContextSource) => Promise<void>;
   openWithQuestion: (question: string, source: AssistantContextSource) => void;
-  acceptVfrApproachRecommendation: () => void;
-  rejectVfrApproachRecommendation: () => void;
-  resetVfrApproachRecommendation: () => void;
+
 }
 
 let activeController: AbortController | null = null;
@@ -54,67 +43,12 @@ export const useAssistant = create<AssistantState>()((set, get) => ({
   contextSource: 'demo',
   busy: false,
   draft: '',
-  vfrRecommendation: {
-    status: 'pending',
-    rejectionNotice: null,
-    timestamp: null,
-  },
 
   setContextSource: (contextSource) => set({ contextSource }),
   setDraft: (draft) => set({ draft }),
   clearHistory: () => {
     activeController?.abort();
     set({ messages: [], busy: false });
-  },
-
-  acceptVfrApproachRecommendation: () => {
-    const acceptNotice =
-      'S-a acceptat recomandarea Asistentului: aeronavele VFR vor urma procedura optimă de apropiere și eșalonare.';
-    const userMsg: AssistantMessage = {
-      id: `msg-${++msgCounter}`,
-      role: 'controller',
-      text: acceptNotice,
-      contextSource: get().contextSource,
-      createdAtLabel: nowTimeLabel(),
-    };
-    useApp.getState().clearVfrOverrides();
-    set((s) => ({
-      vfrRecommendation: {
-        status: 'accepted',
-        rejectionNotice: null,
-        timestamp: nowTimeLabel(),
-      },
-      messages: [...s.messages, userMsg],
-    }));
-  },
-
-  rejectVfrApproachRecommendation: () => {
-    const rejectionNotice = 'S-a refuzat recomandarea si se vor urma indicatiile controlorului de trafic aerian';
-    const userMsg: AssistantMessage = {
-      id: `msg-${++msgCounter}`,
-      role: 'controller',
-      text: rejectionNotice,
-      contextSource: get().contextSource,
-      createdAtLabel: nowTimeLabel(),
-    };
-    set((s) => ({
-      vfrRecommendation: {
-        status: 'rejected',
-        rejectionNotice,
-        timestamp: nowTimeLabel(),
-      },
-      messages: [...s.messages, userMsg],
-    }));
-  },
-
-  resetVfrApproachRecommendation: () => {
-    set({
-      vfrRecommendation: {
-        status: 'pending',
-        rejectionNotice: null,
-        timestamp: null,
-      },
-    });
   },
 
   sendPrompt: async (rawQuestion, forceSource) => {

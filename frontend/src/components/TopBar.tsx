@@ -1,4 +1,3 @@
-import { getAwaitingVfrFlights } from '../sim/traffic';
 import { useAssistant } from '../state/assistant';
 import { setMode, type Mode } from '../state/mode';
 import { useApp } from '../state/store';
@@ -39,12 +38,7 @@ export function TopBar({ mode }: { mode: Mode }) {
 
 /** Deschide Asistentul; punctul roșu apare cât timp Asistentul are o recomandare la care nu s-a răspuns. */
 function AssistantButton({ active }: { active: boolean }) {
-  const flights = useApp((s) => s.evaluation?.traffic.flights);
-  const simTimeSeconds = useApp((s) => s.simTimeSeconds);
-  const vfrRec = useAssistant((s) => s.vfrRecommendation);
-  const awaitingVfr = flights ? getAwaitingVfrFlights(flights, simTimeSeconds).length : 0;
-  const tacticalDecisions = flights ? flights.filter((f) => f.tacticalDecision !== null).length : 0;
-  const hasRecommendation = (awaitingVfr >= 2 && vfrRec.status === 'pending') || tacticalDecisions > 0;
+  const hasRecommendation = useApp((s) => s.vfrPlan.status === 'proposed');
   return (
     <button
       type="button"

@@ -4,7 +4,7 @@ import type { CraiovaAircraft, CraiovaSimulationResult, TrafficPresetId, Weather
 import { ApiError, evaluateCraiova, fetchScenarioTraffic } from '../api/client';
 import { FALLBACK_FIRS, loadFirsDataset, type FirEntry } from '../data/airspace';
 import { DEFAULT_PRESET_ID, WEATHER_PRESETS } from '../data/weatherPresets';
-import { buildTraffic, type TrafficModel, type VfrResolutionAction } from '../sim/traffic';
+import { buildTacticalTraffic, minArrivalDistance, type TrafficModel, type VfrPlan } from '../sim/traffic';
 import { readFlag, writeFlag } from './prefs';
 
 export const SPEEDS = [1, 10, 60] as const;
@@ -40,7 +40,8 @@ interface AppState {
   error: string | null;
   evaluation: Evaluation | null;
   firs: FirEntry[];
-  vfrOverrides: Record<string, VfrResolutionAction>;
+  vfrPlan: VfrPlan;
+  minDistanceToLrcvNm: number | null;
 
   simTimeSeconds: number;
   playing: boolean;
@@ -57,8 +58,8 @@ interface AppState {
   load: () => Promise<void>;
   setTrafficPreset: (preset: TrafficPresetId) => Promise<void>;
   setWeatherPreset: (id: string) => void;
-  setVfrResolution: (aircraftId: string, action: VfrResolutionAction | null) => void;
-  clearVfrOverrides: () => void;
+  acceptVfrPlan: () => boolean;
+  rejectVfrPlan: () => boolean;
   reset: () => void;
   tick: (dtRealSeconds: number) => void;
   togglePlay: () => void;
@@ -72,9 +73,29 @@ interface AppState {
   setTimelineScope: (scope: TimelineScope) => void;
 }
 
+const newVfrPlan = (): VfrPlan => ({ status: 'idle', acceptedAtSeconds: null, rejectionReason: null });
+
 let inFlight: AbortController | null = null;
 
 export const useApp = create<AppState>()((set, get) => {
+  function updateClock(t: number, from = get().simTimeSeconds) {
+    const s = get();
+    const traffic = s.evaluation?.traffic;
+    if (!traffic || s.evaluation?.revision !== s.scenario?.revision) {
+      set({ simTimeSeconds: t });
+      return;
+    }
+    const distance = minArrivalDistance(traffic, t);
+    const crossedDistance = minArrivalDistance(traffic, t, from);
+    let vfrPlan = s.vfrPlan;
+    if ((vfrPlan.status === 'idle' || vfrPlan.status === 'proposed') &&
+        traffic.flights.some((f) => f.aircraft.flightRules === 'VFR') && crossedDistance !== null) {
+      if (crossedDistance <= 20) vfrPlan = { ...vfrPlan, status: 'rejected', rejectionReason: 'gate' };
+      else if (crossedDistance <= 30) vfrPlan = { ...vfrPlan, status: 'proposed' };
+    }
+    set({ simTimeSeconds: t, minDistanceToLrcvNm: distance, vfrPlan });
+  }
+
   async function evaluate(scenario: Scenario, resetClock: boolean) {
     inFlight?.abort();
     const controller = new AbortController();
@@ -84,7 +105,7 @@ export const useApp = create<AppState>()((set, get) => {
       const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts, useTrajectoryEngine: true }, controller.signal);
       // Răspuns pentru o revizie veche: îl ignorăm.
       if (get().scenario?.revision !== scenario.revision) return;
-      const traffic = buildTraffic(scenario.aircrafts, result, get().firs, get().vfrOverrides);
+      const traffic = buildTacticalTraffic(scenario.aircrafts, result, get().firs, get().vfrPlan);
       const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
       set((s) => ({
         status: 'ok',
@@ -95,6 +116,7 @@ export const useApp = create<AppState>()((set, get) => {
             : traffic.startSeconds
           : clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
       }));
+      updateClock(get().simTimeSeconds, get().simTimeSeconds);
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       set({ status: 'error', error: e instanceof ApiError ? e.message : String(e) });
@@ -108,7 +130,8 @@ export const useApp = create<AppState>()((set, get) => {
     error: null,
     evaluation: null,
     firs: FALLBACK_FIRS,
-    vfrOverrides: {},
+    vfrPlan: newVfrPlan(),
+    minDistanceToLrcvNm: null,
     simTimeSeconds: 0,
     playing: false,
     speed: 10,
@@ -126,7 +149,7 @@ export const useApp = create<AppState>()((set, get) => {
         if (ds.firs.length > FALLBACK_FIRS.length) {
           set((s) => {
             if (!s.evaluation || !s.scenario) return { firs: ds.firs };
-            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs, s.vfrOverrides);
+            const updatedTraffic = buildTacticalTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs, s.vfrPlan);
             return { firs: ds.firs, evaluation: { ...s.evaluation, traffic: updatedTraffic } };
           });
         }
@@ -143,7 +166,7 @@ export const useApp = create<AppState>()((set, get) => {
           weather: preset.weather,
           source: live.source,
         };
-        set({ scenario, initialScenario: scenario, vfrOverrides: {} });
+        set({ scenario, initialScenario: scenario, vfrPlan: newVfrPlan(), minDistanceToLrcvNm: null });
         await evaluate(scenario, true);
       } catch (e) {
         set({ status: 'error', error: e instanceof ApiError ? e.message : String(e) });
@@ -155,7 +178,7 @@ export const useApp = create<AppState>()((set, get) => {
       const weatherPresetId = current?.weatherPresetId ?? DEFAULT_PRESET_ID;
       const weather = current?.weather ?? WEATHER_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)!.weather;
       const nextRev = (current?.revision ?? 0) + 1;
-      set({ status: 'loading', error: null, playing: false, selectedId: null, vfrOverrides: {} });
+      set({ status: 'loading', error: null, playing: false, selectedId: null, vfrPlan: newVfrPlan(), minDistanceToLrcvNm: null });
       try {
         const live = await fetchScenarioTraffic(undefined, trafficPreset);
         const scenario: Scenario = {
@@ -180,69 +203,59 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     setWeatherPreset: (id) => {
+      if (get().vfrPlan.status === 'accepted' || get().vfrPlan.status === 'rejected') return;
       const current = get().scenario;
       const preset = WEATHER_PRESETS.find((p) => p.id === id);
       if (!current || !preset) return;
       const scenario = { ...current, revision: current.revision + 1, weatherPresetId: id, weather: preset.weather };
-      set({ scenario, vfrOverrides: {} });
+      set({ scenario });
       void evaluate(scenario, false);
     },
 
-    setVfrResolution: (aircraftId, action) => {
-      set((s) => {
-        const nextOverrides = { ...s.vfrOverrides };
-        if (action === null) delete nextOverrides[aircraftId];
-        else nextOverrides[aircraftId] = action;
-        if (!s.evaluation || !s.scenario) return { vfrOverrides: nextOverrides };
-        const traffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, s.firs, nextOverrides);
-        const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
-        return {
-          vfrOverrides: nextOverrides,
-          evaluation: { ...s.evaluation, traffic },
-          simTimeSeconds: clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
-        };
-      });
+    acceptVfrPlan: () => {
+      updateClock(get().simTimeSeconds);
+      const s = get();
+      const distance = s.minDistanceToLrcvNm;
+      if (s.status !== 'ok' || !s.scenario || !s.evaluation || s.evaluation.revision !== s.scenario.revision ||
+          s.vfrPlan.status !== 'proposed' || distance === null || distance <= 20 || distance > 30) return false;
+      const vfrPlan: VfrPlan = { status: 'accepted', acceptedAtSeconds: s.simTimeSeconds, rejectionReason: null };
+      const traffic = buildTacticalTraffic(s.scenario.aircrafts, s.evaluation.result, s.firs, vfrPlan);
+      set({ vfrPlan, evaluation: { ...s.evaluation, traffic } });
+      return true;
     },
 
-    clearVfrOverrides: () => {
-      set((s) => {
-        if (!s.evaluation || !s.scenario) return { vfrOverrides: {} };
-        const traffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, s.firs, {});
-        const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
-        return {
-          vfrOverrides: {},
-          evaluation: { ...s.evaluation, traffic },
-          simTimeSeconds: clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
-        };
-      });
+    rejectVfrPlan: () => {
+      updateClock(get().simTimeSeconds);
+      if (get().vfrPlan.status !== 'proposed') return false;
+      set({ vfrPlan: { status: 'rejected', acceptedAtSeconds: null, rejectionReason: 'manual' } });
+      return true;
     },
 
     reset: () => {
       const initial = get().initialScenario;
       if (!initial) return;
       const scenario = { ...initial, revision: (get().scenario?.revision ?? 0) + 1 };
-      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach', vfrOverrides: {} });
+      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach', vfrPlan: newVfrPlan(), minDistanceToLrcvNm: null });
       void evaluate(scenario, true);
     },
 
     tick: (dt) => {
-      const { playing, speed, evaluation, simTimeSeconds } = get();
-      if (!playing || !evaluation) return;
+      const { playing, speed, evaluation, simTimeSeconds, status, scenario } = get();
+      if (!playing || !evaluation || status !== 'ok' || evaluation.revision !== scenario?.revision) return;
       const next = simTimeSeconds + dt * speed;
-      if (next >= evaluation.traffic.endSeconds) set({ simTimeSeconds: evaluation.traffic.endSeconds, playing: false });
-      else set({ simTimeSeconds: next });
+      updateClock(Math.min(next, evaluation.traffic.endSeconds));
+      if (next >= evaluation.traffic.endSeconds) set({ playing: false });
     },
     togglePlay: () => set((s) => ({ playing: !s.playing })),
     setSpeed: (speed) => set({ speed }),
     seek: (t) => {
+      if (get().status !== 'ok') return;
       const ev = get().evaluation;
       if (!ev) return;
       const minSeek = Math.min(ev.traffic.missionStartSeconds, ev.traffic.startSeconds);
       const clamped = clamp(t, minSeek, ev.traffic.endSeconds);
-      set((s) => ({
-        simTimeSeconds: clamped,
-        timelineScope: clamped < ev.traffic.startSeconds - 60 ? 'mission' : s.timelineScope,
-      }));
+      updateClock(clamped);
+      if (clamped < ev.traffic.startSeconds - 60) set({ timelineScope: 'mission' });
     },
     select: (selectedId) => set({ selectedId }),
     setView: (view) => set((s) => ({ view, viewNonce: s.viewNonce + 1 })),
@@ -258,14 +271,13 @@ export const useApp = create<AppState>()((set, get) => {
       writeFlag('aeris.showAltitudeLegend', showAltitudeLegend);
       set({ showAltitudeLegend });
     },
-    setTimelineScope: (timelineScope) =>
-      set((s) => {
-        if (!s.evaluation) return { timelineScope };
-        if (timelineScope === 'approach' && s.simTimeSeconds < s.evaluation.traffic.startSeconds) {
-          return { timelineScope, simTimeSeconds: s.evaluation.traffic.startSeconds };
-        }
-        return { timelineScope };
-      }),
+    setTimelineScope: (timelineScope) => {
+      set({ timelineScope });
+      const { evaluation, simTimeSeconds } = get();
+      if (evaluation && timelineScope === 'approach' && simTimeSeconds < evaluation.traffic.startSeconds) {
+        updateClock(evaluation.traffic.startSeconds);
+      }
+    },
   };
 });
 

@@ -25,9 +25,9 @@ import {
   type RunwayId,
 } from '../data/geo';
 import { destination, distanceNm, greatCircleInterpolate, greatCirclePoints, type LatLon } from './geomath';
-import type { TrackPoint } from './interpolate';
+import { positionAt, type TrackPoint } from './interpolate';
 import { appendLeg, appendRacetrack, trackArrivingAt, type PlannedFix } from './synthetic';
-import { feetLabel, metersToFeet } from './units';
+import { clockLabel, feetLabel, metersToFeet } from './units';
 
 export type FlightKind = 'approach' | 'hold' | 'divert';
 export type VfrResolutionAction = 'wait_and_land_lrcv' | 'divert_alternate';
@@ -98,6 +98,165 @@ export interface TrafficModel {
   /** Primul moment de decolare din întregul scenariu (pentru vizualizarea De la Decolare). */
   missionStartSeconds: number;
   endSeconds: number;
+}
+
+export interface VfrPlan {
+  status: 'idle' | 'proposed' | 'accepted' | 'rejected';
+  acceptedAtSeconds: number | null;
+  rejectionReason: 'manual' | 'gate' | null;
+}
+
+/** Într-un grup mixt, VFR-urile din holding nu declanșează poarta sosirilor IFR. */
+export function minArrivalDistance(traffic: TrafficModel, t: number, from = t): number | null {
+  const ifr = traffic.flights.filter((f) => f.aircraft.flightRules === 'IFR');
+  const arrivals = ifr.length ? ifr : traffic.flights;
+  const distances: number[] = [];
+  for (const flight of arrivals) {
+    const landing = flight.resolvedLandingSeconds ?? Infinity;
+    const times = [t];
+    // Un salt al ceasului peste aterizare trebuie să traverseze și poarta de 20 NM.
+    if (t > from) {
+      times.push(...flight.track.filter((p) => p.timeSeconds > from && p.timeSeconds <= t && p.timeSeconds <= landing).map((p) => p.timeSeconds));
+    }
+    for (const time of times) {
+      if (time < flight.takeoffSeconds || time > landing || (time === t && time >= landing)) continue;
+      const pos = positionAt(flight.track, time);
+      if (pos) distances.push(distanceNm(pos, ARP));
+    }
+  }
+  return distances.length ? Math.round(Math.min(...distances) * 1e9) / 1e9 : null;
+}
+
+/** Planul Demo are un singur proprietar: holding până la Accept, apoi aterizare integrată. */
+export function buildTacticalTraffic(
+  aircrafts: CraiovaAircraft[],
+  result: CraiovaSimulationResult,
+  firs: FirEntry[],
+  plan: VfrPlan,
+): TrafficModel {
+  const model = buildTraffic(aircrafts, result, firs);
+  const ifr = model.flights.filter((f) => f.aircraft.flightRules === 'IFR' && f.resolvedLandingSeconds !== null)
+    .sort((a, b) => a.resolvedLandingSeconds! - b.resolvedLandingSeconds!);
+  let lastLanding = -Infinity;
+  for (const flight of ifr) {
+    const touchdown = Math.max(flight.resolvedLandingSeconds!, lastLanding + (5 / 140) * 3600);
+    const shift = touchdown - flight.resolvedLandingSeconds!;
+    if (shift > 0) {
+      flight.track = flight.track.map((p) => ({ ...p, timeSeconds: p.timeSeconds + shift }));
+      flight.takeoffSeconds += shift;
+      if (flight.todPoint) flight.todPoint = { ...flight.todPoint, timeSeconds: flight.todPoint.timeSeconds + shift };
+      flight.landingSeconds = touchdown;
+      flight.resolvedLandingSeconds = touchdown;
+      flight.slot = tacticalSlot(flight.aircraft, touchdown);
+    }
+    lastLanding = touchdown;
+  }
+  const holdingEnd = Math.max(model.endSeconds, (Number.isFinite(lastLanding) ? lastLanding : 0) + 45 * 60);
+  let previousFinalSpeed = 140;
+  const vfrFlights = model.flights.filter((f) => f.aircraft.flightRules === 'VFR');
+  const vfrOrder = optimalVfrOrder(vfrFlights, model.runway, lastLanding, plan.acceptedAtSeconds ?? model.startSeconds);
+  const orderedFlights = [...model.flights.filter((f) => f.aircraft.flightRules === 'IFR'), ...vfrOrder];
+  const flights = orderedFlights.map((flight): FlightView => {
+    if (flight.aircraft.flightRules !== 'VFR') return flight;
+    const aircraft = flight.aircraft;
+    const speed = Math.max(55, aircraft.speedKnots ?? 90);
+    const finalSpeed = speed * 0.85;
+    const entry = selectVfrEntryForOrigin(flight.origin, 0);
+    const fixes = buildVfrOriginToEntryFixes(flight.origin, entry, Math.max(1500, flight.advisory?.takeoffToLanding?.cruiseAltitudeFeet ?? 2200));
+    const holdAltitude = 1500 + vfrFlights.indexOf(flight) * 1000;
+    const center = destination(ARP, 180, 2.5);
+    const thr = threshold(model.runway);
+    const join = destination(thr, (runwayTrueBearing(model.runway) + 180) % 360, 6);
+    let track = trackArrivingAt(fixes, buildVfrSpeeds(fixes, speed), aircraft.etaSeconds - 300);
+    const accepted = plan.status === 'accepted' && plan.acceptedAtSeconds !== null;
+    const timing = tacticalVfrTiming(flight, model.runway, lastLanding, previousFinalSpeed, plan.acceptedAtSeconds ?? 0);
+    const holdUntil = accepted ? timing.holdUntil : holdingEnd;
+    track = appendRacetrack(track, center, runwayTrueBearing(model.runway), 'Right', holdAltitude, speed, holdUntil);
+    let touchdown: number | null = null;
+    if (accepted) {
+      track = appendLeg(track, join, 1500, speed);
+      track = appendLeg(track, thr, thr.elevationFt, finalSpeed);
+      touchdown = track[track.length - 1].timeSeconds;
+      lastLanding = touchdown;
+      previousFinalSpeed = finalSpeed;
+      track = withRollout(track, model.runway);
+    }
+    const fullRoute: [number, number][] = track.map((p) => [p.latitudeDeg, p.longitudeDeg]);
+    return {
+      ...flight,
+      entryFixId: entry.id,
+      kind: accepted ? 'approach' : 'hold',
+      status: accepted ? 'ClearedForApproach' : 'HoldInOrbitRecommended',
+      slot: touchdown === null ? null : tacticalSlot(aircraft, touchdown),
+      routeLabel: `${flight.origin.icao} → ${entry.id} → holding Cârcea${accepted ? ` → RWY ${model.runway}` : ' (radio TWR)'}`,
+      fullRoute,
+      plannedRoute: fullRoute,
+      diversionRoute: null,
+      alternate: null,
+      tacticalDecision: null,
+      track,
+      takeoffSeconds: track[0].timeSeconds,
+      landingSeconds: touchdown,
+      resolvedLandingSeconds: touchdown,
+    };
+  });
+  const accepted = plan.status === 'accepted';
+  return {
+    ...model,
+    flights,
+    missionStartSeconds: Math.floor(Math.min(...flights.map((f) => f.takeoffSeconds), model.missionStartSeconds) / 60) * 60,
+    endSeconds: accepted
+      ? Math.max(model.endSeconds, Math.ceil(((Number.isFinite(lastLanding) ? lastLanding : 0) + 120) / 60) * 60)
+      : aircrafts.some((a) => a.flightRules === 'VFR') ? holdingEnd : model.endSeconds,
+  };
+}
+
+function tacticalVfrTiming(flight: FlightView, runway: RunwayId, previousLanding: number, previousSpeed: number, acceptedAt: number) {
+  const speed = Math.max(55, flight.aircraft.speedKnots ?? 90);
+  const finalSpeed = speed * 0.85;
+  const center = destination(ARP, 180, 2.5);
+  const entry = selectVfrEntryForOrigin(flight.origin, 0);
+  const join = destination(threshold(runway), (runwayTrueBearing(runway) + 180) % 360, 6);
+  const approachSeconds = (distanceNm(center, join) / speed + 6 / finalSpeed) * 3600;
+  // 4 NM pe finala comună, inclusiv când următorul VFR este mai lent decât liderul.
+  const gap = Math.max(4 / finalSpeed, 6 / finalSpeed - 2 / previousSpeed) * 3600;
+  const targetLanding = Math.max(flight.aircraft.etaSeconds, previousLanding + gap, acceptedAt + approachSeconds);
+  const holdUntil = Math.max(acceptedAt, targetLanding - approachSeconds);
+  const holdStart = flight.aircraft.etaSeconds - 300 + (distanceNm(entry, center) / speed) * 3600;
+  const holdExit = holdStart + Math.ceil(Math.max(0, holdUntil - holdStart) / 240) * 240;
+  return { holdUntil, touchdown: holdExit + approachSeconds, finalSpeed };
+}
+
+function optimalVfrOrder(flights: FlightView[], runway: RunwayId, lastIfrLanding: number, acceptedAt: number): FlightView[] {
+  // ponytail: comparație exactă pentru max. 8 VFR; pentru grupuri mai mari, înlocuiește fallback-ul ETA cu un scheduler dedicat.
+  if (flights.length > 8) return [...flights].sort((a, b) => a.aircraft.etaSeconds - b.aircraft.etaSeconds);
+  let best = flights;
+  let bestEnd = Infinity;
+  let bestDelay = Infinity;
+  function visit(remaining: FlightView[], order: FlightView[], previousLanding: number, previousSpeed: number, delay: number) {
+    if (remaining.length === 0) {
+      if (previousLanding < bestEnd || (previousLanding === bestEnd && delay < bestDelay)) {
+        best = order;
+        bestEnd = previousLanding;
+        bestDelay = delay;
+      }
+      return;
+    }
+    for (const flight of remaining) {
+      const timing = tacticalVfrTiming(flight, runway, previousLanding, previousSpeed, acceptedAt);
+      if (timing.touchdown > bestEnd) continue;
+      visit(remaining.filter((f) => f !== flight), [...order, flight], timing.touchdown, timing.finalSpeed,
+        delay + Math.max(0, timing.touchdown - flight.aircraft.etaSeconds));
+    }
+  }
+  visit([...flights].sort((a, b) => a.callsign.localeCompare(b.callsign)), [], lastIfrLanding, 140, 0);
+  return best;
+}
+
+function tacticalSlot(aircraft: CraiovaAircraft, t: number): ScheduleSlot {
+  const delaySeconds = Math.max(0, t - aircraft.etaSeconds);
+  return { aircraftId: aircraft.id, flightRules: aircraft.flightRules, calculatedTimeSeconds: t,
+    delaySeconds, delayMinutes: delaySeconds / 60, formattedTime: clockLabel(50400 + t, false) };
 }
 
 /** Identifică aeronavele VFR care sunt în așteptare pentru aterizare (în holding, nealocate sau în procedură de apropiere). */
