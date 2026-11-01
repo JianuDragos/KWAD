@@ -53,22 +53,21 @@ describe('store', () => {
     expect(s.evaluation?.result.weather.windDirectionDegrees).toBe(180);
   });
 
-  it('reset readuce exact scenariul inițial și ceasul la început', async () => {
+  it('reset reia scenariul și vremea selectate, cu ceasul la început', async () => {
     const useApp = await freshStore();
     await useApp.getState().load();
-    const initial = useApp.getState().evaluation!;
-
     useApp.getState().setWeatherPreset('cross-critical');
     await new Promise((r) => setTimeout(r, 0));
-    useApp.getState().seek(initial.traffic.startSeconds + 500);
+    const current = useApp.getState().evaluation!;
+    useApp.getState().seek(current.traffic.startSeconds + 500);
     useApp.getState().select('YR-SAV');
 
     useApp.getState().reset();
     await new Promise((r) => setTimeout(r, 0));
     const s = useApp.getState();
-    expect(s.scenario?.weatherPresetId).toBe('calm');
-    expect(s.evaluation?.traffic).toEqual(initial.traffic);
-    expect(s.simTimeSeconds).toBe(initial.traffic.startSeconds);
+    expect(s.scenario?.weatherPresetId).toBe('cross-critical');
+    expect(s.evaluation?.traffic).toEqual(current.traffic);
+    expect(s.simTimeSeconds).toBe(current.traffic.startSeconds);
     expect(s.selectedId).toBeNull();
     expect(s.playing).toBe(false);
   });
@@ -162,16 +161,16 @@ describe('poarta tactică 30–20 NM', () => {
     expect(app.getState().evaluation!.traffic.flights.every((f) => f.resolvedLandingSeconds !== null)).toBe(true);
   });
 
-  it('refuzul manual este definitiv pentru grup, inclusiv după seek înapoi', async () => {
+  it('refuzul rămâne blocat la avansare și sub pragul de 20 NM', async () => {
     const app = await proposedStore();
-    const t = app.getState().simTimeSeconds;
     expect(app.getState().rejectVfrPlan()).toBe(true);
-    expect(app.getState().vfrPlan.rejectionReason).toBe('manual');
-    app.getState().seek(app.getState().evaluation!.traffic.startSeconds);
-    app.getState().seek(t);
+    app.getState().seek(app.getState().simTimeSeconds + 1);
+    expect(app.getState().acceptVfrPlan()).toBe(false);
+    app.getState().seek(300);
+    app.getState().seek(299);
+    expect(app.getState().vfrPlan.status).toBe('rejected');
     expect(app.getState().acceptVfrPlan()).toBe(false);
     app.getState().setWeatherPreset('west');
-    expect(app.getState().vfrPlan.status).toBe('rejected');
     expect(app.getState().scenario!.weatherPresetId).toBe('calm');
   });
 
@@ -237,4 +236,132 @@ describe('limitele exacte ale ferestrei tactice', () => {
     expect(app.getState().vfrPlan.status).toBe('rejected');
     expect(app.getState().acceptVfrPlan()).toBe(false);
   });
+});
+
+
+describe('reluarea simulării înaintea notificării', () => {
+  it.each(['accepted', 'manual', 'gate'] as const)('șterge decizia %s și reaplică holdingul la derularea înainte de notificare', async (decision) => {
+    const app = await proposedStore();
+    const proposedAt = app.getState().simTimeSeconds;
+    if (decision === 'accepted') app.getState().acceptVfrPlan();
+    else if (decision === 'manual') app.getState().rejectVfrPlan();
+    else app.getState().seek(300);
+    const calls = evaluateCraiova.mock.calls.length;
+    app.getState().seek(app.getState().evaluation!.traffic.startSeconds);
+    expect(app.getState().vfrPlan).toEqual({ status: 'idle', acceptedAtSeconds: null, rejectionReason: null });
+    expect(app.getState().minDistanceToLrcvNm).toBeGreaterThan(30);
+    expect(app.getState().evaluation!.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR')
+      .every((f) => f.slot === null && f.resolvedLandingSeconds === null && f.kind === 'hold')).toBe(true);
+    app.getState().seek(proposedAt);
+    expect(app.getState().vfrPlan.status).toBe('proposed');
+    expect(app.getState().acceptVfrPlan()).toBe(true);
+    expect(evaluateCraiova.mock.calls).toHaveLength(calls);
+  });
+
+  it('ascunde și o propunere fără răspuns, apoi o afișează din nou la redare', async () => {
+    const app = await proposedStore();
+    const target = app.getState().simTimeSeconds;
+    app.getState().seek(app.getState().evaluation!.traffic.startSeconds);
+    expect(app.getState().vfrPlan.status).toBe('idle');
+    app.getState().setSpeed(1);
+    app.getState().togglePlay();
+    app.getState().tick(target - app.getState().simTimeSeconds);
+    expect(app.getState().vfrPlan.status).toBe('proposed');
+  });
+
+  it('schimbarea vremii reia notificarea de la un început sigur pe noua rută', async () => {
+    const app = await proposedStore();
+    app.getState().togglePlay();
+    app.getState().setWeatherPreset('cross-critical');
+    await new Promise((r) => setTimeout(r, 0));
+    const s = app.getState();
+    expect(s.scenario?.weatherPresetId).toBe('cross-critical');
+    expect(s.simTimeSeconds).toBe(s.evaluation!.traffic.startSeconds);
+    expect(s.vfrPlan.status).toBe('idle');
+    expect(s.minDistanceToLrcvNm).toBeGreaterThan(30);
+    expect(s.playing).toBe(false);
+  });
+
+  it.each(['calm', 'west', 'cross-moderate', 'cross-critical'])('Reset păstrează vremea %s și traficul Eurasia, înainte de notificare', async (weather) => {
+    const app = await freshStore();
+    await app.getState().load();
+    await app.getState().setTrafficPreset('eurasia');
+    app.getState().setWeatherPreset(weather);
+    await new Promise((r) => setTimeout(r, 0));
+    app.getState().seek(app.getState().evaluation!.traffic.endSeconds);
+    app.getState().reset();
+    await new Promise((r) => setTimeout(r, 0));
+    const s = app.getState();
+    expect(s.scenario?.trafficPreset).toBe('eurasia');
+    expect(s.scenario?.weatherPresetId).toBe(weather);
+    expect(s.timelineScope).toBe('approach');
+    expect(s.simTimeSeconds).toBe(s.evaluation!.traffic.startSeconds);
+    expect(s.vfrPlan.status).toBe('idle');
+    expect(s.minDistanceToLrcvNm).toBeGreaterThan(30);
+  });
+});
+
+
+describe('revenirea în fereastra de decizie după orice răspuns', () => {
+  it.each(['accepted', 'manual', 'gate'] as const)('%s: reafișează propunerea la revenirea între 30 și 20 NM, fără a trece de marcaj', async (decision) => {
+    const app = await proposedStore();
+    const firstWindowTime = app.getState().simTimeSeconds;
+    app.getState().seek(firstWindowTime + 20);
+    if (decision === 'accepted') app.getState().acceptVfrPlan();
+    else if (decision === 'manual') app.getState().rejectVfrPlan();
+    else app.getState().seek(300);
+    const callCount = evaluateCraiova.mock.calls.length;
+    app.getState().seek(firstWindowTime + 5);
+    const s = app.getState();
+    expect(s.simTimeSeconds).toBeGreaterThan(s.evaluation!.traffic.notificationSeconds!);
+    expect(s.minDistanceToLrcvNm).toBeGreaterThan(20);
+    expect(s.minDistanceToLrcvNm).toBeLessThan(30);
+    expect(s.vfrPlan).toEqual({ status: 'proposed', acceptedAtSeconds: null, rejectionReason: null });
+    expect(s.evaluation!.traffic.flights.filter((f) => f.aircraft.flightRules === 'VFR')
+      .every((f) => f.kind === 'hold' && f.slot === null && f.resolvedLandingSeconds === null)).toBe(true);
+    expect(evaluateCraiova.mock.calls).toHaveLength(callCount);
+    expect(app.getState().acceptVfrPlan()).toBe(true);
+  });
+
+  it('permite repetarea Refuz → derulare înapoi → Accept fără resetarea scenariului', async () => {
+    const app = await proposedStore();
+    const t = app.getState().simTimeSeconds;
+    for (let n = 0; n < 2; n++) {
+      app.getState().seek(t + 20);
+      expect(app.getState().rejectVfrPlan()).toBe(true);
+      app.getState().seek(t + 5);
+      expect(app.getState().vfrPlan.status).toBe('proposed');
+      expect(app.getState().acceptVfrPlan()).toBe(true);
+      app.getState().seek(t);
+      expect(app.getState().vfrPlan.status).toBe('proposed');
+    }
+  });
+});
+
+it('un IFR ulterior la 25 NM nu redeschide decizia după poarta primului IFR', async () => {
+  const app = await freshStore();
+  await app.getState().load();
+  const { destination } = await import('../sim/geomath');
+  const { ARP } = await import('../data/geo');
+  const evaluation = app.getState().evaluation!;
+  const flights = evaluation.traffic.flights;
+  const ifr = flights.filter((f) => f.aircraft.flightRules === 'IFR').slice(0, 2).map((f, index) => {
+    const shift = index * 400;
+    return { ...f, takeoffSeconds: shift, resolvedLandingSeconds: shift + 300,
+      track: [35, 30, 20, 0].map((distance, i) => {
+        const p = destination(ARP, 0, distance);
+        return { timeSeconds: shift + i * 100, latitudeDeg: p.lat, longitudeDeg: p.lon,
+          altitudeMeters: 1700, source: 'synthetic' as const };
+      }) };
+  });
+  app.setState({ simTimeSeconds: 0, evaluation: { ...evaluation, traffic: { ...evaluation.traffic,
+    startSeconds: 0, endSeconds: 1000, notificationSeconds: 100,
+    flights: [...ifr, ...flights.filter((f) => f.aircraft.flightRules === 'VFR')] } } });
+  app.getState().seek(550);
+  expect(app.getState().vfrPlan.rejectionReason).toBe('gate');
+  app.getState().seek(549);
+  expect(app.getState().minDistanceToLrcvNm).toBeGreaterThan(20);
+  expect(app.getState().minDistanceToLrcvNm).toBeLessThan(30);
+  expect(app.getState().vfrPlan.status).toBe('rejected');
+  expect(app.getState().acceptVfrPlan()).toBe(false);
 });

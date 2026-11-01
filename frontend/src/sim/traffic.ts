@@ -93,11 +93,13 @@ export interface FlightView {
 export interface TrafficModel {
   runway: RunwayId;
   flights: FlightView[];
-  /** Fereastra tactică de apropiere LRCV (implicit ~13 min înainte de primul ETA). */
+  /** Începutul ferestrei de apropiere; în Demo include minimum două minute înainte de notificare. */
   startSeconds: number;
   /** Primul moment de decolare din întregul scenariu (pentru vizualizarea De la Decolare). */
   missionStartSeconds: number;
   endSeconds: number;
+  /** Prima trecere a sosirilor prin 30 NM; nu depinde de decizia Accept/Reject. */
+  notificationSeconds?: number | null;
 }
 
 export interface VfrPlan {
@@ -125,6 +127,46 @@ export function minArrivalDistance(traffic: TrafficModel, t: number, from = t): 
     }
   }
   return distances.length ? Math.round(Math.min(...distances) * 1e9) / 1e9 : null;
+}
+
+/** Folosește aceeași interpolare ca harta, inclusiv când un segment traversează cercul și iese iar. */
+function firstNotificationSeconds(flights: FlightView[]): number | null {
+  if (!flights.some((f) => f.aircraft.flightRules === 'VFR')) return null;
+  const ifr = flights.filter((f) => f.aircraft.flightRules === 'IFR');
+  let first: number | null = null;
+  for (const flight of ifr.length ? ifr : flights) {
+    const distanceAt = (t: number) => distanceNm(positionAt(flight.track, t)!, ARP);
+    for (let i = 1; i < flight.track.length; i++) {
+      const start = flight.track[i - 1].timeSeconds;
+      const end = Math.min(flight.track[i].timeSeconds, flight.resolvedLandingSeconds ?? Infinity, first ?? Infinity);
+      if (start > end) break;
+      if (distanceAt(start) <= 30) { first = start; break; }
+      if (end <= start) continue;
+      let inside = end;
+      if (distanceAt(inside) > 30) {
+        // Caută punctul cel mai apropiat de aeroport pe segment, nu doar capetele lui.
+        let lo = start;
+        let hi = end;
+        for (let step = 0; step < 32; step++) {
+          const a = lo + (hi - lo) / 3;
+          const b = hi - (hi - lo) / 3;
+          if (distanceAt(a) < distanceAt(b)) hi = b;
+          else lo = a;
+        }
+        inside = (lo + hi) / 2;
+        if (distanceAt(inside) > 30) continue;
+      }
+      let outside = start;
+      for (let step = 0; step < 32; step++) {
+        const mid = (outside + inside) / 2;
+        if (distanceAt(mid) <= 30) inside = mid;
+        else outside = mid;
+      }
+      first = inside;
+      break;
+    }
+  }
+  return first;
 }
 
 /** Planul Demo are un singur proprietar: holding până la Accept, apoi aterizare integrată. */
@@ -201,10 +243,15 @@ export function buildTacticalTraffic(
     };
   });
   const accepted = plan.status === 'accepted';
+  const notificationSeconds = firstNotificationSeconds(flights);
+  const startSeconds = notificationSeconds === null ? model.startSeconds
+    : Math.min(model.startSeconds, Math.floor((notificationSeconds - 120) / 60) * 60);
   return {
     ...model,
     flights,
-    missionStartSeconds: Math.floor(Math.min(...flights.map((f) => f.takeoffSeconds), model.missionStartSeconds) / 60) * 60,
+    startSeconds,
+    notificationSeconds,
+    missionStartSeconds: Math.floor(Math.min(...flights.map((f) => f.takeoffSeconds), model.missionStartSeconds, startSeconds) / 60) * 60,
     endSeconds: accepted
       ? Math.max(model.endSeconds, Math.ceil(((Number.isFinite(lastLanding) ? lastLanding : 0) + 120) / 60) * 60)
       : aircrafts.some((a) => a.flightRules === 'VFR') ? holdingEnd : model.endSeconds,

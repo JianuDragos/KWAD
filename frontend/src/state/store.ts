@@ -80,20 +80,34 @@ let inFlight: AbortController | null = null;
 export const useApp = create<AppState>()((set, get) => {
   function updateClock(t: number, from = get().simTimeSeconds) {
     const s = get();
-    const traffic = s.evaluation?.traffic;
-    if (!traffic || s.evaluation?.revision !== s.scenario?.revision) {
+    let evaluation = s.evaluation;
+    if (!evaluation || evaluation.revision !== s.scenario?.revision) {
       set({ simTimeSeconds: t });
       return;
     }
+    let traffic = evaluation.traffic;
+    let vfrPlan = s.vfrPlan;
+    const rewinding = t < from;
+    const replayDistance = rewinding ? minArrivalDistance(traffic, t, traffic.notificationSeconds ?? t) : null;
+    const beforeNotification = traffic.notificationSeconds != null && t < traffic.notificationSeconds;
+    // Reia propunerea în fereastra inițială; un IFR ulterior nu redeschide poarta deja depășită.
+    const backInWindow = replayDistance !== null && replayDistance > 20 && replayDistance <= 30;
+    if (rewinding && (beforeNotification || backInWindow) && vfrPlan.status !== 'idle') {
+      const wasAccepted = vfrPlan.status === 'accepted';
+      vfrPlan = newVfrPlan();
+      if (wasAccepted && s.scenario) {
+        traffic = buildTacticalTraffic(s.scenario.aircrafts, evaluation.result, s.firs, vfrPlan);
+        evaluation = { ...evaluation, traffic };
+      }
+    }
     const distance = minArrivalDistance(traffic, t);
     const crossedDistance = minArrivalDistance(traffic, t, from);
-    let vfrPlan = s.vfrPlan;
     if ((vfrPlan.status === 'idle' || vfrPlan.status === 'proposed') &&
         traffic.flights.some((f) => f.aircraft.flightRules === 'VFR') && crossedDistance !== null) {
       if (crossedDistance <= 20) vfrPlan = { ...vfrPlan, status: 'rejected', rejectionReason: 'gate' };
       else if (crossedDistance <= 30) vfrPlan = { ...vfrPlan, status: 'proposed' };
     }
-    set({ simTimeSeconds: t, minDistanceToLrcvNm: distance, vfrPlan });
+    set({ simTimeSeconds: t, minDistanceToLrcvNm: distance, vfrPlan, evaluation });
   }
 
   async function evaluate(scenario: Scenario, resetClock: boolean) {
@@ -208,8 +222,8 @@ export const useApp = create<AppState>()((set, get) => {
       const preset = WEATHER_PRESETS.find((p) => p.id === id);
       if (!current || !preset) return;
       const scenario = { ...current, revision: current.revision + 1, weatherPresetId: id, weather: preset.weather };
-      set({ scenario });
-      void evaluate(scenario, false);
+      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach', vfrPlan: newVfrPlan(), minDistanceToLrcvNm: null });
+      void evaluate(scenario, true);
     },
 
     acceptVfrPlan: () => {
@@ -232,9 +246,9 @@ export const useApp = create<AppState>()((set, get) => {
     },
 
     reset: () => {
-      const initial = get().initialScenario;
-      if (!initial) return;
-      const scenario = { ...initial, revision: (get().scenario?.revision ?? 0) + 1 };
+      const current = get().scenario;
+      if (!current) return;
+      const scenario = { ...current, revision: current.revision + 1 };
       set({ scenario, playing: false, selectedId: null, timelineScope: 'approach', vfrPlan: newVfrPlan(), minDistanceToLrcvNm: null });
       void evaluate(scenario, true);
     },

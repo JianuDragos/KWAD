@@ -107,3 +107,21 @@ it('rezolvă întregul grup standard cu ROMATSA și păstrează optimul la reord
   expect(a.flights.every((f) => f.slot !== null && f.resolvedLandingSeconds !== null)).toBe(true);
   expect(finish(a)).toBeCloseTo(finish(b), 5);
 });
+
+
+it.each(WEATHER_PRESETS)('$id: ambele scenarii încep cu minimum două minute înainte de prima trecere prin 30 NM', ({ weather }) => {
+  for (const preset of ['default', 'eurasia'] as const) {
+    const input = mock.liveTraffic(preset).traffic;
+    const response = mock.evaluateSimulation(input, weather, 'test');
+    const model = buildTacticalTraffic(input, response, FALLBACK_FIRS, { ...pending, status: 'idle' });
+    // Scanare în timp, independentă de calculul momentului de notificare din generator.
+    let first30: number | null = null;
+    for (let t = Math.max(model.missionStartSeconds, model.startSeconds - 1800); t < model.endSeconds; t++) {
+      const distance = minArrivalDistance(model, t);
+      if (distance !== null && distance <= 30) { first30 = t; break; }
+    }
+    expect(first30).not.toBeNull();
+    expect(first30! - model.startSeconds).toBeGreaterThanOrEqual(120);
+    expect(minArrivalDistance(model, model.startSeconds)).toBeGreaterThan(30);
+  }
+});

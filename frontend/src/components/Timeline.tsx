@@ -21,12 +21,15 @@ export function Timeline() {
   const timelineScope = useApp((s) => s.timelineScope);
   const { select, seek, setTimelineScope } = useApp.getState();
   const [collapsed, setCollapsed] = useState(false);
+  const [dragRange, setDragRange] = useState<{ start: number; end: number } | null>(null);
   if (!ev) return <section className="timeline" />;
 
-  const t0 = timelineScope === 'mission' ? ev.traffic.missionStartSeconds : ev.traffic.startSeconds;
-  const t1 = ev.traffic.endSeconds;
+  const t0 = dragRange?.start ?? (timelineScope === 'mission' ? ev.traffic.missionStartSeconds : ev.traffic.startSeconds);
+  const t1 = dragRange?.end ?? ev.traffic.endSeconds;
   const span = Math.max(60, t1 - t0);
   const step = chooseTickStep(span);
+  const notificationTime = ev.traffic.notificationSeconds;
+  const showNotification = notificationTime != null && notificationTime >= t0 && notificationTime <= t1;
 
   const flights = [...ev.traffic.flights].sort((a, b) => sequenceTime(a) - sequenceTime(b));
   const pct = (s: number) => ((s - t0) / span) * 100;
@@ -37,7 +40,10 @@ export function Timeline() {
   for (let s = Math.ceil(t0 / step) * step; s <= t1; s += step) ticks.push(s);
 
   const onAxis = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.type === 'pointerdown') e.currentTarget.setPointerCapture(e.pointerId);
+    if (e.type === 'pointerdown') {
+      setDragRange({ start: t0, end: t1 });
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     else if (e.buttons !== 1) return;
     const r = e.currentTarget.getBoundingClientRect();
     seek(t0 + ((e.clientX - r.left) / r.width) * span);
@@ -72,12 +78,25 @@ export function Timeline() {
             </button>
           </div>
         </div>
-        <div className="tl-track tl-axis" onPointerDown={onAxis} onPointerMove={onAxis} title="Click sau trage pentru a muta ceasul">
+        <div className="tl-track tl-axis" onPointerDown={onAxis} onPointerMove={onAxis}
+          onPointerUp={() => setDragRange(null)} onPointerCancel={() => setDragRange(null)}
+          title="Click sau trage pentru a muta ceasul">
           {ticks.map((s) => (
             <span key={s} className="tl-tick" style={{ left: x(s) }}>
               {clockLabel(BASE_TIME_OFFSET_SECONDS + s, false)}
             </span>
           ))}
+          {showNotification && (
+            <span
+              className="tl-notification"
+              role="img"
+              aria-label={`Notificare tactică la ${clockLabel(BASE_TIME_OFFSET_SECONDS + notificationTime)} (30 NM)`}
+              title={`Notificarea apare la ${clockLabel(BASE_TIME_OFFSET_SECONDS + notificationTime)} · 30 NM`}
+              style={{ left: x(notificationTime) }}
+            >
+              ◆
+            </span>
+          )}
           <NowLine t0={t0} span={span} />
         </div>
       </div>
@@ -142,6 +161,9 @@ export function Timeline() {
         </div>
       </div>
       <div className="tl-legend muted small">
+        {showNotification && (
+          <span><i className="lg lg--notification" aria-hidden="true" /> notificare 30 NM</span>
+        )}
         {timelineScope === 'mission' && (
           <span>
             <i className="lg lg--dep" /> decolare &amp; rută

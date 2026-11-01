@@ -333,6 +333,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .tl-axis { cursor: ew-resize; border-bottom: 1px solid var(--line); touch-action: none; overflow: hidden; }
 .tl-body .tl-track { overflow: hidden; }
 .tl-tick { position: absolute; bottom: 3px; transform: translateX(-50%); font: 11px var(--mono); color: var(--faint); pointer-events: none; }
+.tl-notification { position: absolute; top: 1px; width: 16px; height: 14px; transform: translateX(-50%); color: var(--hold); text-align: center; font: 11px/1 var(--mono); cursor: help; z-index: 1; }
+.tl-notification::after { content: ''; position: absolute; left: 50%; top: 8px; bottom: 0; border-left: 2px solid currentColor; transform: translateX(-1px); }
 .tl-nowlayer { position: absolute; top: 0; bottom: 0; left: calc(var(--tl-label) + 1px); right: 0; pointer-events: none; } /* + 1px bordura pistei */
 .tl-now { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--select); pointer-events: none; }
 .tl-airborne { position: absolute; top: 12px; height: 4px; border-radius: 2px; opacity: .45; }
@@ -347,12 +349,13 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .tl-slot.st-cleared { color: var(--cleared); }
 .tl-slot.st-hold, .tl-flag.st-hold { color: var(--hold); }
 .tl-slot.st-divert, .tl-flag.st-divert { color: var(--divert); }
-.tl-legend { display: flex; gap: 16px; padding-top: 6px; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 6px; }
 .lg { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; }
 .lg--dep { border-radius: 50%; border: 1.5px solid var(--ifr); width: 8px; height: 8px; }
 .lg--window { background: rgba(169, 216, 234, .12); border: 1px solid rgba(169, 216, 234, .35); }
 .lg--eta { border: 1.5px solid var(--text); transform: rotate(45deg); width: 8px; height: 8px; }
 .lg--slot { border-radius: 50%; background: var(--cleared); }
+.lg--notification { width: 7px; height: 7px; background: var(--hold); transform: rotate(45deg); }
 
 @media (max-width: 900px) {
   .app {
