@@ -18,8 +18,11 @@ export function altitudeLabel(altitudeMeters: number): string {
 /** Altitudine din backend (în picioare), afișată în metri. */
 export const feetLabel = (ft: number) => altitudeLabel(feetToMeters(ft));
 
-/** Viteza verticală în m/s, cu semn și o zecimală. */
-export const verticalRateLabel = (metersPerSecond: number) => `${metersPerSecond > 0 ? '+' : ''}${metersPerSecond.toFixed(1)} m/s`;
+/** Viteza verticală în m/s, cu semn și o zecimală; sub 0,05 m/s e zbor la nivel („0.0”, nu „-0.0”). */
+export function verticalRateLabel(metersPerSecond: number): string {
+  const v = Math.abs(metersPerSecond) < 0.05 ? 0 : metersPerSecond;
+  return `${v > 0 ? '+' : ''}${v.toFixed(1)} m/s`;
+}
 
 /** Secunde de la începutul zilei → "HH:MM:SS". Backendul are doar o bază „14:00”, fără dată sau fus orar. */
 export function clockLabel(secondsOfDay: number, withSeconds = true): string {

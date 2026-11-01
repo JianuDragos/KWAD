@@ -244,6 +244,7 @@ describe('altitudeLabel', () => {
     expect(altitudeLabel(10972)).toBe('10 970 m');
     expect(feetLabel(4000)).toBe('1 220 m');
     expect(verticalRateLabel(-5.08)).toBe('-5.1 m/s');
+    expect(verticalRateLabel(-0.04)).toBe('0.0 m/s');
   });
 });
 

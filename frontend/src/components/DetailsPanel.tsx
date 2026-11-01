@@ -45,7 +45,7 @@ export function DetailsPanel() {
       <div className="panel__head">
         <h2 className="panel__title">Sosiri LRCV</h2>
         <span className="panel__count">
-          {flights.length} avioane, {flights.filter((f) => f.slot).length} cu slot
+          {flights.length === 1 ? '1 avion' : `${flights.length} avioane`}, {flights.filter((f) => f.slot).length} cu slot
           {stats.holdingInOrbitCount > 0 && <>, {stats.holdingInOrbitCount} în așteptare</>}
           {stats.divertAdvisedCount > 0 && <>, {stats.divertAdvisedCount} deviate</>}
         </span>

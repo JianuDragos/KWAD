@@ -14,7 +14,9 @@ const DEFAULT_SUGGESTIONS = [
 export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?: ExplainContext; suggestions?: string[] }) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<Explanation | null>(null);
+  // Răspunsul ține minte scenariul pentru care a fost cerut: după o schimbare de trafic sau vreme nu mai e valabil.
+  const [reply, setReply] = useState<{ explanation: Explanation; scenario: ExplainContext['evaluationResult'] } | null>(null);
+  const answer = reply && reply.scenario === context?.evaluationResult ? reply.explanation : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef<AbortController | null>(null);
@@ -29,7 +31,7 @@ export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?
     setError(null);
     try {
       const result = await explain(text, controller.signal, context);
-      setAnswer(result);
+      setReply({ explanation: result, scenario: context?.evaluationResult });
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       setError(e instanceof ApiError ? e.message : 'Analiza AI nu a putut fi obținută.');
@@ -111,7 +113,7 @@ export function AskAi({ context, suggestions = DEFAULT_SUGGESTIONS }: { context?
                   type="button"
                   className="ai__new"
                   onClick={() => {
-                    setAnswer(null);
+                    setReply(null);
                     setQuestion('');
                   }}
                 >

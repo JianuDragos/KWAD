@@ -62,5 +62,9 @@ function UpdatedAgo({ at }: { at: number }) {
     return () => clearInterval(id);
   }, []);
   const s = Math.max(0, Math.round((now - at) / 1000));
-  return <span className={`pill ${s > 45 ? 'pill--warn' : ''}`}>actualizat acum {s} s</span>;
+  return (
+    <span className={`pill ${s > 45 ? 'pill--warn' : ''}`} title={HINT.UPDATED}>
+      actualizat acum {s} s
+    </span>
+  );
 }
