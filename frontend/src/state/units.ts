@@ -1,26 +1,25 @@
-// Unitatea vitezelor aleasă de utilizator (km/h sau noduri), ținută minte în browserul lui.
+// Unitățile alese de utilizator (viteză: km/h sau noduri; distanță: NM sau km), ținute minte în browserul lui.
 import { create } from 'zustand';
-import { SPEED_UNIT_LABEL, speedLabel, speedValue, type SpeedUnit } from '../sim/units';
+import { DISTANCE_UNIT_LABEL, SPEED_UNIT_LABEL, distanceLabel, speedLabel, speedValue, type DistanceUnit, type SpeedUnit } from '../sim/units';
+import { readPref, writePref } from './prefs';
 
-const KEY = 'aeris.speedUnit';
-
-function saved(): SpeedUnit {
-  try {
-    return localStorage.getItem(KEY) === 'kt' ? 'kt' : 'kmh';
-  } catch {
-    return 'kmh'; // stocare blocată (mod privat): implicit km/h
-  }
+interface UnitsState {
+  speed: SpeedUnit;
+  distance: DistanceUnit;
+  setSpeed: (u: SpeedUnit) => void;
+  setDistance: (u: DistanceUnit) => void;
 }
 
-export const useUnits = create<{ speed: SpeedUnit; setSpeed: (u: SpeedUnit) => void }>()((set) => ({
-  speed: saved(),
+export const useUnits = create<UnitsState>()((set) => ({
+  speed: readPref('aeris.speedUnit', ['kt', 'kmh'], 'kt'),
+  distance: readPref('aeris.distanceUnit', ['nm', 'km'], 'nm'),
   setSpeed: (speed) => {
-    try {
-      localStorage.setItem(KEY, speed);
-    } catch {
-      /* alegerea rămâne doar până la refresh */
-    }
+    writePref('aeris.speedUnit', speed);
     set({ speed });
+  },
+  setDistance: (distance) => {
+    writePref('aeris.distanceUnit', distance);
+    set({ distance });
   },
 }));
 
@@ -32,4 +31,10 @@ export function useSpeed() {
     value: (knots: number) => speedValue(knots, unit),
     label: (knots: number) => speedLabel(knots, unit),
   };
+}
+
+/** Formatorul de distanțe (primește NM). */
+export function useDistance() {
+  const unit = useUnits((s) => s.distance);
+  return { unit: DISTANCE_UNIT_LABEL[unit], label: (nm: number) => distanceLabel(nm, unit) };
 }

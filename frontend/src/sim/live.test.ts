@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import * as mockLive from '../api/mockLive';
 import { explanationSchema, livePositionsSchema, metarSchema, type LiveFlight } from '../contracts/live';
 import { bearingDeg, distanceNm } from './geomath';
-import { MAX_EXTRAPOLATION_SECONDS, airlineFor, extrapolate, runwayForWind, trendArrow, windComponents } from './live';
+import { ARP } from '../data/geo';
+import { MAX_EXTRAPOLATION_SECONDS, airlineFor, extrapolate, fromLrcv, runwayForWind, trendArrow, windComponents } from './live';
 
 const flight = (over: Partial<LiveFlight> = {}): LiveFlight => ({
   icao24: 'abc123',
@@ -41,6 +42,16 @@ describe('extrapolate', () => {
   });
   it('fără coordonate nu inventează poziția', () => {
     expect(extrapolate(flight({ latitude: null }), 1010)).toBeNull();
+  });
+});
+
+describe('fromLrcv', () => {
+  it('dă distanța și direcția de la LRCV la poziția raportată, aceleași pe hartă și în listă', () => {
+    const p = { lat: ARP.lat, lon: ARP.lon + 0.2 };
+    const r = fromLrcv(flight({ latitude: p.lat, longitude: p.lon }))!;
+    expect(r.nm).toBeCloseTo(distanceNm(ARP, p), 6);
+    expect(r.bearing).toBeCloseTo(90, 0);
+    expect(fromLrcv(flight({ latitude: null }))).toBeNull();
   });
 });
 

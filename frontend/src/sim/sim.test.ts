@@ -6,7 +6,7 @@ import * as mock from '../api/mockBackend';
 import type { AircraftInput, WeatherCondition } from '../contracts/backend';
 import { destination, distanceNm, greatCirclePoints } from './geomath';
 import { positionAt, trailUntil, type TrackPoint } from './interpolate';
-import { altitudeBand, altitudeLabel, feetLabel, speedLabel, verticalRateLabel } from './units';
+import { altitudeBand, altitudeLabel, distanceLabel, feetLabel, speedLabel, verticalRateLabel } from './units';
 import { buildTraffic } from './traffic';
 
 const P = (t: number, lat: number, lon: number, alt = 0, source: TrackPoint['source'] = 'synthetic'): TrackPoint => ({
@@ -254,5 +254,14 @@ describe('speedLabel', () => {
     expect(speedLabel(450, 'kmh')).toBe('833 km/h'); // 833,4
     expect(speedLabel(450.4, 'kt')).toBe('450 kt');
     expect(speedLabel(0, 'kmh')).toBe('0 km/h');
+  });
+});
+
+describe('distanceLabel', () => {
+  it('afișează NM sau km, cu o zecimală sub 10', () => {
+    expect(distanceLabel(8.04, 'nm')).toBe('8.0 NM');
+    expect(distanceLabel(17.9, 'nm')).toBe('18 NM');
+    expect(distanceLabel(17.9, 'km')).toBe('33 km');
+    expect(distanceLabel(2, 'km')).toBe('3.7 km');
   });
 });

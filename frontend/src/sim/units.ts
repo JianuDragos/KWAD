@@ -63,3 +63,12 @@ export type SpeedUnit = 'kmh' | 'kt';
 export const SPEED_UNIT_LABEL: Record<SpeedUnit, string> = { kmh: 'km/h', kt: 'kt' };
 export const speedValue = (knots: number, unit: SpeedUnit) => Math.round(unit === 'kmh' ? knots * 1.852 : knots);
 export const speedLabel = (knots: number, unit: SpeedUnit) => `${speedValue(knots, unit)} ${SPEED_UNIT_LABEL[unit]}`;
+
+/** Unitatea distanțelor afișate (mile marine sau kilometri); calculele rămân în NM. */
+export type DistanceUnit = 'nm' | 'km';
+export const DISTANCE_UNIT_LABEL: Record<DistanceUnit, string> = { nm: 'NM', km: 'km' };
+/** Sub 10 cu o zecimală (8.3 NM), peste 10 rotunjit (36 NM). */
+export function distanceLabel(nm: number, unit: DistanceUnit): string {
+  const v = unit === 'km' ? (nm * M_PER_NM) / 1000 : nm;
+  return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${DISTANCE_UNIT_LABEL[unit]}`;
+}

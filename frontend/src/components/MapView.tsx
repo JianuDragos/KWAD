@@ -25,6 +25,7 @@ import { M_PER_NM, altitudeBand, altitudeLabel, clockLabel, feetLabel, feetToMet
 import { BASE_TIME_OFFSET_SECONDS, useApp, type MapViewPreset } from '../state/store';
 import { STATUS_CLASS, STATUS_SHORT, isUnsequenced } from './flightStyle';
 import { useLive } from '../state/live';
+import { useDistance } from '../state/units';
 
 /** Funcție stabilă: un ref inline s-ar re-rula la fiecare randare. */
 const hideLeafletPrefix = (map: L.Map | null) => void map?.attributionControl.setPrefix(false);
@@ -602,6 +603,7 @@ function AircraftMarkerView({
   const visualStatusClass =
     flight.kind === 'divert' ? 'st-divert' : flight.kind === 'hold' ? 'st-hold' : STATUS_CLASS[flight.status];
   const trafficRenderer = useTrafficRenderer();
+  const distance = useDistance();
   const dimmed = done || preTakeoff;
 
   const icon = useMemo(
@@ -658,7 +660,7 @@ function AircraftMarkerView({
           interactive={false}
         >
           <Tooltip permanent direction="top" className="lbl lbl--tod" offset={[0, -5]}>
-            TOD · {feetLabel(flight.todPoint.altitudeFt)} ({flight.todPoint.distanceToLandingNm} NM)
+            TOD · {feetLabel(flight.todPoint.altitudeFt)} ({distance.label(flight.todPoint.distanceToLandingNm)})
           </Tooltip>
         </CircleMarker>
       )}

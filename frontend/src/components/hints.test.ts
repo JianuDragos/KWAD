@@ -41,7 +41,7 @@ afterEach(() => {
 const last = () => shown[shown.length - 1] ?? null;
 
 describe('attachHints', () => {
-  it('arată explicația abia după 5 secunde de hover și mută title în data-hint', () => {
+  it('arată explicația abia după 2,5 secunde de hover și mută title în data-hint', () => {
     const el = new FakeElement('Pista în folosință');
     fire('mouseover', el);
     expect(el.getAttribute('title')).toBeNull();
@@ -52,7 +52,7 @@ describe('attachHints', () => {
     expect(last()?.text).toBe('Pista în folosință');
   });
 
-  it('nu mai apare dacă pointerul pleacă înainte de 5 secunde', () => {
+  it('nu mai apare dacă pointerul pleacă înainte de 2,5 secunde', () => {
     const el = new FakeElement('QNH');
     fire('mouseover', el);
     vi.advanceTimersByTime(2000);

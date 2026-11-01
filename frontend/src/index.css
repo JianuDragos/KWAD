@@ -403,6 +403,8 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 /* ---------- explicații la hover (data/glossary.ts) ---------- */
 .atis > [title], .clock[title], .pill[title], .rules[title], .strip__when[title], .math-badge[title],
 .kv dt[title], .math-metric__lbl[title], .ldr-bar__labels [title], .tl-eta, .tl-slot, .tl-window { cursor: help; }
+/* Orice text cu explicație arată cursorul cu semn de întrebare; butoanele și linkurile își păstrează mâna. */
+:where([title], [data-hint]):where(:not(button, a, input, select, textarea, label, .leaflet-interactive)) { cursor: help; }
 .kv dt[title], .math-metric__lbl[title] { text-decoration: underline dotted rgba(154, 168, 163, .55); text-underline-offset: 3px; }
 
 /* ---------- Verificare Matematică & Anti-Halucinație Qwen ---------- */
