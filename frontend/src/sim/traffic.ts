@@ -26,6 +26,7 @@ import {
 } from '../data/geo';
 import { destination, distanceNm, greatCircleInterpolate, greatCirclePoints, type LatLon } from './geomath';
 import { positionAt, type TrackPoint } from './interpolate';
+import { smoothTurns } from './turns';
 import { appendLeg, appendRacetrack, trackArrivingAt, type PlannedFix } from './synthetic';
 import { clockLabel, feetLabel, metersToFeet } from './units';
 
@@ -223,6 +224,7 @@ export function buildTacticalTraffic(
       previousFinalSpeed = finalSpeed;
       track = withRollout(track, model.runway);
     }
+    track = smoothTurns(track);
     const fullRoute: [number, number][] = track.map((p) => [p.latitudeDeg, p.longitudeDeg]);
     return {
       ...flight,
@@ -265,8 +267,10 @@ function tacticalVfrTiming(flight: FlightView, runway: RunwayId, previousLanding
   const entry = selectVfrEntryForOrigin(flight.origin, 0);
   const join = destination(threshold(runway), (runwayTrueBearing(runway) + 180) % 360, 6);
   const approachSeconds = (distanceNm(center, join) / speed + 6 / finalSpeed) * 3600;
-  // 4 NM pe finala comună, inclusiv când următorul VFR este mai lent decât liderul.
-  const gap = Math.max(4 / finalSpeed, 6 / finalSpeed - 2 / previousSpeed) * 3600;
+  // 4 NM pe finala comună, inclusiv când următorul VFR este mai lent decât liderul. Plus 0,1 NM rezervă:
+  // virajul de intrare pe finală (sim/turns.ts) taie colțul și îl apropie puțin de lider.
+  const sep = 4.1;
+  const gap = Math.max(sep / finalSpeed, 6 / finalSpeed - (6 - sep) / previousSpeed) * 3600;
   const targetLanding = Math.max(flight.aircraft.etaSeconds, previousLanding + gap, acceptedAt + approachSeconds);
   const holdUntil = Math.max(acceptedAt, targetLanding - approachSeconds);
   const holdStart = flight.aircraft.etaSeconds - 300 + (distanceNm(entry, center) / speed) * 3600;
@@ -726,7 +730,8 @@ export function buildTraffic(
   );
   const endSeconds = Math.max(baseEndSeconds, Math.ceil((maxResolvedEnd + 120) / 60) * 60);
 
-  return { runway, flights, startSeconds, missionStartSeconds, endSeconds };
+  // Colțurile traseelor devin viraje la cel mult 30° înclinare; ora de sosire rămâne aceeași (sim/turns.ts).
+  return { runway, flights: flights.map((f) => ({ ...f, track: smoothTurns(f.track) })), startSeconds, missionStartSeconds, endSeconds };
 }
 
 /** Construiește lanțul complet IFR: Decolare (origin) → Climb → Croazieră Great-Circle → TOD → Puncte AIP (IAF..THR). */
