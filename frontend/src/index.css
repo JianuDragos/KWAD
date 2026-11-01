@@ -615,12 +615,6 @@ select { background: var(--raised); border: 1px solid var(--line-strong); border
 .vfr-mini-seg .seg__btn { font-size: 11px; padding: 4px 6px; }
 .vfr-mini-seg .seg__btn.is-divert-on { background: var(--divert); color: var(--scope); }
 
-.assistant-cta {
-  margin-top: auto; padding: 10px 12px; border-radius: 4px;
-  background: var(--raised); border: 1px solid var(--line-strong); border-left: 3px solid #7dd3c8;
-  display: flex; justify-content: space-between; align-items: center; gap: 10px;
-}
-
 /* Rute și aerodromuri de deviere pe harta 4D */
 .divert-route { stroke: var(--divert); stroke-width: 2.2; stroke-dasharray: 7 5; stroke-opacity: .92; fill: none; }
 .alt-apt { stroke: var(--divert); fill: rgba(255, 122, 102, .25); stroke-width: 2; }

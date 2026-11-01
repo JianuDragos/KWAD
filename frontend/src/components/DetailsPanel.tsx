@@ -6,8 +6,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { positionAt } from '../sim/interpolate';
 import type { FlightView } from '../sim/traffic';
-import { useAssistant } from '../state/assistant';
-import { setMode } from '../state/mode';
 import { altitudeLabel, clockLabel, feetLabel, feetToMeters, minutesLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { HINT } from '../data/glossary';
@@ -67,23 +65,6 @@ export function DetailsPanel() {
           </li>
         ))}
       </ol>
-
-      <div className="assistant-cta">
-        <div>
-          <strong className="small">Asistent Tactic ATC (Qwen3-4B)</strong>
-          <p className="muted small">Conversație operațională, analiză secvențiere și rezoluții VFR în tab-ul dedicat.</p>
-        </div>
-        <button
-          type="button"
-          className="btn btn--primary btn--xs"
-          onClick={() => {
-            useAssistant.getState().setContextSource('demo');
-            setMode('assistant');
-          }}
-        >
-          Deschide Asistent →
-        </button>
-      </div>
     </aside>
   );
 }

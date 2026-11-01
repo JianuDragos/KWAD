@@ -5,8 +5,6 @@ import { airlineFor, trendArrow } from '../sim/live';
 import { M_PER_NM, altitudeLabel, verticalRateLabel } from '../sim/units';
 import { useSpeed } from '../state/units';
 import { useLive } from '../state/live';
-import { useAssistant } from '../state/assistant';
-import { setMode } from '../state/mode';
 import { AskAi } from './AskAi';
 import { HINT } from '../data/glossary';
 
@@ -55,24 +53,6 @@ export function LivePanel() {
           </p>
         ))}
       </ol>
-      {positions && <p className="muted small">Sursa: {positions.source}. Actualizare la 15 s.</p>}
-
-      <div className="assistant-cta">
-        <div>
-          <strong className="small">Asistent Tactic ATC (Trafic Real)</strong>
-          <p className="muted small">Analizează METAR-ul curent, eligibilitatea VMC și traficul radar în tab-ul Asistent.</p>
-        </div>
-        <button
-          type="button"
-          className="btn btn--primary btn--xs"
-          onClick={() => {
-            useAssistant.getState().setContextSource('live');
-            setMode('assistant');
-          }}
-        >
-          Deschide Asistent →
-        </button>
-      </div>
     </aside>
   );
 }
