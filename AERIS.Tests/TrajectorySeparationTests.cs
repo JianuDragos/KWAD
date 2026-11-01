@@ -504,6 +504,82 @@ public class TrajectorySeparationTests
         Assert.Equal(6, ccaAdvisory.TakeoffToLanding.Phases.Count);
     }
 
+    [Fact]
+    public async Task Test_21_GroundedExplainer_FailsOverToOllamaAndVerifiesDirectRomanianAnswer()
+    {
+        var closedPrimary = new DelegateHttpHandler((_, _) => throw new TaskCanceledException("ConnectTimeout", new TimeoutException("18090 connect timeout")));
+        var ollamaHandler = new DelegateHttpHandler((_, _) =>
+        {
+            var qaJson = JsonSerializer.Serialize(new
+            {
+                direct_answer = "Aeronava YR-5123 mai are 75 min de combustibil și este redirecționată la Podari RWY 18 deoarece vântul lateral de 22 kt depășește limita de 11 kt.",
+                statement_ids = new[] { "flight_YRSAV" }
+            });
+            var payload = JsonSerializer.Serialize(new
+            {
+                choices = new[] { new { finish_reason = "stop", message = new { content = qaJson } } }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) });
+        });
+
+        using var primaryClient = new HttpClient(closedPrimary) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
+        using var ollamaClient = new HttpClient(ollamaHandler) { BaseAddress = new Uri("http://127.0.0.1:11434/") };
+        var explainer = new GroundedExplainer(
+            primaryClient,
+            ollamaFallbackClient: ollamaClient,
+            ollamaModel: "hf.co/unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_K_M");
+
+        var statements = new[]
+        {
+            new ApprovedStatement("weather", "Vânt din 180° cu 22 kt pe RWY 26.", "WX-1"),
+            new ApprovedStatement("flight_YRSAV", "YR-5123 (ICP Savannah S): combustibil rămas 75 min, vânt lateral 22 kt din max 11 kt, alternativă Podari RWY 18.", "SIM-1")
+        };
+
+        var res = await explainer.ExplainAsync(new ExplanationRequest("Cât combustibil mai are YR-5123?", 7, statements));
+
+        Assert.Equal("grounded_selection", res.Mode);
+        Assert.NotNull(res.DirectAnswer);
+        Assert.Contains("75 min", res.DirectAnswer);
+        Assert.NotNull(res.Verification);
+        Assert.True(res.Verification!.IsVerified);
+        Assert.False(res.Verification.HallucinationBlocked);
+        Assert.Contains("75", res.Verification.VerifiedNumbers);
+        Assert.Empty(res.Verification.UnverifiedNumbers);
+    }
+
+    [Fact]
+    public async Task Test_22_GroundedExplainer_BlocksHallucinatedNumbersAndSubstitutesSafeAnswer()
+    {
+        var hallucinatingHandler = new DelegateHttpHandler((_, _) =>
+        {
+            var qaJson = JsonSerializer.Serialize(new
+            {
+                direct_answer = "YR-5123 mai are 9400 litri de kerosen la altitudinea de 38000 ft.",
+                statement_ids = new[] { "flight_YRSAV" }
+            });
+            var payload = JsonSerializer.Serialize(new
+            {
+                choices = new[] { new { finish_reason = "stop", message = new { content = qaJson } } }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload) });
+        });
+
+        using var client = new HttpClient(hallucinatingHandler) { BaseAddress = new Uri("http://127.0.0.1:18090/") };
+        var explainer = new GroundedExplainer(client);
+        var statements = new[]
+        {
+            new ApprovedStatement("flight_YRSAV", "YR-5123 (ICP Savannah S): combustibil rămas 75 min, vânt lateral 22 kt din max 11 kt.", "SIM-1")
+        };
+
+        var res = await explainer.ExplainAsync(new ExplanationRequest("Cât combustibil mai are YR-5123?", 8, statements));
+
+        Assert.NotNull(res.Verification);
+        Assert.True(res.Verification!.HallucinationBlocked);
+        Assert.Contains("9400", res.Verification.UnverifiedNumbers);
+        Assert.DoesNotContain("9400", res.DirectAnswer);
+        Assert.Contains("75 min", res.DirectAnswer);
+    }
+
     private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);

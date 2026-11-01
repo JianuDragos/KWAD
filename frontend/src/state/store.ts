@@ -4,7 +4,7 @@ import type { CraiovaAircraft, CraiovaSimulationResult, TrafficPresetId, Weather
 import { ApiError, evaluateCraiova, fetchScenarioTraffic } from '../api/client';
 import { FALLBACK_FIRS, loadFirsDataset, type FirEntry } from '../data/airspace';
 import { DEFAULT_PRESET_ID, WEATHER_PRESETS } from '../data/weatherPresets';
-import { buildTraffic, type TrafficModel } from '../sim/traffic';
+import { buildTraffic, type TrafficModel, type VfrResolutionAction } from '../sim/traffic';
 
 export const SPEEDS = [1, 10, 60] as const;
 export type Speed = (typeof SPEEDS)[number];
@@ -39,6 +39,7 @@ interface AppState {
   error: string | null;
   evaluation: Evaluation | null;
   firs: FirEntry[];
+  vfrOverrides: Record<string, VfrResolutionAction>;
 
   simTimeSeconds: number;
   playing: boolean;
@@ -53,6 +54,8 @@ interface AppState {
   load: () => Promise<void>;
   setTrafficPreset: (preset: TrafficPresetId) => Promise<void>;
   setWeatherPreset: (id: string) => void;
+  setVfrResolution: (aircraftId: string, action: VfrResolutionAction | null) => void;
+  clearVfrOverrides: () => void;
   reset: () => void;
   tick: (dtRealSeconds: number) => void;
   togglePlay: () => void;
@@ -77,7 +80,7 @@ export const useApp = create<AppState>()((set, get) => {
       const result = await evaluateCraiova({ weather: scenario.weather, aircrafts: scenario.aircrafts, useTrajectoryEngine: true }, controller.signal);
       // Răspuns pentru o revizie veche: îl ignorăm.
       if (get().scenario?.revision !== scenario.revision) return;
-      const traffic = buildTraffic(scenario.aircrafts, result, get().firs);
+      const traffic = buildTraffic(scenario.aircrafts, result, get().firs, get().vfrOverrides);
       const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
       set((s) => ({
         status: 'ok',
@@ -101,6 +104,7 @@ export const useApp = create<AppState>()((set, get) => {
     error: null,
     evaluation: null,
     firs: FALLBACK_FIRS,
+    vfrOverrides: {},
     simTimeSeconds: 0,
     playing: false,
     speed: 10,
@@ -117,7 +121,7 @@ export const useApp = create<AppState>()((set, get) => {
         if (ds.firs.length > FALLBACK_FIRS.length) {
           set((s) => {
             if (!s.evaluation || !s.scenario) return { firs: ds.firs };
-            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs);
+            const updatedTraffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, ds.firs, s.vfrOverrides);
             return { firs: ds.firs, evaluation: { ...s.evaluation, traffic: updatedTraffic } };
           });
         }
@@ -134,7 +138,7 @@ export const useApp = create<AppState>()((set, get) => {
           weather: preset.weather,
           source: live.source,
         };
-        set({ scenario, initialScenario: scenario });
+        set({ scenario, initialScenario: scenario, vfrOverrides: {} });
         await evaluate(scenario, true);
       } catch (e) {
         set({ status: 'error', error: e instanceof ApiError ? e.message : String(e) });
@@ -146,7 +150,7 @@ export const useApp = create<AppState>()((set, get) => {
       const weatherPresetId = current?.weatherPresetId ?? DEFAULT_PRESET_ID;
       const weather = current?.weather ?? WEATHER_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)!.weather;
       const nextRev = (current?.revision ?? 0) + 1;
-      set({ status: 'loading', error: null, playing: false, selectedId: null });
+      set({ status: 'loading', error: null, playing: false, selectedId: null, vfrOverrides: {} });
       try {
         const live = await fetchScenarioTraffic(undefined, trafficPreset);
         const scenario: Scenario = {
@@ -175,15 +179,44 @@ export const useApp = create<AppState>()((set, get) => {
       const preset = WEATHER_PRESETS.find((p) => p.id === id);
       if (!current || !preset) return;
       const scenario = { ...current, revision: current.revision + 1, weatherPresetId: id, weather: preset.weather };
-      set({ scenario });
+      set({ scenario, vfrOverrides: {} });
       void evaluate(scenario, false);
+    },
+
+    setVfrResolution: (aircraftId, action) => {
+      set((s) => {
+        const nextOverrides = { ...s.vfrOverrides };
+        if (action === null) delete nextOverrides[aircraftId];
+        else nextOverrides[aircraftId] = action;
+        if (!s.evaluation || !s.scenario) return { vfrOverrides: nextOverrides };
+        const traffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, s.firs, nextOverrides);
+        const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
+        return {
+          vfrOverrides: nextOverrides,
+          evaluation: { ...s.evaluation, traffic },
+          simTimeSeconds: clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
+        };
+      });
+    },
+
+    clearVfrOverrides: () => {
+      set((s) => {
+        if (!s.evaluation || !s.scenario) return { vfrOverrides: {} };
+        const traffic = buildTraffic(s.scenario.aircrafts, s.evaluation.result, s.firs, {});
+        const minSeek = Math.min(traffic.missionStartSeconds, traffic.startSeconds);
+        return {
+          vfrOverrides: {},
+          evaluation: { ...s.evaluation, traffic },
+          simTimeSeconds: clamp(s.simTimeSeconds, minSeek, traffic.endSeconds),
+        };
+      });
     },
 
     reset: () => {
       const initial = get().initialScenario;
       if (!initial) return;
       const scenario = { ...initial, revision: (get().scenario?.revision ?? 0) + 1 };
-      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach' });
+      set({ scenario, playing: false, selectedId: null, timelineScope: 'approach', vfrOverrides: {} });
       void evaluate(scenario, true);
     },
 
